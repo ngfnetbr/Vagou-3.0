@@ -18,7 +18,7 @@ const Inscricao = () => {
               Nova Inscrição
             </h1>
             <p className="text-muted-foreground">
-              Preencha os dados abaixo para solicitar uma vaga em CMEI
+              Preencha os dados abaixo para solicitar uma intenção de vaga em CMEI
             </p>
           </div>
 
