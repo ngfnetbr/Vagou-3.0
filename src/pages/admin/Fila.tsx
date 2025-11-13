@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Bell, XCircle, Eye, Loader2, Clock } from "lucide-react";
+import { Search, Download, Bell, XCircle, Eye, Loader2, Clock, RotateCcw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -133,11 +133,14 @@ const Fila = () => {
     const today = new Date();
     const daysRemaining = differenceInDays(deadlineDate, today);
     
-    if (daysRemaining < 0) {
+    const isExpired = daysRemaining < 0;
+
+    if (isExpired) {
         return {
             text: `Prazo Expirado (${format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR })})`,
             className: "bg-destructive/20 text-destructive",
             icon: XCircle,
+            isExpired: true,
         };
     }
     
@@ -145,6 +148,7 @@ const Fila = () => {
         text: `Prazo: ${daysRemaining} dias (${format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR })})`,
         className: "bg-accent/20 text-foreground",
         icon: Clock,
+        isExpired: false,
     };
   };
 
@@ -299,39 +303,52 @@ const Fila = () => {
                                 Ver detalhes
                               </DropdownMenuItem>
                               
-                              {!isConvocado && (
+                              {/* Opção de Convocar / Reconvocar */}
+                              {(!isConvocado || (isConvocado && deadlineInfo?.isExpired)) && (
                                 <DropdownMenuItem className="text-secondary" onSelect={() => handleConvocarClick(item)}>
-                                  <Bell className="mr-2 h-4 w-4" />
-                                  Convocar para matrícula
+                                  {isConvocado ? (
+                                    <>
+                                      <RotateCcw className="mr-2 h-4 w-4" />
+                                      Reconvocar para matrícula
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Bell className="mr-2 h-4 w-4" />
+                                      Convocar para matrícula
+                                    </>
+                                  )}
                                 </DropdownMenuItem>
                               )}
                               
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                    <XCircle className="mr-2 h-4 w-4" />
-                                    Marcar como desistente
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Confirmar Desistência?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Esta ação removerá <span className="font-semibold">{item.nome}</span> da fila de espera e marcará como desistente. Esta ação é reversível apenas manualmente.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel disabled={isMarkingDesistente}>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction 
-                                      onClick={() => handleDesistente(item.id)} 
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      disabled={isMarkingDesistente}
-                                    >
-                                      {isMarkingDesistente ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirmar Desistência"}
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              {/* Opção de Marcar como desistente (sempre disponível para Fila/Convocado) */}
+                              {(item.status === "Fila de Espera" || item.status === "Convocado") && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                      <XCircle className="mr-2 h-4 w-4" />
+                                      Marcar como desistente
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Confirmar Desistência?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Esta ação removerá <span className="font-semibold">{item.nome}</span> da fila de espera e marcará como desistente. Esta ação é reversível apenas manualmente.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel disabled={isMarkingDesistente}>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        onClick={() => handleDesistente(item.id)} 
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        disabled={isMarkingDesistente}
+                                      >
+                                        {isMarkingDesistente ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirmar Desistência"}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

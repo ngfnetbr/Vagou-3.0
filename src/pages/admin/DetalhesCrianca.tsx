@@ -1,7 +1,7 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, Calendar, MapPin, Phone, Mail, Edit, History, Loader2, FileText, CheckCircle, ListOrdered, School, Clock, XCircle } from "lucide-react";
+import { ArrowLeft, User, Calendar, MapPin, Phone, Mail, Edit, History, Loader2, FileText, CheckCircle, ListOrdered, School, Clock, XCircle, RotateCcw } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useCriancaDetails } from "@/hooks/use-criancas";
@@ -12,6 +12,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import ConvocarModal from "@/components/ConvocarModal"; // Importar ConvocarModal
 
 const DetalhesCrianca = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const DetalhesCrianca = () => {
   const criancaId = id ? parseInt(id) : undefined;
   const { data: crianca, isLoading, error, refetch } = useCriancaDetails(criancaId || 0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConvocarModalOpen, setIsConvocarModalOpen] = useState(false);
 
   const handleGeneratePdf = () => {
     toast.info("Gerando Ficha em PDF...", {
@@ -76,6 +78,11 @@ const DetalhesCrianca = () => {
         navigate('/admin/criancas');
     }
   };
+  
+  const handleConvocarSuccess = () => {
+    setIsConvocarModalOpen(false);
+    refetch(); // Refresh data after successful convocation
+  };
 
   const isMatriculado = crianca.status === 'Matriculado' || crianca.status === 'Matriculada';
   const isFila = crianca.status === 'Fila de Espera';
@@ -86,11 +93,14 @@ const DetalhesCrianca = () => {
     const today = new Date();
     const daysRemaining = differenceInDays(deadlineDate, today);
     
-    if (daysRemaining < 0) {
+    const isExpired = daysRemaining < 0;
+
+    if (isExpired) {
         return {
             text: `Prazo Expirado em ${format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR })}`,
             className: "bg-destructive/20 text-destructive",
             icon: XCircle,
+            isExpired: true,
         };
     }
     
@@ -98,6 +108,7 @@ const DetalhesCrianca = () => {
         text: `Prazo de resposta: ${daysRemaining} dias (até ${format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR })})`,
         className: "bg-accent/20 text-foreground",
         icon: Clock,
+        isExpired: false,
     };
   })() : null;
 
@@ -126,6 +137,43 @@ const DetalhesCrianca = () => {
               <FileText className="mr-2 h-4 w-4" />
               Gerar Ficha em PDF
             </Button>
+            
+            {/* Botão de Convocar / Reconvocar */}
+            {crianca.status !== 'Matriculado' && crianca.status !== 'Matriculada' && crianca.status !== 'Desistente' && (
+                <Dialog open={isConvocarModalOpen} onOpenChange={setIsConvocarModalOpen}>
+                    <DialogTrigger asChild>
+                        <Button 
+                            variant="outline" 
+                            className="text-primary border-primary hover:bg-primary/10"
+                        >
+                            {isConvocado && deadlineInfo?.isExpired ? (
+                                <>
+                                    <RotateCcw className="mr-2 h-4 w-4" />
+                                    Reconvocar
+                                </>
+                            ) : (
+                                <>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Editar Dados
+                                </>
+                            )}
+                        </Button>
+                    </DialogTrigger>
+                    {isConvocado || isFila ? (
+                        <ConvocarModal 
+                            crianca={crianca} 
+                            onClose={handleConvocarSuccess}
+                        />
+                    ) : (
+                        <NovaCriancaModalContent 
+                            onClose={() => setIsModalOpen(false)} 
+                            initialData={crianca}
+                        />
+                    )}
+                </Dialog>
+            )}
+            
+            {/* Botão de Editar Dados (sempre disponível) */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="text-primary border-primary hover:bg-primary/10">
@@ -320,6 +368,16 @@ const DetalhesCrianca = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Modal de Convocação/Reconvocação */}
+      {crianca.status !== 'Matriculado' && crianca.status !== 'Matriculada' && crianca.status !== 'Desistente' && (
+        <Dialog open={isConvocarModalOpen} onOpenChange={setIsConvocarModalOpen}>
+          <ConvocarModal 
+            crianca={crianca} 
+            onClose={handleConvocarSuccess}
+          />
+        </Dialog>
+      )}
     </AdminLayout>
   );
 };

@@ -68,18 +68,16 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
 
   // Tipando o parâmetro values explicitamente como InscricaoFormData
   const onSubmit = async (values: InscricaoFormData) => {
-    // O ZodResolver garante que 'values' é InscricaoFormData se a validação passar.
-    // Usamos a asserção de tipo para satisfazer o compilador TS.
-    const dataToSubmit = values as InscricaoFormData; 
+    // Forçamos o tipo completo para satisfazer as funções de mutação
+    const data = values as InscricaoFormData; 
 
     if (onSuccess) {
       // Admin context: use mutation
       try {
         if (isEditing && criancaId) {
-          // O erro 1 e 2 são corrigidos aqui, pois dataToSubmit é explicitamente InscricaoFormData
-          await updateCrianca({ id: criancaId, data: dataToSubmit }); 
+          await updateCrianca({ id: criancaId, data: data }); 
         } else {
-          await addCrianca(dataToSubmit); 
+          await addCrianca(data); 
         }
         onSuccess(values);
         if (!isEditing) {
@@ -102,7 +100,7 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
       await deleteCrianca(criancaId);
       if (onSuccess) {
         // O getValues() retorna o tipo correto, mas o cast é mantido aqui para garantir que o onSuccess receba o tipo completo, mesmo que o formulário esteja sendo resetado.
-        onSuccess(form.getValues()); 
+        onSuccess(form.getValues() as InscricaoFormData); 
       }
     }
   };

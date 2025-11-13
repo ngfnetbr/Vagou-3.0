@@ -66,14 +66,19 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
   };
   
   const preferredCmeis = [crianca.cmei1, crianca.cmei2].filter(Boolean);
-  const aceitaQualquerCmei = crianca.aceitaQualquerCmei === 'sim';
+  const isReconvocacao = crianca.status === 'Convocado' && crianca.convocacaoDeadline && new Date(crianca.convocacaoDeadline) < new Date();
+
+  const modalTitle = isReconvocacao ? `Reconvocar ${crianca.nome}` : `Convocar ${crianca.nome}`;
+  const modalDescription = isReconvocacao 
+    ? "O prazo anterior expirou. Selecione uma nova vaga para reconvocar a criança."
+    : "Selecione o CMEI e a turma para a qual a criança será convocada.";
 
   return (
     <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle>Convocar {crianca.nome}</DialogTitle>
+        <DialogTitle>{modalTitle}</DialogTitle>
         <DialogDescription>
-          Selecione o CMEI e a turma para a qual a criança será convocada.
+          {modalDescription}
         </DialogDescription>
       </DialogHeader>
       
@@ -142,14 +147,14 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                     disabled={isConvoking || !form.formState.isValid || isLoadingTurmas}
                 >
                     <Bell className="mr-2 h-4 w-4" />
-                    Convocar
+                    {isReconvocacao ? "Reconvocar" : "Convocar"}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmar Convocação?</AlertDialogTitle>
+                  <AlertDialogTitle>Confirmar {isReconvocacao ? "Reconvocação" : "Convocação"}?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Você está prestes a convocar <span className="font-semibold">{crianca.nome}</span> para a vaga selecionada.
+                    Você está prestes a {isReconvocacao ? "reconvocar" : "convocar"} <span className="font-semibold">{crianca.nome}</span> para a vaga selecionada.
                     O responsável terá 7 dias úteis para efetivar a matrícula.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -163,7 +168,7 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                     {isConvoking ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                        "Confirmar Convocação"
+                        `Confirmar ${isReconvocacao ? "Reconvocação" : "Convocação"}`
                     )}
                   </AlertDialogAction>
                 </AlertDialogFooter>
