@@ -14,8 +14,6 @@ import Turmas from "./pages/admin/Turmas";
 import Convocacoes from "./pages/admin/Convocacoes";
 import Relatorios from "./pages/admin/Relatorios";
 import Configuracoes from "./pages/admin/Configuracoes";
-import Importar from "./pages/parametros/Importar";
-import TurmasBase from "./pages/parametros/TurmasBase";
 import Logs from "./pages/Logs";
 import NotFound from "./pages/NotFound";
 
@@ -43,10 +41,6 @@ const App = () => (
           <Route path="/admin/convocacoes" element={<Convocacoes />} />
           <Route path="/admin/relatorios" element={<Relatorios />} />
           <Route path="/admin/configuracoes" element={<Configuracoes />} />
-          
-          {/* Parameters Routes */}
-          <Route path="/parametros/importar" element={<Importar />} />
-          <Route path="/parametros/turmas-base" element={<TurmasBase />} />
           
           {/* Logs Route */}
           <Route path="/logs" element={<Logs />} />

@@ -1,14 +1,13 @@
 import { NavLink } from "@/components/NavLink";
-import { 
-  LayoutDashboard, 
-  Users, 
-  School, 
-  ListOrdered, 
-  Bell, 
-  GraduationCap, 
-  FileText, 
-  Settings, 
-  Upload,
+import {
+  LayoutDashboard,
+  Users,
+  School,
+  ListOrdered,
+  Bell,
+  GraduationCap,
+  FileText,
+  Settings,
   Layers,
   History
 } from "lucide-react";
@@ -23,8 +22,6 @@ const menuItems = [
   { icon: Bell, label: "Convocações", to: "/admin/convocacoes" },
   { icon: FileText, label: "Relatórios", to: "/admin/relatorios" },
   { icon: Settings, label: "Configurações", to: "/admin/configuracoes" },
-  { icon: Upload, label: "Importar Dados", to: "/parametros/importar" },
-  { icon: Layers, label: "Turmas Base", to: "/parametros/turmas-base" },
   { icon: History, label: "Logs do Sistema", to: "/logs" },
 ];
 

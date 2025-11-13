@@ -1,4 +1,3 @@
-import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Edit, Trash2, Users } from "lucide-react";
@@ -30,7 +29,6 @@ const TurmasBase = () => {
       nome: "Berçário I",
       idadeMinima: 4,
       idadeMaxima: 11,
-      // capacidade: 15, // Removido
       descricao: "4 a 11 meses"
     },
     {
@@ -38,7 +36,6 @@ const TurmasBase = () => {
       nome: "Berçário II",
       idadeMinima: 12,
       idadeMaxima: 23,
-      // capacidade: 15, // Removido
       descricao: "1 ano"
     },
     {
@@ -46,7 +43,6 @@ const TurmasBase = () => {
       nome: "Maternal I",
       idadeMinima: 24,
       idadeMaxima: 35,
-      // capacidade: 20, // Removido
       descricao: "2 anos"
     },
     {
@@ -54,7 +50,6 @@ const TurmasBase = () => {
       nome: "Maternal II",
       idadeMinima: 36,
       idadeMaxima: 47,
-      // capacidade: 20, // Removido
       descricao: "3 anos"
     },
     {
@@ -62,7 +57,6 @@ const TurmasBase = () => {
       nome: "Pré I",
       idadeMinima: 48,
       idadeMaxima: 59,
-      // capacidade: 25, // Removido
       descricao: "4 anos"
     },
     {
@@ -70,7 +64,6 @@ const TurmasBase = () => {
       nome: "Pré II",
       idadeMinima: 60,
       idadeMaxima: 71,
-      // capacidade: 25, // Removido
       descricao: "5 anos"
     },
   ]);
@@ -110,94 +103,89 @@ const TurmasBase = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Turmas Base</h1>
-            <p className="text-muted-foreground">Configuração dos modelos de turmas com faixas etárias</p>
-          </div>
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                onClick={handleNewTurmaClick}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Turma Base
-              </Button>
-            </DialogTrigger>
-            <NovaTurmaBaseModal 
-              initialData={editingTurmaBase} 
-              onSave={handleSaveTurma} 
-              onClose={() => setIsModalOpen(false)} 
-              onDelete={handleDeleteTurma}
-            />
-          </Dialog>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Modelos de Turmas</h2>
+          <p className="text-muted-foreground">Configuração dos modelos de turmas com faixas etárias</p>
         </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {turmasBase.map((turma) => (
-            <Card key={turma.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-lg">
-                      <Users className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{turma.nome}</CardTitle>
-                      <CardDescription>{turma.descricao}</CardDescription>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Faixa Etária:</span>
-                    <Badge variant="secondary">{turma.descricao || `${turma.idadeMinima} - ${turma.idadeMaxima} meses`}</Badge>
-                  </div>
-                  {/* Capacidade removida da exibição */}
-                </div>
-                
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditClick(turma)}>
-                    <Edit className="mr-2 h-3 w-3" />
-                    Editar
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10">
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação não pode ser desfeita. Isso excluirá permanentemente a turma base 
-                          <span className="font-semibold"> {turma.nome} </span>
-                          e removerá todos os dados associados.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteTurma(turma.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          Excluir
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* O formulário de adição inline foi removido, pois agora usamos o modal */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogTrigger asChild>
+            <Button
+              className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+              onClick={handleNewTurmaClick}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Turma Base
+            </Button>
+          </DialogTrigger>
+          <NovaTurmaBaseModal
+            initialData={editingTurmaBase}
+            onSave={handleSaveTurma}
+            onClose={() => setIsModalOpen(false)}
+            onDelete={handleDeleteTurma}
+          />
+        </Dialog>
       </div>
-    </AdminLayout>
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {turmasBase.map((turma) => (
+          <Card key={turma.id} className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">{turma.nome}</CardTitle>
+                    <CardDescription>{turma.descricao}</CardDescription>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Faixa Etária:</span>
+                  <Badge variant="secondary">{turma.descricao || `${turma.idadeMinima} - ${turma.idadeMaxima} meses`}</Badge>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditClick(turma)}>
+                  <Edit className="mr-2 h-3 w-3" />
+                  Editar
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10">
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Isso excluirá permanentemente a turma base
+                        <span className="font-semibold"> {turma.nome} </span>
+                        e removerá todos os dados associados.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteTurma(turma.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 };
 
