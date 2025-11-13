@@ -102,7 +102,7 @@ const Turmas = () => {
   const [turmas, setTurmas] = useState<Turma[]>(initialTurmasData);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTurma, setEditingTurma] = useState<Turma | undefined>(undefined);
-  const [currentView, setCurrentView] = useState<"grid" | "list">("grid"); // Novo estado para visualização
+  const [currentView, setCurrentView] = useState<"grid" | "list">("grid");
 
   useEffect(() => {
     if (cmeiFilterParam && selectedCmei !== cmeiFilterParam) {
@@ -370,49 +370,68 @@ const Turmas = () => {
     ))
   );
 
-  const renderTurmasList = () => (
-    <Card>
-      <CardContent className="pt-6">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>CMEI</TableHead>
-              <TableHead>Turma</TableHead>
-              <TableHead>Modelo Base</TableHead>
-              <TableHead className="text-center">Capacidade</TableHead>
-              <TableHead className="text-center">Ocupação</TableHead>
-              <TableHead className="text-center">Vagas Livres</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredTurmas.map((turma) => {
-              const ocupacaoPercent = Math.round((turma.ocupacao / turma.capacidade) * 100);
-              const baseTurma = mockTurmasBase.find(t => t.id === turma.turmaBaseId);
-              
-              return (
-                <TableRow key={turma.id}>
-                  <TableCell className="font-medium">{turma.cmei}</TableCell>
-                  <TableCell>{turma.nome}</TableCell>
-                  <TableCell>{baseTurma?.nome}</TableCell>
-                  <TableCell className="text-center">{turma.capacidade}</TableCell>
-                  <TableCell className="text-center">{turma.ocupacao}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant={turma.capacidade - turma.ocupacao === 0 ? "destructive" : "secondary"}>
-                      {turma.capacidade - turma.ocupacao}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {renderTurmaActions(turma)}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
+  const renderTurmasList = () => {
+    if (filteredTurmas.length === 0) {
+      return (
+        <Card>
+          <CardContent className="py-6 text-center text-muted-foreground">
+            Nenhuma turma encontrada para o filtro selecionado.
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {/* Removendo a coluna CMEI, pois será o agrupador */}
+                <TableHead>Turma</TableHead>
+                <TableHead>Modelo Base</TableHead>
+                <TableHead className="text-center">Capacidade</TableHead>
+                <TableHead className="text-center">Ocupação</TableHead>
+                <TableHead className="text-center">Vagas Livres</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Object.entries(groupedTurmas).map(([cmeiName, turmasList]) => (
+                <>
+                  <TableRow key={cmeiName} className="bg-muted/50 hover:bg-muted/50">
+                    <TableCell colSpan={6} className="font-bold text-primary text-lg">
+                      {cmeiName}
+                    </TableCell>
+                  </TableRow>
+                  {turmasList.map((turma) => {
+                    const baseTurma = mockTurmasBase.find(t => t.id === turma.turmaBaseId);
+                    
+                    return (
+                      <TableRow key={turma.id}>
+                        <TableCell className="font-medium">{turma.nome}</TableCell>
+                        <TableCell>{baseTurma?.nome}</TableCell>
+                        <TableCell className="text-center">{turma.capacidade}</TableCell>
+                        <TableCell className="text-center">{turma.ocupacao}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={turma.capacidade - turma.ocupacao === 0 ? "destructive" : "secondary"}>
+                            {turma.capacidade - turma.ocupacao}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {renderTurmaActions(turma)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <AdminLayout>
@@ -477,24 +496,10 @@ const Turmas = () => {
           </CardHeader>
         </Card>
 
-        {Object.keys(groupedTurmas).length === 0 && selectedCmei !== "todos" && (
-          <Card>
-            <CardContent className="py-6 text-center text-muted-foreground">
-              Nenhuma turma encontrada para o CMEI selecionado.
-            </CardContent>
-          </Card>
-        )}
+        {/* A verificação de turmas vazias agora é feita dentro de renderTurmasList e renderTurmasGrid */}
         
         {currentView === "grid" ? renderTurmasGrid() : renderTurmasList()}
         
-        {/* Se estiver em modo lista e não houver turmas, a mensagem de 'Nenhuma turma encontrada' já é tratada pelo renderTurmasList */}
-        {currentView === "list" && filteredTurmas.length === 0 && (
-          <Card>
-            <CardContent className="py-6 text-center text-muted-foreground">
-              Nenhuma turma encontrada para o filtro selecionado.
-            </CardContent>
-          </Card>
-        )}
       </div>
     </AdminLayout>
   );
