@@ -17,7 +17,7 @@ const novaTurmaSchema = z.object({
   turmaBaseId: z.string().min(1, "O modelo de turma é obrigatório."),
   nome: z.string().min(1, "O nome da turma é obrigatório (ex: Manhã, Tarde)."),
   capacidade: z.coerce.number().min(1, "A capacidade deve ser no mínimo 1."),
-  turno: z.enum(["manha", "tarde", "integral"], { message: "Selecione o turno." }),
+  sala: z.enum(["A", "B", "C", "D"], { message: "Selecione a sala." }), // Alterado de 'turno' para 'sala'
 });
 
 export type NovaTurmaFormData = z.infer<typeof novaTurmaSchema>;
@@ -39,7 +39,7 @@ const NovaTurmaModal = ({ initialData, onSave, onClose, cmeiOptions, turmaBaseOp
       turmaBaseId: "",
       nome: "",
       capacidade: 0,
-      turno: "manha",
+      sala: "A", // Valor padrão alterado
     },
   });
 
@@ -112,20 +112,21 @@ const NovaTurmaModal = ({ initialData, onSave, onClose, cmeiOptions, turmaBaseOp
             />
             <FormField
               control={form.control}
-              name="turno"
+              name="sala" // Alterado de 'turno' para 'sala'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Turno *</FormLabel>
+                  <FormLabel>Sala *</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o turno" />
+                        <SelectValue placeholder="Selecione a sala" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="manha">Manhã</SelectItem>
-                      <SelectItem value="tarde">Tarde</SelectItem>
-                      <SelectItem value="integral">Integral</SelectItem>
+                      <SelectItem value="A">A</SelectItem>
+                      <SelectItem value="B">B</SelectItem>
+                      <SelectItem value="C">C</SelectItem>
+                      <SelectItem value="D">D</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

@@ -30,12 +30,12 @@ import {
 interface Turma {
   id: number;
   cmei: string;
-  nome: string; // Ex: Berçário I - Manhã
+  nome: string; // Ex: Berçário I - Sala A
   capacidade: number;
   ocupacao: number;
   alunos: string[];
   turmaBaseId: number;
-  turno: string;
+  sala: string; // Alterado de 'turno' para 'sala'
 }
 
 // Dados mockados de Turmas Base (para seleção no modal)
@@ -53,42 +53,42 @@ const initialTurmasData: Turma[] = [
   {
     id: 1,
     cmei: "CMEI Centro",
-    nome: "Berçário I - Manhã",
+    nome: "Berçário I - Sala A",
     capacidade: 15,
     ocupacao: 15,
     alunos: ["Ana Silva", "João Pedro", "Maria Clara", "Lucas Silva", "Beatriz Costa"],
     turmaBaseId: 1,
-    turno: "manha",
+    sala: "A",
   },
   {
     id: 2,
     cmei: "CMEI Centro",
-    nome: "Maternal I - Tarde",
+    nome: "Maternal I - Sala B",
     capacidade: 20,
     ocupacao: 18,
     alunos: ["Carlos Eduardo", "Julia Santos", "Pedro Henrique", "Laura Oliveira"],
     turmaBaseId: 3,
-    turno: "tarde",
+    sala: "B",
   },
   {
     id: 3,
     cmei: "CMEI Norte",
-    nome: "Maternal II - Manhã",
+    nome: "Maternal II - Sala A",
     capacidade: 20,
     ocupacao: 19,
     alunos: ["Rafaela Lima", "Gabriel Costa", "Isabela Silva", "Miguel Santos"],
     turmaBaseId: 4,
-    turno: "manha",
+    sala: "A",
   },
   {
     id: 4,
     cmei: "CMEI Norte",
-    nome: "Pré I - Tarde",
+    nome: "Pré I - Sala C",
     capacidade: 25,
     ocupacao: 22,
     alunos: ["Sofia Alves", "Davi Oliveira", "Helena Costa", "Arthur Silva"],
     turmaBaseId: 5,
-    turno: "tarde",
+    sala: "C",
   },
 ];
 
@@ -131,14 +131,15 @@ const Turmas = () => {
 
   const handleSaveTurma = (data: NovaTurmaFormData & { id?: number }) => {
     const baseTurma = mockTurmasBase.find(t => String(t.id) === data.turmaBaseId);
-    const nomeCompleto = `${baseTurma?.nome || 'Turma'} - ${data.turno.charAt(0).toUpperCase() + data.turno.slice(1)}`;
+    // Nome da turma agora usa a Sala
+    const nomeCompleto = `${baseTurma?.nome || 'Turma'} - Sala ${data.sala}`;
 
     if (data.id) {
       // Edição
       setTurmas(turmas.map(t => t.id === data.id ? { 
         ...t, 
         capacidade: data.capacidade, 
-        turno: data.turno,
+        sala: data.sala, // Alterado de turno para sala
         nome: nomeCompleto,
       } : t));
       toast.success("Turma atualizada com sucesso!");
@@ -153,7 +154,7 @@ const Turmas = () => {
         ocupacao: 0, // Nova turma começa com 0 ocupação
         alunos: [],
         turmaBaseId: Number(data.turmaBaseId),
-        turno: data.turno,
+        sala: data.sala, // Alterado de turno para sala
       }]);
       toast.success("Turma cadastrada com sucesso!");
     }
@@ -174,7 +175,7 @@ const Turmas = () => {
       cmei: turma.cmei,
       nome: turma.nome,
       capacidade: turma.capacidade,
-      turno: turma.turno,
+      sala: turma.sala, // Alterado de turno para sala
     });
     setIsModalOpen(true);
   };
@@ -192,7 +193,7 @@ const Turmas = () => {
         turmaBaseId: String(editingTurma.turmaBaseId),
         nome: editingTurma.nome,
         capacidade: editingTurma.capacidade,
-        turno: editingTurma.turno as NovaTurmaFormData['turno'],
+        sala: editingTurma.sala as NovaTurmaFormData['sala'], // Alterado de turno para sala
       };
     }
     // Preenche o CMEI se houver um filtro ativo
