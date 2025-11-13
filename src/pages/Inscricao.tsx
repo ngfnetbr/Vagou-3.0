@@ -11,16 +11,6 @@ const Inscricao = () => {
   return (
     <div className="container mx-auto px-4 py-6"> {/* Ajustado para ser um container interno */}
       <div className="max-w-4xl mx-auto">
-        {/* Removido o título e a descrição */}
-        {/* <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-3">
-            Nova Inscrição
-          </h1>
-          <p className="text-muted-foreground">
-            Preencha os dados abaixo para registrar sua intenção de vaga em um CMEI.
-          </p>
-        </div> */}
-
         <form className="space-y-6">
           {/* Dados da Criança */}
           <Card>
@@ -40,7 +30,7 @@ const Inscricao = () => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-6 gap-4">
-                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-1">
+                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-2"> {/* Alterado de md:col-span-1 para md:col-span-2 */}
                   <Label className="text-base font-semibold">Sexo *</Label>
                   <RadioGroup defaultValue="feminino" className="flex flex-col gap-3">
                     <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
@@ -54,7 +44,7 @@ const Inscricao = () => {
                   </RadioGroup>
                 </div>
                 
-                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-3">
+                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-2"> {/* Ajustado para md:col-span-2 para balancear */}
                   <Label className="text-base font-semibold">É beneficiário(a) de programas sociais? *</Label>
                   <RadioGroup defaultValue="nao" className="flex flex-col gap-3">
                     <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
@@ -68,7 +58,7 @@ const Inscricao = () => {
                   </RadioGroup>
                 </div>
                 
-                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-2">
+                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-2"> {/* Ajustado para md:col-span-2 para balancear */}
                   <Label className="text-base font-semibold">Aceita qualquer CMEI? *</Label>
                   <RadioGroup defaultValue="nao" className="flex flex-col gap-3">
                     <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
