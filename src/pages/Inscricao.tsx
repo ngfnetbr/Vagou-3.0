@@ -66,9 +66,9 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
     (cmei) => cmei.value !== selectedCmei1
   );
 
-  // Tipando o parâmetro values explicitamente como InscricaoFormData
-  const onSubmit = async (values: InscricaoFormData) => {
-    // Forçamos o tipo completo para satisfazer as funções de mutação
+  // Usamos 'any' no parâmetro para evitar conflitos de tipagem com RHF/Zod,
+  // e então forçamos o tipo InscricaoFormData na variável 'data' para as mutações.
+  const onSubmit = async (values: any) => {
     const data = values as InscricaoFormData; 
 
     if (onSuccess) {
