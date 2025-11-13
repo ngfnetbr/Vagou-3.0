@@ -101,6 +101,12 @@ const Inscricao = () => {
     (cmei) => cmei.value !== selectedCmei1
   );
 
+  // Adiciona a opção "Sem segunda opção" no início da lista para cmei2
+  const cmei2OptionsWithNone = [
+    { value: "", label: "Sem segunda opção" },
+    ...filteredCmei2Options,
+  ];
+
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     console.log("Dados do formulário:", values);
     // Aqui você enviaria os dados para o backend
@@ -279,7 +285,7 @@ const Inscricao = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {filteredCmei2Options.map((cmei) => (
+                            {cmei2OptionsWithNone.map((cmei) => (
                               <SelectItem key={cmei.value} value={cmei.value}>
                                 {cmei.label}
                               </SelectItem>
