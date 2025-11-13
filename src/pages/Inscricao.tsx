@@ -101,11 +101,8 @@ const Inscricao = () => {
     (cmei) => cmei.value !== selectedCmei1
   );
 
-  // Adiciona a opção "Sem segunda opção" no início da lista para cmei2
-  const cmei2OptionsWithNone = [
-    { value: "", label: "Sem segunda opção" },
-    ...filteredCmei2Options,
-  ];
+  // Removido o item { value: "", label: "Sem segunda opção" } pois o Select.Item não aceita valor de string vazia.
+  // O placeholder do SelectValue já gerencia o estado de 'nenhuma seleção'.
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     console.log("Dados do formulário:", values);
@@ -285,7 +282,7 @@ const Inscricao = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {cmei2OptionsWithNone.map((cmei) => (
+                            {filteredCmei2Options.map((cmei) => (
                               <SelectItem key={cmei.value} value={cmei.value}>
                                 {cmei.label}
                               </SelectItem>
