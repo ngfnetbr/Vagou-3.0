@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ConvocarModal from "@/components/ConvocarModal"; // Importar ConvocarModal
+import JustificativaModal from "@/components/JustificativaModal"; // Importar JustificativaModal
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,15 +26,31 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+type JustificativaAction = 'recusada' | 'desistente' | 'fim_de_fila';
+
 const DetalhesCrianca = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const criancaId = id ? parseInt(id) : undefined;
   const { data: crianca, isLoading, error, refetch } = useCriancaDetails(criancaId || 0);
-  const { marcarFimDeFila, isMarkingFimDeFila, reativarCrianca, isReactivating } = useCriancas();
+  const { 
+    marcarFimDeFila, 
+    isMarkingFimDeFila, 
+    reativarCrianca, 
+    isReactivating,
+    marcarDesistente,
+    isMarkingDesistente,
+    marcarRecusada,
+    isMarkingRecusada,
+    confirmarMatricula,
+    isConfirmingMatricula,
+  } = useCriancas();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConvocarModalOpen, setIsConvocarModalOpen] = useState(false);
+  const [isJustificativaModalOpen, setIsJustificativaModalOpen] = useState(false);
+  const [currentJustificativaAction, setCurrentJustificativaAction] = useState<JustificativaAction | undefined>(undefined);
+
 
   const handleGeneratePdf = () => {
     toast.info("Gerando Ficha em PDF...", {
@@ -78,6 +95,7 @@ const DetalhesCrianca = () => {
       "Fila de Espera": { className: "bg-accent/20 text-foreground", text: "Fila de Espera" },
       "Convocado": { className: "bg-primary/20 text-primary", text: "Convocado" },
       "Desistente": { className: "bg-destructive/20 text-destructive", text: "Desistente" },
+      "Recusada": { className: "bg-destructive/20 text-destructive", text: "Recusada" },
     };
     
     const config = variants[status] || { className: "bg-muted text-muted-foreground", text: status };
@@ -97,10 +115,58 @@ const DetalhesCrianca = () => {
     refetch(); // Refresh data after successful convocation
   };
   
-  const handleFimDeFila = async () => {
-    if (criancaId) {
-      await marcarFimDeFila(criancaId);
-      refetch();
+  const handleJustificativaAction = (action: JustificativaAction) => {
+    setCurrentJustificativaAction(action);
+    setIsJustificativaModalOpen(true);
+  };
+  
+  const handleJustificativaConfirm = async (justificativa: string) => {
+    if (!criancaId || !currentJustificativaAction) return;
+    
+    try {
+        switch (currentJustificativaAction) {
+          case 'recusada':
+            await marcarRecusada({ id: criancaId, justificativa });
+            break;
+          case 'desistente':
+            await marcarDesistente({ id: criancaId, justificativa });
+            break;
+          case 'fim_de_fila':
+            await marcarFimDeFila({ id: criancaId, justificativa });
+            break;
+        }
+        refetch();
+    } catch (e) {
+        // Erro já tratado pelo hook
+    }
+  };
+  
+  const getJustificativaProps = (action: JustificativaAction) => {
+    const criancaNome = crianca.nome;
+    switch (action) {
+      case 'recusada':
+        return {
+          title: `Recusar Convocação de ${criancaNome}`,
+          description: "Confirme a recusa da convocação. A criança será marcada como 'Recusada'.",
+          actionLabel: "Confirmar Recusa",
+          isPending: isMarkingRecusada,
+        };
+      case 'desistente':
+        return {
+          title: `Marcar ${criancaNome} como Desistente`,
+          description: "Confirme a desistência. A criança será removida permanentemente da fila.",
+          actionLabel: "Confirmar Desistência",
+          isPending: isMarkingDesistente,
+        };
+      case 'fim_de_fila':
+        return {
+          title: `Marcar Fim de Fila para ${criancaNome}`,
+          description: "Confirme o fim de fila. A criança será movida para o final da fila de espera.",
+          actionLabel: "Confirmar Fim de Fila",
+          isPending: isMarkingFimDeFila,
+        };
+      default:
+        return { title: "", description: "", actionLabel: "", isPending: false };
     }
   };
   
@@ -110,11 +176,19 @@ const DetalhesCrianca = () => {
       refetch();
     }
   };
+  
+  const handleConfirmarMatricula = async () => {
+    if (criancaId) {
+      await confirmarMatricula(criancaId);
+      refetch();
+    }
+  };
 
   const isMatriculado = crianca.status === 'Matriculado' || crianca.status === 'Matriculada';
   const isFila = crianca.status === 'Fila de Espera';
   const isConvocado = crianca.status === 'Convocado';
   const isDesistente = crianca.status === 'Desistente';
+  const isRecusada = crianca.status === 'Recusada';
   
   const deadlineInfo = isConvocado && crianca.convocacaoDeadline ? (() => {
     const deadlineDate = parseISO(crianca.convocacaoDeadline);
@@ -166,36 +240,64 @@ const DetalhesCrianca = () => {
               Gerar Ficha em PDF
             </Button>
             
-            {/* Ações de Fila/Convocação/Desistência */}
-            {!isMatriculado && !isDesistente && (
-                <Dialog open={isConvocarModalOpen} onOpenChange={setIsConvocarModalOpen}>
-                    <DialogTrigger asChild>
-                        <Button 
-                            variant="outline" 
-                            className="text-primary border-primary hover:bg-primary/10"
-                        >
-                            {isConvocado && deadlineInfo?.isExpired ? (
-                                <>
-                                    <RotateCcw className="mr-2 h-4 w-4" />
-                                    Reconvocar
-                                </>
-                            ) : (
-                                <>
-                                    <ListRestart className="mr-2 h-4 w-4" />
-                                    Convocar
-                                </>
-                            )}
-                        </Button>
-                    </DialogTrigger>
-                    <ConvocarModal 
-                        crianca={crianca} 
-                        onClose={handleConvocarSuccess}
-                    />
-                </Dialog>
+            {/* Ações de Status */}
+            
+            {/* 1. Se Convocado: Confirmar Matrícula, Recusar, Fim de Fila, Desistir, Reconvocar */}
+            {isConvocado && (
+                <>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button 
+                                variant="secondary" 
+                                className="text-secondary-foreground hover:bg-secondary/90"
+                                disabled={isConfirmingMatricula}
+                            >
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Confirmar Matrícula
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar Matrícula?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Você está confirmando a matrícula de <span className="font-semibold">{crianca.nome}</span> no CMEI {crianca.cmei}. Esta ação é irreversível.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel disabled={isConfirmingMatricula}>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction 
+                                    onClick={handleConfirmarMatricula} 
+                                    className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                                    disabled={isConfirmingMatricula}
+                                >
+                                    {isConfirmingMatricula ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirmar Matrícula"}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                    
+                    <Button 
+                        variant="outline" 
+                        className="text-destructive border-destructive hover:bg-destructive/10"
+                        onClick={() => handleJustificativaAction('recusada')}
+                    >
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Recusar
+                    </Button>
+                    
+                    <Button 
+                        variant="outline" 
+                        className="text-accent border-accent hover:bg-accent/10"
+                        onClick={() => handleJustificativaAction('fim_de_fila')}
+                    >
+                        <ListRestart className="mr-2 h-4 w-4" />
+                        Fim de Fila
+                    </Button>
+                </>
             )}
             
-            {/* Ação de Reativar (se Desistente) */}
-            {isDesistente && (
+            {/* 2. Se Desistente ou Recusada: Reativar */}
+            {(isDesistente || isRecusada) && (
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button 
@@ -228,38 +330,32 @@ const DetalhesCrianca = () => {
                 </AlertDialog>
             )}
             
-            {/* Ação de Fim de Fila (se Convocado) */}
-            {isConvocado && (
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
+            {/* 3. Se Fila de Espera, Convocado (expirado) ou Recusada: Convocar/Reconvocar */}
+            {(!isMatriculado && !isDesistente) && (
+                <Dialog open={isConvocarModalOpen} onOpenChange={setIsConvocarModalOpen}>
+                    <DialogTrigger asChild>
                         <Button 
                             variant="outline" 
-                            className="text-accent border-accent hover:bg-accent/10"
-                            disabled={isMarkingFimDeFila}
+                            className="text-primary border-primary hover:bg-primary/10"
                         >
-                            <ListRestart className="mr-2 h-4 w-4" />
-                            Marcar Fim de Fila
+                            {isConvocado && deadlineInfo?.isExpired ? (
+                                <>
+                                    <RotateCcw className="mr-2 h-4 w-4" />
+                                    Reconvocar
+                                </>
+                            ) : (
+                                <>
+                                    <ListRestart className="mr-2 h-4 w-4" />
+                                    Convocar
+                                </>
+                            )}
                         </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Confirmar Fim de Fila?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Esta ação moverá <span className="font-semibold">{crianca.nome}</span> para o final da fila de espera, cancelando a convocação atual.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel disabled={isMarkingFimDeFila}>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction 
-                                onClick={handleFimDeFila} 
-                                className="bg-accent text-accent-foreground hover:bg-accent/90"
-                                disabled={isMarkingFimDeFila}
-                            >
-                                {isMarkingFimDeFila ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirmar Fim de Fila"}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                    </DialogTrigger>
+                    <ConvocarModal 
+                        crianca={crianca} 
+                        onClose={handleConvocarSuccess}
+                    />
+                </Dialog>
             )}
             
             {/* Botão de Editar Dados (sempre disponível) */}
@@ -291,8 +387,10 @@ const DetalhesCrianca = () => {
                   ? `Matriculado(a) no ${crianca.cmei}` 
                   : isConvocado
                   ? `Convocado(a) para ${crianca.cmei}`
-                  : crianca.status === 'Desistente'
-                  ? 'Removido(a) da fila.'
+                  : isDesistente
+                  ? 'Removido(a) da fila por desistência.'
+                  : isRecusada
+                  ? 'Convocação recusada.'
                   : `Na fila de espera.`
                 }
               </p>
@@ -459,14 +557,28 @@ const DetalhesCrianca = () => {
       </div>
       
       {/* Modal de Convocação/Reconvocação */}
-      {crianca.status !== 'Matriculado' && crianca.status !== 'Matriculada' && crianca.status !== 'Desistente' && (
-        <Dialog open={isConvocarModalOpen} onOpenChange={setIsConvocarModalOpen}>
+      <Dialog open={isConvocarModalOpen} onOpenChange={setIsConvocarModalOpen}>
+        {crianca && (
           <ConvocarModal 
             crianca={crianca} 
             onClose={handleConvocarSuccess}
           />
-        </Dialog>
-      )}
+        )}
+      </Dialog>
+      
+      {/* Modal de Justificativa */}
+      <Dialog open={isJustificativaModalOpen} onOpenChange={setIsJustificativaModalOpen}>
+        {crianca && currentJustificativaAction && (
+          <JustificativaModal
+            {...getJustificativaProps(currentJustificativaAction)}
+            onConfirm={handleJustificativaConfirm}
+            onClose={() => {
+              setIsJustificativaModalOpen(false);
+              setCurrentJustificativaAction(undefined);
+            }}
+          />
+        )}
+      </Dialog>
     </AdminLayout>
   );
 };

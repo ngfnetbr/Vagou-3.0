@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchCriancas, addCriancaFromInscricao, InscricaoFormData, Crianca, updateCrianca, deleteCrianca, getCriancaById, convocarCrianca, marcarDesistente, fetchAvailableTurmas, ConvocationData, reativarCrianca, marcarFimDeFila } from "@/lib/mock-data";
+import { fetchCriancas, addCriancaFromInscricao, InscricaoFormData, Crianca, updateCrianca, deleteCrianca, getCriancaById, convocarCrianca, marcarDesistente, fetchAvailableTurmas, ConvocationData, reativarCrianca, marcarFimDeFila, confirmarMatricula, marcarRecusada } from "@/lib/mock-data";
 import { toast } from "sonner";
 
 const CRIANCAS_QUERY_KEY = ["criancas"];
@@ -81,8 +81,38 @@ export function useCriancas() {
     },
   });
   
+  const confirmarMatriculaMutation = useMutation({
+    mutationFn: confirmarMatricula,
+    onSuccess: (updatedCrianca) => {
+      queryClient.invalidateQueries({ queryKey: CRIANCAS_QUERY_KEY });
+      toast.success("Matrícula Confirmada!", {
+        description: `${updatedCrianca.nome} foi matriculado(a) no CMEI ${updatedCrianca.cmei}.`,
+      });
+    },
+    onError: (error) => {
+      toast.error("Erro ao confirmar matrícula.", {
+        description: error.message || "A criança pode não estar em status de convocação.",
+      });
+    },
+  });
+  
+  const marcarRecusadaMutation = useMutation({
+    mutationFn: ({ id, justificativa }: { id: number, justificativa: string }) => marcarRecusada(id, justificativa),
+    onSuccess: (updatedCrianca) => {
+      queryClient.invalidateQueries({ queryKey: CRIANCAS_QUERY_KEY });
+      toast.warning("Convocação Recusada.", {
+        description: `${updatedCrianca.nome} foi marcado(a) como Recusado(a).`,
+      });
+    },
+    onError: () => {
+      toast.error("Erro ao marcar recusa.", {
+        description: "Tente novamente mais tarde.",
+      });
+    },
+  });
+
   const desistenteMutation = useMutation({
-    mutationFn: marcarDesistente,
+    mutationFn: ({ id, justificativa }: { id: number, justificativa: string }) => marcarDesistente(id, justificativa),
     onSuccess: (updatedCrianca) => {
       queryClient.invalidateQueries({ queryKey: CRIANCAS_QUERY_KEY }); // Refetch the list to update the queue position
       toast.warning("Criança marcada como desistente.", {
@@ -112,7 +142,7 @@ export function useCriancas() {
   });
   
   const fimDeFilaMutation = useMutation({
-    mutationFn: marcarFimDeFila,
+    mutationFn: ({ id, justificativa }: { id: number, justificativa: string }) => marcarFimDeFila(id, justificativa),
     onSuccess: (updatedCrianca) => {
       queryClient.invalidateQueries({ queryKey: CRIANCAS_QUERY_KEY });
       toast.info("Criança movida para o fim da fila.", {
@@ -139,6 +169,10 @@ export function useCriancas() {
     isDeleting: deleteMutation.isPending,
     convocarCrianca: convocarMutation.mutateAsync,
     isConvoking: convocarMutation.isPending,
+    confirmarMatricula: confirmarMatriculaMutation.mutateAsync,
+    isConfirmingMatricula: confirmarMatriculaMutation.isPending,
+    marcarRecusada: marcarRecusadaMutation.mutateAsync,
+    isMarkingRecusada: marcarRecusadaMutation.isPending,
     marcarDesistente: desistenteMutation.mutateAsync,
     isMarkingDesistente: desistenteMutation.isPending,
     reativarCrianca: reativarMutation.mutateAsync,

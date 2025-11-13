@@ -59,16 +59,17 @@ const Criancas = () => {
   }, [criancas, statusFilter, searchTerm]);
 
   const getStatusBadge = (status: Crianca['status']) => {
-    const variants: Record<Crianca['status'], { variant: "default" | "secondary" | "outline", className: string }> = {
-      "Matriculada": { variant: "default", className: "bg-secondary text-secondary-foreground" },
-      "Matriculado": { variant: "default", className: "bg-secondary text-secondary-foreground" },
-      "Fila de Espera": { variant: "secondary", className: "bg-accent/20 text-foreground" },
-      "Convocado": { variant: "default", className: "bg-primary/20 text-primary" },
-      "Desistente": { variant: "default", className: "bg-destructive/20 text-destructive" }, // Adicionado status Desistente
+    const variants: Record<Crianca['status'], { variant: "default" | "secondary" | "outline", className: string, text: string }> = {
+      "Matriculada": { variant: "default", className: "bg-secondary text-secondary-foreground", text: "Matriculada" },
+      "Matriculado": { variant: "default", className: "bg-secondary text-secondary-foreground", text: "Matriculado" },
+      "Fila de Espera": { variant: "secondary", className: "bg-accent/20 text-foreground", text: "Fila de Espera" },
+      "Convocado": { variant: "default", className: "bg-primary/20 text-primary", text: "Convocado" },
+      "Desistente": { variant: "default", className: "bg-destructive/20 text-destructive", text: "Desistente" },
+      "Recusada": { variant: "default", className: "bg-destructive/20 text-destructive", text: "Recusada" },
     };
     
-    const config = variants[status] || { variant: "outline" as const, className: "" };
-    return <Badge variant={config.variant} className={config.className}>{status}</Badge>;
+    const config = variants[status] || { variant: "outline" as const, className: "", text: status };
+    return <Badge variant={config.variant} className={config.className}>{config.text}</Badge>;
   };
 
   const handleEditClick = (crianca: Crianca) => {

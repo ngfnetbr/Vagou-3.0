@@ -22,7 +22,7 @@ export interface Crianca {
   cmei1: string;
   cmei2?: string;
   observacoes?: string;
-  status: "Matriculada" | "Matriculado" | "Fila de Espera" | "Convocado" | "Desistente"; // Added Desistente
+  status: "Matriculada" | "Matriculado" | "Fila de Espera" | "Convocado" | "Desistente" | "Recusada"; // Added Recusada
   cmei: string; // CMEI atual ou preferencial
   turmaAtual?: string; // Nova informação: Turma atual (se matriculado)
   posicaoFila?: number; // Nova informação: Posição na fila (se na fila)
@@ -359,7 +359,69 @@ export const convocarCrianca = async (criancaId: number, data: ConvocationData):
     return updatedCrianca;
 };
 
-export const marcarDesistente = async (criancaId: number): Promise<Crianca> => {
+export const confirmarMatricula = async (criancaId: number): Promise<Crianca> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const index = mockCriancas.findIndex(c => c.id === criancaId);
+    if (index === -1) throw new Error("Criança não encontrada");
+
+    const existingCrianca = mockCriancas[index];
+    
+    if (existingCrianca.status !== 'Convocado' || !existingCrianca.cmei || !existingCrianca.turmaAtual) {
+        throw new Error("A criança não está em status de convocação válida.");
+    }
+
+    const updatedCrianca = {
+        ...existingCrianca,
+        status: existingCrianca.sexo === 'feminino' ? "Matriculada" as const : "Matriculado" as const,
+        posicaoFila: undefined,
+        convocacaoDeadline: undefined,
+        historico: [
+            ...existingCrianca.historico,
+            {
+                data: new Date().toISOString().split('T')[0],
+                acao: "Matrícula Efetivada",
+                detalhes: `Matrícula confirmada para ${existingCrianca.turmaAtual} no CMEI ${existingCrianca.cmei}.`,
+                usuario: "Admin/Gestor",
+            }
+        ]
+    };
+    
+    mockCriancas[index] = updatedCrianca;
+    return updatedCrianca;
+};
+
+export const marcarRecusada = async (criancaId: number, justificativa: string): Promise<Crianca> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const index = mockCriancas.findIndex(c => c.id === criancaId);
+    if (index === -1) throw new Error("Criança não encontrada");
+
+    const existingCrianca = mockCriancas[index];
+    
+    const updatedCrianca = {
+        ...existingCrianca,
+        status: "Recusada" as const,
+        cmei: existingCrianca.cmei, // Mantém o CMEI da convocação para referência
+        turmaAtual: existingCrianca.turmaAtual, // Mantém a turma da convocação para referência
+        posicaoFila: undefined,
+        convocacaoDeadline: undefined,
+        historico: [
+            ...existingCrianca.historico,
+            {
+                data: new Date().toISOString().split('T')[0],
+                acao: "Convocação Recusada",
+                detalhes: `Convocação recusada pelo responsável. Justificativa: ${justificativa}`,
+                usuario: "Admin/Gestor",
+            }
+        ]
+    };
+    
+    mockCriancas[index] = updatedCrianca;
+    return updatedCrianca;
+};
+
+export const marcarDesistente = async (criancaId: number, justificativa: string): Promise<Crianca> => {
     await new Promise(resolve => setTimeout(resolve, 300));
     
     const index = mockCriancas.findIndex(c => c.id === criancaId);
@@ -377,7 +439,7 @@ export const marcarDesistente = async (criancaId: number): Promise<Crianca> => {
             {
                 data: new Date().toISOString().split('T')[0],
                 acao: "Marcado como Desistente",
-                detalhes: `Criança removida da fila e marcada como desistente.`,
+                detalhes: `Criança removida da fila e marcada como desistente. Justificativa: ${justificativa}`,
                 usuario: "Admin/Gestor",
             }
         ]
@@ -418,7 +480,7 @@ export const reativarCrianca = async (criancaId: number): Promise<Crianca> => {
     return updatedCrianca;
 };
 
-export const marcarFimDeFila = async (criancaId: number): Promise<Crianca> => {
+export const marcarFimDeFila = async (criancaId: number, justificativa: string): Promise<Crianca> => {
     await new Promise(resolve => setTimeout(resolve, 300));
     
     const index = mockCriancas.findIndex(c => c.id === criancaId);
@@ -439,7 +501,7 @@ export const marcarFimDeFila = async (criancaId: number): Promise<Crianca> => {
             {
                 data: new Date().toISOString().split('T')[0],
                 acao: "Fim de Fila Solicitado",
-                detalhes: `Convocação recusada/expirada e criança movida para o final da fila. Posição: #${newPosicaoFila}.`,
+                detalhes: `Convocação recusada/expirada e criança movida para o final da fila. Justificativa: ${justificativa}`,
                 usuario: "Admin/Gestor",
             }
         ]
