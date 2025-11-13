@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -50,6 +51,26 @@ const formatPhone = (value: string) => {
   return formattedValue;
 };
 
+const isValidCpf = (value: string) => {
+  const cpf = value.replace(/\D/g, "");
+  if (cpf.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(cpf[i]) * (10 - i);
+  }
+  let d1 = (sum * 10) % 11;
+  if (d1 === 10) d1 = 0;
+  if (d1 !== parseInt(cpf[9])) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(cpf[i]) * (11 - i);
+  }
+  let d2 = (sum * 10) % 11;
+  if (d2 === 10) d2 = 0;
+  return d2 === parseInt(cpf[10]);
+};
+
 // Esquema de validação com Zod
 const formSchema = z.object({
   nomeCrianca: z.string().min(1, "Nome completo da criança é obrigatório."),
@@ -60,12 +81,20 @@ const formSchema = z.object({
   cmei1: z.string().min(1, "1ª Opção de CMEI é obrigatória."),
   cmei2: z.string().optional().or(z.literal('')),
   nomeResponsavel: z.string().min(1, "Nome completo do responsável é obrigatório."),
-  cpf: z.string().regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, "CPF inválido. Formato esperado: 000.000.000-00."),
-  telefone: z.string().regex(/^\(\d{2}\) \d \d{4}-\d{4}$/, "Telefone inválido. Formato esperado: (00) 9 0000-0000."),
+  cpf: z
+    .string()
+    .min(1, "CPF é obrigatório.")
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, "CPF inválido. Formato esperado: 000.000.000-00.")
+    .refine(isValidCpf, { message: "CPF inválido." }),
+  telefone: z
+    .string()
+    .min(1, "Telefone é obrigatório.")
+    .regex(/^\(\d{2}\) \d \d{4}-\d{4}$/, "Telefone inválido. Formato esperado: (00) 9 0000-0000."),
   telefone2: z.string().optional().or(z.literal('')),
   email: z.string().email("E-mail inválido.").optional().or(z.literal('')),
   endereco: z.string().optional().or(z.literal('')),
   bairro: z.string().optional().or(z.literal('')),
+  observacoes: z.string().optional().or(z.literal('')),
 });
 
 const Inscricao = () => {
@@ -86,6 +115,7 @@ const Inscricao = () => {
       email: "",
       endereco: "",
       bairro: "",
+      observacoes: "",
     },
   });
 
@@ -167,13 +197,13 @@ const Inscricao = () => {
                               <FormControl>
                                 <RadioGroupItem value="feminino" id="feminino" />
                               </FormControl>
-                              <FormLabel htmlFor="feminino" className="font-normal cursor-pointer">Feminino</FormLabel>
+                              <FormLabel htmlFor="feminino" className="inline-flex items-center h-4 font-normal cursor-pointer whitespace-nowrap flex-shrink-0 -translate-y-[4px]">Feminino</FormLabel>
                             </FormItem>
                             <FormItem className="flex items-center space-x-2">
                               <FormControl>
                                 <RadioGroupItem value="masculino" id="masculino" />
                               </FormControl>
-                              <FormLabel htmlFor="masculino" className="font-normal cursor-pointer">Masculino</FormLabel>
+                              <FormLabel htmlFor="masculino" className="inline-flex items-center h-4 font-normal cursor-pointer whitespace-nowrap flex-shrink-0 -translate-y-[4px]">Masculino</FormLabel>
                             </FormItem>
                           </RadioGroup>
                         </FormControl>
@@ -187,7 +217,7 @@ const Inscricao = () => {
                     name="programasSociais"
                     render={({ field }) => (
                       <FormItem className="space-y-3 p-4 rounded-lg border bg-card">
-                        <FormLabel className="text-base font-semibold">Programas Sociais? *</FormLabel>
+                        <FormLabel className="text-base font-semibold">Programas Sociais *</FormLabel>
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
@@ -198,13 +228,13 @@ const Inscricao = () => {
                               <FormControl>
                                 <RadioGroupItem value="sim" id="programas-sim" />
                               </FormControl>
-                              <FormLabel htmlFor="programas-sim" className="font-normal cursor-pointer">Sim</FormLabel>
+                              <FormLabel htmlFor="programas-sim" className="inline-flex items-center h-4 font-normal cursor-pointer whitespace-nowrap flex-shrink-0 -translate-y-[4px]">Beneficiário(a)</FormLabel>
                             </FormItem>
                             <FormItem className="flex items-center space-x-2">
                               <FormControl>
                                 <RadioGroupItem value="nao" id="programas-nao" />
                               </FormControl>
-                              <FormLabel htmlFor="programas-nao" className="font-normal cursor-pointer">Não</FormLabel>
+                              <FormLabel htmlFor="programas-nao" className="inline-flex items-center h-4 font-normal cursor-pointer whitespace-nowrap flex-shrink-0 -translate-y-[4px]">Não beneficiário(a)</FormLabel>
                             </FormItem>
                           </RadioGroup>
                         </FormControl>
@@ -229,13 +259,13 @@ const Inscricao = () => {
                               <FormControl>
                                 <RadioGroupItem value="sim" id="aceita-sim" />
                               </FormControl>
-                              <FormLabel htmlFor="aceita-sim" className="font-normal cursor-pointer">Sim</FormLabel>
+                              <FormLabel htmlFor="aceita-sim" className="inline-flex items-center h-4 font-normal cursor-pointer whitespace-nowrap flex-shrink-0 -translate-y-[4px]">Sim</FormLabel>
                             </FormItem>
                             <FormItem className="flex items-center space-x-2">
                               <FormControl>
                                 <RadioGroupItem value="nao" id="aceita-nao" />
                               </FormControl>
-                              <FormLabel htmlFor="aceita-nao" className="font-normal cursor-pointer">Não</FormLabel>
+                              <FormLabel htmlFor="aceita-nao" className="inline-flex items-center h-4 font-normal cursor-pointer whitespace-nowrap flex-shrink-0 -translate-y-[4px]">Não</FormLabel>
                             </FormItem>
                           </RadioGroup>
                         </FormControl>
@@ -440,13 +470,34 @@ const Inscricao = () => {
               </CardContent>
             </Card>
 
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações adicionais</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="observacoes"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel htmlFor="observacoes">Observações</FormLabel>
+                      <FormControl>
+                        <Textarea id="observacoes" placeholder="Informações adicionais (opcional)" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
             <div className="flex gap-4">
               <Button type="button" variant="outline" className="flex-1">
                 Cancelar
               </Button>
               <Button type="submit" className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90">
                 <Save className="mr-2 h-4 w-4" />
-                Enviar Inscrição
+                Cadastrar
               </Button>
             </div>
           </form>

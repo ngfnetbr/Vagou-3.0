@@ -4,44 +4,106 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Users, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+
+const allTurmasData = [
+  {
+    cmei: "CMEI Centro",
+    turmas: [
+      { 
+        nome: "Berçário I - Manhã", 
+        capacidade: 15, 
+        ocupacao: 15,
+        alunos: ["Ana Silva", "João Pedro", "Maria Clara", "Lucas Silva", "Beatriz Costa"]
+      },
+      { 
+        nome: "Maternal I - Tarde", 
+        capacidade: 20, 
+        ocupacao: 18,
+        alunos: ["Carlos Eduardo", "Julia Santos", "Pedro Henrique", "Laura Oliveira"]
+      },
+    ]
+  },
+  {
+    cmei: "CMEI Norte",
+    turmas: [
+      { 
+        nome: "Maternal II - Manhã", 
+        capacidade: 20, 
+        ocupacao: 19,
+        alunos: ["Rafaela Lima", "Gabriel Costa", "Isabela Silva", "Miguel Santos"]
+      },
+      { 
+        nome: "Pré I - Tarde", 
+        capacidade: 25, 
+        ocupacao: 22,
+        alunos: ["Sofia Alves", "Davi Oliveira", "Helena Costa", "Arthur Silva"]
+      },
+    ]
+  },
+  {
+    cmei: "CMEI Sul",
+    turmas: [
+      { 
+        nome: "Berçário II - Manhã", 
+        capacidade: 18, 
+        ocupacao: 16,
+        alunos: ["Fernanda Lima", "Bruno Costa"]
+      },
+      { 
+        nome: "Maternal II - Tarde", 
+        capacidade: 22, 
+        ocupacao: 20,
+        alunos: ["Gustavo Santos", "Heloísa Pereira"]
+      },
+    ]
+  },
+  {
+    cmei: "CMEI Leste",
+    turmas: [
+      { 
+        nome: "Pré II - Manhã", 
+        capacidade: 28, 
+        ocupacao: 25,
+        alunos: ["Daniel Rocha", "Manuela Alves"]
+      },
+      { 
+        nome: "Berçário I - Tarde", 
+        capacidade: 16, 
+        ocupacao: 14,
+        alunos: ["Larissa Gomes", "Thiago Martins"]
+      },
+    ]
+  },
+];
 
 const Turmas = () => {
-  const turmas = [
-    {
-      cmei: "CMEI Centro",
-      turmas: [
-        { 
-          nome: "Berçário I - Manhã", 
-          capacidade: 15, 
-          ocupacao: 15,
-          alunos: ["Ana Silva", "João Pedro", "Maria Clara", "Lucas Silva", "Beatriz Costa"]
-        },
-        { 
-          nome: "Maternal I - Tarde", 
-          capacidade: 20, 
-          ocupacao: 18,
-          alunos: ["Carlos Eduardo", "Julia Santos", "Pedro Henrique", "Laura Oliveira"]
-        },
-      ]
-    },
-    {
-      cmei: "CMEI Norte",
-      turmas: [
-        { 
-          nome: "Maternal II - Manhã", 
-          capacidade: 20, 
-          ocupacao: 19,
-          alunos: ["Rafaela Lima", "Gabriel Costa", "Isabela Silva", "Miguel Santos"]
-        },
-        { 
-          nome: "Pré I - Tarde", 
-          capacidade: 25, 
-          ocupacao: 22,
-          alunos: ["Sofia Alves", "Davi Oliveira", "Helena Costa", "Arthur Silva"]
-        },
-      ]
-    },
-  ];
+  const [searchParams, setSearchParams] = useSearchParams();
+  const cmeiFilterParam = searchParams.get("cmei");
+  const [selectedCmei, setSelectedCmei] = useState<string>(cmeiFilterParam || "todos");
+
+  useEffect(() => {
+    if (cmeiFilterParam && selectedCmei !== cmeiFilterParam) {
+      setSelectedCmei(cmeiFilterParam);
+    }
+  }, [cmeiFilterParam, selectedCmei]);
+
+  const handleCmeiChange = (value: string) => {
+    setSelectedCmei(value);
+    if (value === "todos") {
+      searchParams.delete("cmei");
+    } else {
+      searchParams.set("cmei", value);
+    }
+    setSearchParams(searchParams);
+  };
+
+  const filteredTurmas = selectedCmei === "todos"
+    ? allTurmasData
+    : allTurmasData.filter(data => data.cmei === selectedCmei);
+
+  const allCmeiNames = allTurmasData.map(data => data.cmei);
 
   return (
     <AdminLayout>
@@ -56,23 +118,30 @@ const Turmas = () => {
         <Card>
           <CardHeader>
             <div className="flex gap-4">
-              <Select>
+              <Select onValueChange={handleCmeiChange} value={selectedCmei}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Filtrar por CMEI" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os CMEIs</SelectItem>
-                  <SelectItem value="centro">CMEI Centro</SelectItem>
-                  <SelectItem value="norte">CMEI Norte</SelectItem>
-                  <SelectItem value="sul">CMEI Sul</SelectItem>
-                  <SelectItem value="leste">CMEI Leste</SelectItem>
+                  {allCmeiNames.map(name => (
+                    <SelectItem key={name} value={name}>{name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </CardHeader>
         </Card>
 
-        {turmas.map((cmeiData) => (
+        {filteredTurmas.length === 0 && (
+          <Card>
+            <CardContent className="py-6 text-center text-muted-foreground">
+              Nenhuma turma encontrada para o CMEI selecionado.
+            </CardContent>
+          </Card>
+        )}
+
+        {filteredTurmas.map((cmeiData) => (
           <div key={cmeiData.cmei} className="space-y-4">
             <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Users className="h-6 w-6 text-primary" />
