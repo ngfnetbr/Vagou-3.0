@@ -45,7 +45,7 @@ const Inscricao = () => {
                 </div>
                 
                 <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-4"> {/* Aumentado para 4 colunas */}
-                  <Label className="text-base font-semibold">É beneficiário(a) de programas sociais? *</Label>
+                  <Label className="text-sm font-semibold">É beneficiário(a) de programas sociais? *</Label> {/* Font size changed to text-sm */}
                   <RadioGroup defaultValue="nao" className="flex flex-col gap-3">
                     <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
                       <RadioGroupItem value="sim" id="programas-sim" />
