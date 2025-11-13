@@ -279,6 +279,7 @@ const Inscricao = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            {/* Removido o SelectItem com value="" para evitar o erro */}
                             {filteredCmei2Options.map((cmei) => (
                               <SelectItem key={cmei.value} value={cmei.value}>
                                 {cmei.label}
