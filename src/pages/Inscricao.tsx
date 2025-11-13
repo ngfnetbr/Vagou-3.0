@@ -163,13 +163,13 @@ const Inscricao = () => {
                               <FormControl>
                                 <RadioGroupItem value="feminino" id="feminino" />
                               </FormControl>
-                              <FormLabel htmlFor="feminino" className="font-normal cursor-pointer leading-none flex items-center">Feminino</FormLabel>
+                              <FormLabel htmlFor="feminino" className="font-normal cursor-pointer leading-none">Feminino</FormLabel>
                             </FormItem>
                             <FormItem className="flex items-center space-x-2">
                               <FormControl>
                                 <RadioGroupItem value="masculino" id="masculino" />
                               </FormControl>
-                              <FormLabel htmlFor="masculino" className="font-normal cursor-pointer leading-none flex items-center">Masculino</FormLabel>
+                              <FormLabel htmlFor="masculino" className="font-normal cursor-pointer leading-none">Masculino</FormLabel>
                             </FormItem>
                           </RadioGroup>
                         </FormControl>
@@ -194,13 +194,13 @@ const Inscricao = () => {
                               <FormControl>
                                 <RadioGroupItem value="sim" id="programas-sim" />
                               </FormControl>
-                              <FormLabel htmlFor="programas-sim" className="font-normal cursor-pointer leading-none flex items-center">Sim</FormLabel>
+                              <FormLabel htmlFor="programas-sim" className="font-normal cursor-pointer leading-none">Sim</FormLabel>
                             </FormItem>
                             <FormItem className="flex items-center space-x-2">
                               <FormControl>
                                 <RadioGroupItem value="nao" id="programas-nao" />
                               </FormControl>
-                              <FormLabel htmlFor="programas-nao" className="font-normal cursor-pointer leading-none flex items-center">Não</FormLabel>
+                              <FormLabel htmlFor="programas-nao" className="font-normal cursor-pointer leading-none">Não</FormLabel>
                             </FormItem>
                           </RadioGroup>
                         </FormControl>
@@ -225,13 +225,13 @@ const Inscricao = () => {
                               <FormControl>
                                 <RadioGroupItem value="sim" id="aceita-sim" />
                               </FormControl>
-                              <FormLabel htmlFor="aceita-sim" className="font-normal cursor-pointer leading-none flex items-center">Sim</FormLabel>
+                              <FormLabel htmlFor="aceita-sim" className="font-normal cursor-pointer leading-none">Sim</FormLabel>
                             </FormItem>
                             <FormItem className="flex items-center space-x-2">
                               <FormControl>
                                 <RadioGroupItem value="nao" id="aceita-nao" />
                               </FormControl>
-                              <FormLabel htmlFor="aceita-nao" className="font-normal cursor-pointer leading-none flex items-center">Não</FormLabel>
+                              <FormLabel htmlFor="aceita-nao" className="font-normal cursor-pointer leading-none">Não</FormLabel>
                             </FormItem>
                           </RadioGroup>
                         </FormControl>
