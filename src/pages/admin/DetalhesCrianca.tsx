@@ -1,7 +1,7 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, Calendar, MapPin, Phone, Mail, Edit, History, Loader2, FileText, CheckCircle, ListOrdered, School, Clock, XCircle, RotateCcw, ListRestart } from "lucide-react";
+import { ArrowLeft, User, Calendar, MapPin, Phone, Mail, Edit, History, Loader2, FileText, CheckCircle, ListOrdered, School, Clock, XCircle, RotateCcw, ListRestart, Bell } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useCriancaDetails, useCriancas } from "@/hooks/use-criancas";
@@ -345,7 +345,7 @@ const DetalhesCrianca = () => {
                                 </>
                             ) : (
                                 <>
-                                    <ListRestart className="mr-2 h-4 w-4" />
+                                    <Bell className="mr-2 h-4 w-4" />
                                     Convocar
                                 </>
                             )}

@@ -473,11 +473,20 @@ const Fila = () => {
                                 </>
                               )}
                               
-                              {/* Opção de Convocar / Reconvocar (se não estiver convocado) */}
-                              {!isConvocado && (
+                              {/* Opção de Convocar / Reconvocar */}
+                              {(!isConvocado || (isConvocado && deadlineInfo?.isExpired)) && (
                                 <DropdownMenuItem className="text-primary" onSelect={() => handleConvocarClick(item)}>
-                                  <Bell className="mr-2 h-4 w-4" />
-                                  Convocar para matrícula
+                                  {isConvocado ? (
+                                    <>
+                                      <RotateCcw className="mr-2 h-4 w-4" />
+                                      Reconvocar para matrícula
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Bell className="mr-2 h-4 w-4" />
+                                      Convocar para matrícula
+                                    </>
+                                  )}
                                 </DropdownMenuItem>
                               )}
                               
