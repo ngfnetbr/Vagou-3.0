@@ -25,9 +25,10 @@ export function DatePicker({ value, onChange, placeholder = "Selecione uma data"
   // Converte a string "YYYY-MM-DD" para um objeto Date.
   // Adiciona 'T00:00:00' para garantir que a data seja interpretada como UTC e evitar problemas de fuso horário.
   const date = value ? new Date(value + 'T00:00:00') : undefined; 
+  const [open, setOpen] = React.useState(false); // Estado para controlar a abertura do popover
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}> {/* Controla o estado de abertura do popover */}
       <PopoverTrigger asChild>
         <Button
           variant={"outline"}
@@ -49,6 +50,7 @@ export function DatePicker({ value, onChange, placeholder = "Selecione uma data"
             if (selectedDate) {
               // Formata o objeto Date de volta para a string "YYYY-MM-DD"
               onChange(format(selectedDate, "yyyy-MM-dd")); 
+              setOpen(false); // Fecha o popover após a seleção
             } else {
               onChange(""); // Limpa a data se nada for selecionado
             }
