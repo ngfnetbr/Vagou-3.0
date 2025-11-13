@@ -1,7 +1,7 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, Calendar, MapPin, Phone, Mail, Edit, History, Loader2, FileText, CheckCircle, ListOrdered, School } from "lucide-react";
+import { ArrowLeft, User, Calendar, MapPin, Phone, Mail, Edit, History, Loader2, FileText, CheckCircle, ListOrdered, School, Clock, XCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useCriancaDetails } from "@/hooks/use-criancas";
@@ -10,7 +10,7 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import NovaCriancaModalContent from "@/components/NovaCriancaModal";
 import { useState } from "react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const DetalhesCrianca = () => {
@@ -62,6 +62,7 @@ const DetalhesCrianca = () => {
       "Matriculado": { className: "bg-secondary text-secondary-foreground", text: "Matriculado" },
       "Fila de Espera": { className: "bg-accent/20 text-foreground", text: "Fila de Espera" },
       "Convocado": { className: "bg-primary/20 text-primary", text: "Convocado" },
+      "Desistente": { className: "bg-destructive/20 text-destructive", text: "Desistente" },
     };
     
     const config = variants[status] || { className: "bg-muted text-muted-foreground", text: status };
@@ -78,6 +79,28 @@ const DetalhesCrianca = () => {
 
   const isMatriculado = crianca.status === 'Matriculado' || crianca.status === 'Matriculada';
   const isFila = crianca.status === 'Fila de Espera';
+  const isConvocado = crianca.status === 'Convocado';
+  
+  const deadlineInfo = isConvocado && crianca.convocacaoDeadline ? (() => {
+    const deadlineDate = parseISO(crianca.convocacaoDeadline);
+    const today = new Date();
+    const daysRemaining = differenceInDays(deadlineDate, today);
+    
+    if (daysRemaining < 0) {
+        return {
+            text: `Prazo Expirado em ${format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR })}`,
+            className: "bg-destructive/20 text-destructive",
+            icon: XCircle,
+        };
+    }
+    
+    return {
+        text: `Prazo de resposta: ${daysRemaining} dias (até ${format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR })})`,
+        className: "bg-accent/20 text-foreground",
+        icon: Clock,
+    };
+  })() : null;
+
 
   return (
     <AdminLayout>
@@ -111,7 +134,7 @@ const DetalhesCrianca = () => {
                 </Button>
               </DialogTrigger>
               <NovaCriancaModalContent 
-                onClose={() => setIsModalOpen(false)} 
+                onClose={handleEditSuccess} 
                 initialData={crianca}
               />
             </Dialog>
@@ -129,8 +152,10 @@ const DetalhesCrianca = () => {
               <p className="text-sm text-muted-foreground mt-2">
                 {isMatriculado 
                   ? `Matriculado(a) no ${crianca.cmei}` 
-                  : crianca.status === 'Convocado' 
-                  ? `Aguardando resposta para ${crianca.cmei}`
+                  : isConvocado
+                  ? `Convocado(a) para ${crianca.cmei}`
+                  : crianca.status === 'Desistente'
+                  ? 'Removido(a) da fila.'
                   : `Na fila de espera.`
                 }
               </p>
@@ -152,6 +177,11 @@ const DetalhesCrianca = () => {
                   <ListOrdered className="h-4 w-4 text-accent" />
                   <p className="text-sm font-medium">Posição na Fila: #{crianca.posicaoFila}</p>
                 </div>
+              ) : isConvocado && crianca.turmaAtual ? (
+                <div className="flex items-center gap-2">
+                  <School className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-medium">Vaga Ofertada: {crianca.turmaAtual}</p>
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Nenhuma turma ou posição na fila definida.</p>
               )}
@@ -160,12 +190,19 @@ const DetalhesCrianca = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Critérios de Prioridade</CardTitle>
+              <CardTitle className="text-lg">Prazo de Resposta</CardTitle>
             </CardHeader>
             <CardContent>
-              <Badge variant={crianca.programasSociais === 'sim' ? 'default' : 'secondary'}>
-                {crianca.programasSociais === 'sim' ? 'Beneficiário Social' : 'Sem Prioridade Social'}
-              </Badge>
+              {deadlineInfo ? (
+                <div className={`flex items-center gap-2 text-sm font-medium p-2 rounded-lg ${deadlineInfo.className}`}>
+                    <deadlineInfo.icon className="h-4 w-4" />
+                    <p>{deadlineInfo.text}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                    {isConvocado ? 'Prazo não definido.' : 'Não aplicável (Criança não convocada).'}
+                </p>
+              )}
               <div className="flex items-center gap-2 mt-2">
                 <CheckCircle className={`h-4 w-4 ${crianca.aceitaQualquerCmei === 'sim' ? 'text-secondary' : 'text-destructive'}`} />
                 <p className="text-sm text-muted-foreground">
@@ -268,7 +305,7 @@ const DetalhesCrianca = () => {
                   <span className="absolute flex items-center justify-center w-3 h-3 bg-primary rounded-full -left-1.5 ring-4 ring-background"></span>
                   <div className="p-3 bg-card border border-border rounded-lg shadow-sm">
                     <time className="mb-1 text-xs font-normal leading-none text-muted-foreground">
-                      {format(new Date(entry.data + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}
+                      {format(parseISO(entry.data + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}
                     </time>
                     <h3 className="text-base font-semibold text-foreground mt-1">{entry.acao}</h3>
                     <p className="text-sm font-normal text-muted-foreground">{entry.detalhes}</p>

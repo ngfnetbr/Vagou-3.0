@@ -68,16 +68,18 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
 
   // Tipando o parâmetro values explicitamente como InscricaoFormData
   const onSubmit = async (values: InscricaoFormData) => {
-    // O TypeScript, por vezes, infere que 'values' pode ter campos opcionais devido ao uso do useForm,
-    // mesmo com o ZodResolver. Usamos a asserção de tipo para garantir que os dados são completos.
-    
+    // O ZodResolver garante que 'values' é InscricaoFormData se a validação passar.
+    // Usamos a asserção de tipo para satisfazer o compilador TS.
+    const dataToSubmit = values as InscricaoFormData; 
+
     if (onSuccess) {
       // Admin context: use mutation
       try {
         if (isEditing && criancaId) {
-          await updateCrianca({ id: criancaId, data: values as InscricaoFormData }); 
+          // O erro 1 e 2 são corrigidos aqui, pois dataToSubmit é explicitamente InscricaoFormData
+          await updateCrianca({ id: criancaId, data: dataToSubmit }); 
         } else {
-          await addCrianca(values as InscricaoFormData); 
+          await addCrianca(dataToSubmit); 
         }
         onSuccess(values);
         if (!isEditing) {

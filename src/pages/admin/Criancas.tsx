@@ -64,6 +64,7 @@ const Criancas = () => {
       "Matriculado": { variant: "default", className: "bg-secondary text-secondary-foreground" },
       "Fila de Espera": { variant: "secondary", className: "bg-accent/20 text-foreground" },
       "Convocado": { variant: "default", className: "bg-primary/20 text-primary" },
+      "Desistente": { variant: "default", className: "bg-destructive/20 text-destructive" }, // Adicionado status Desistente
     };
     
     const config = variants[status] || { variant: "outline" as const, className: "" };

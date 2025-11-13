@@ -22,10 +22,11 @@ export interface Crianca {
   cmei1: string;
   cmei2?: string;
   observacoes?: string;
-  status: "Matriculada" | "Matriculado" | "Fila de Espera" | "Convocado";
+  status: "Matriculada" | "Matriculado" | "Fila de Espera" | "Convocado" | "Desistente"; // Added Desistente
   cmei: string; // CMEI atual ou preferencial
   turmaAtual?: string; // Nova informação: Turma atual (se matriculado)
   posicaoFila?: number; // Nova informação: Posição na fila (se na fila)
+  convocacaoDeadline?: string; // New field: YYYY-MM-DD for conviction deadline
   historico: HistoricoEntry[];
 }
 
@@ -106,6 +107,7 @@ let mockCriancas: Crianca[] = [
     cmei1: "CMEI Leste",
     status: "Convocado",
     cmei: "CMEI Leste",
+    convocacaoDeadline: "2025-01-20", // Mocked deadline
     historico: [
       { data: "2024-04-10", acao: "Convocação Enviada", detalhes: "Convocação para CMEI Leste", usuario: "Sistema" },
       { data: "2024-03-20", acao: "Inscrição Inicial", detalhes: "Inscrição na fila de espera (Prioridade Social)", usuario: "Responsável" },
@@ -204,6 +206,7 @@ const mapInscricaoToCrianca = (data: InscricaoFormData, id: number, currentCmei:
         // Preserve existing status-related fields if editing
         turmaAtual: existingCrianca?.turmaAtual,
         posicaoFila: existingCrianca?.posicaoFila,
+        convocacaoDeadline: existingCrianca?.convocacaoDeadline,
         historico: [{
             data: new Date().toISOString().split('T')[0],
             acao: id ? "Dados Atualizados" : "Inscrição Inicial",
@@ -265,4 +268,121 @@ export const getCriancaById = (id: number): Crianca | undefined => {
         };
     }
     return undefined;
+};
+
+// --- New Mock Functions for Convocation ---
+
+export interface ConvocationData {
+    cmei: string;
+    turma: string;
+}
+
+// Mock list of CMEIs and their available turmas (simplified)
+const mockAvailableTurmas = [
+    { cmei: "CMEI Centro", turma: "Maternal I - Sala C", vagas: 5 },
+    { cmei: "CMEI Norte", turma: "Pré II - Sala B", vagas: 3 },
+    { cmei: "CMEI Sul", turma: "Berçário II - Sala A", vagas: 8 },
+    { cmei: "CMEI Leste", turma: "Maternal II - Sala D", vagas: 2 },
+    { cmei: "CMEI Oeste", turma: "Pré I - Sala A", vagas: 4 }, // Extra CMEI
+];
+
+export const fetchAvailableTurmas = async (criancaId: number): Promise<typeof mockAvailableTurmas> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const crianca = mockCriancas.find(c => c.id === criancaId);
+    if (!crianca) return [];
+
+    const preferredCmeis = [crianca.cmei1, crianca.cmei2].filter(Boolean);
+    
+    let availableTurmas = mockAvailableTurmas.filter(turma => turma.vagas > 0);
+
+    if (crianca.aceitaQualquerCmei === 'nao') {
+        // Only show preferred CMEIs
+        availableTurmas = availableTurmas.filter(turma => preferredCmeis.includes(turma.cmei));
+    } else {
+        // Prioritize preferred CMEIs by moving them to the top
+        availableTurmas.sort((a, b) => {
+            const aPreferred = preferredCmeis.includes(a.cmei);
+            const bPreferred = preferredCmeis.includes(b.cmei);
+            
+            if (aPreferred && !bPreferred) return -1;
+            if (!aPreferred && bPreferred) return 1;
+            return 0;
+        });
+    }
+    
+    // In a real system, we would also filter by age/turma base compatibility here.
+    // For this mock, we assume all available turmas are compatible with the child's age group.
+
+    return availableTurmas;
+};
+
+// Function to calculate the deadline (7 business days from now)
+const calculateDeadline = (): string => {
+    const today = new Date();
+    let deadline = new Date(today);
+    
+    // Simple approximation: 7 days + 2 weekend days = 9 days total
+    // In a real system, this would require complex calendar logic (holidays, weekends)
+    deadline.setDate(deadline.getDate() + 9); 
+    
+    return deadline.toISOString().split('T')[0]; // YYYY-MM-DD
+};
+
+export const convocarCrianca = async (criancaId: number, data: ConvocationData): Promise<Crianca> => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const index = mockCriancas.findIndex(c => c.id === criancaId);
+    if (index === -1) throw new Error("Criança não encontrada");
+
+    const deadline = calculateDeadline();
+    
+    const updatedCrianca = {
+        ...mockCriancas[index],
+        status: "Convocado" as const,
+        cmei: data.cmei,
+        turmaAtual: data.turma,
+        posicaoFila: undefined, // Remove from queue position
+        convocacaoDeadline: deadline,
+        historico: [
+            ...mockCriancas[index].historico,
+            {
+                data: new Date().toISOString().split('T')[0],
+                acao: "Convocação Enviada",
+                detalhes: `Convocado para ${data.turma} no CMEI ${data.cmei}. Prazo: ${deadline}`,
+                usuario: "Admin/Gestor",
+            }
+        ]
+    };
+    
+    mockCriancas[index] = updatedCrianca;
+    return updatedCrianca;
+};
+
+export const marcarDesistente = async (criancaId: number): Promise<Crianca> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const index = mockCriancas.findIndex(c => c.id === criancaId);
+    if (index === -1) throw new Error("Criança não encontrada");
+
+    const updatedCrianca = {
+        ...mockCriancas[index],
+        status: "Desistente" as const,
+        cmei: "N/A",
+        turmaAtual: undefined,
+        posicaoFila: undefined,
+        convocacaoDeadline: undefined,
+        historico: [
+            ...mockCriancas[index].historico,
+            {
+                data: new Date().toISOString().split('T')[0],
+                acao: "Marcado como Desistente",
+                detalhes: `Criança removida da fila e marcada como desistente.`,
+                usuario: "Admin/Gestor",
+            }
+        ]
+    };
+    
+    mockCriancas[index] = updatedCrianca;
+    return updatedCrianca;
 };

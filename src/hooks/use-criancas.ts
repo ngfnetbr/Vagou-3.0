@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchCriancas, addCriancaFromInscricao, InscricaoFormData, Crianca, updateCrianca, deleteCrianca, getCriancaById } from "@/lib/mock-data";
+import { fetchCriancas, addCriancaFromInscricao, InscricaoFormData, Crianca, updateCrianca, deleteCrianca, getCriancaById, convocarCrianca, marcarDesistente, fetchAvailableTurmas, ConvocationData } from "@/lib/mock-data";
 import { toast } from "sonner";
 
 const CRIANCAS_QUERY_KEY = ["criancas"];
@@ -65,6 +65,37 @@ export function useCriancas() {
       });
     },
   });
+  
+  const convocarMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number, data: ConvocationData }) => convocarCrianca(id, data),
+    onSuccess: (updatedCrianca) => {
+      queryClient.invalidateQueries({ queryKey: CRIANCAS_QUERY_KEY }); // Refetch the list to update the queue position
+      toast.success("Convocação enviada!", {
+        description: `${updatedCrianca.nome} foi convocado(a) para ${updatedCrianca.cmei}.`,
+      });
+    },
+    onError: () => {
+      toast.error("Erro ao convocar criança.", {
+        description: "Tente novamente mais tarde.",
+      });
+    },
+  });
+  
+  const desistenteMutation = useMutation({
+    mutationFn: marcarDesistente,
+    onSuccess: (updatedCrianca) => {
+      queryClient.invalidateQueries({ queryKey: CRIANCAS_QUERY_KEY }); // Refetch the list to update the queue position
+      toast.warning("Criança marcada como desistente.", {
+        description: `${updatedCrianca.nome} foi removido(a) da fila.`,
+      });
+    },
+    onError: () => {
+      toast.error("Erro ao marcar desistência.", {
+        description: "Tente novamente mais tarde.",
+      });
+    },
+  });
+
 
   return {
     criancas: criancas || [],
@@ -76,6 +107,10 @@ export function useCriancas() {
     isUpdating: updateMutation.isPending,
     deleteCrianca: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
+    convocarCrianca: convocarMutation.mutateAsync,
+    isConvoking: convocarMutation.isPending,
+    marcarDesistente: desistenteMutation.mutateAsync,
+    isMarkingDesistente: desistenteMutation.isPending,
   };
 }
 
@@ -84,5 +119,13 @@ export function useCriancaDetails(id: number) {
         queryKey: ['crianca', id],
         queryFn: () => getCriancaById(id),
         enabled: !!id,
+    });
+}
+
+export function useAvailableTurmas(criancaId: number) {
+    return useQuery({
+        queryKey: ['availableTurmas', criancaId],
+        queryFn: () => fetchAvailableTurmas(criancaId),
+        enabled: !!criancaId,
     });
 }
