@@ -51,7 +51,6 @@ const cmeiSchema = z.object({
   email: z.string().email("E-mail inválido.").optional().or(z.literal('')),
   diretor: z.string().optional().or(z.literal('')),
   coordenador: z.string().optional().or(z.literal('')),
-  // observacoes: z.string().optional().or(z.literal('')), // Removido
 });
 
 type CmeiFormData = z.infer<typeof cmeiSchema>;
@@ -74,7 +73,6 @@ const NovaCmeiModal = ({ initialData, onSave, onClose }: NovaCmeiModalProps) => 
       email: "",
       diretor: "",
       coordenador: "",
-      // observacoes: "", // Removido
     },
   });
 
@@ -153,10 +151,10 @@ const NovaCmeiModal = ({ initialData, onSave, onClose }: NovaCmeiModalProps) => 
               name="telefone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Telefone</FormLabel> {/* Removido o '*' de obrigatório */}
+                  <FormLabel>Telefone</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="(00) 9 0000-0000 (opcional)" // Adicionado (opcional)
+                      placeholder="(00) 9 0000-0000" // Removido (opcional)
                       {...field}
                       value={formatPhone(field.value)}
                       onChange={(e) => {
@@ -211,7 +209,6 @@ const NovaCmeiModal = ({ initialData, onSave, onClose }: NovaCmeiModalProps) => 
               )}
             />
           </div>
-          {/* Removido o FormField para 'observacoes' */}
           <DialogFooter className="pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               <X className="mr-2 h-4 w-4" />
