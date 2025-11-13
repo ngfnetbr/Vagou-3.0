@@ -68,7 +68,7 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
 
   // Tipando o parâmetro values explicitamente como InscricaoFormData
   const onSubmit = async (values: InscricaoFormData) => {
-    // Aplicando cast seguro diretamente no parâmetro para resolver o erro de compilação.
+    // Aplicando cast seguro, pois a validação Zod garante que todos os campos obrigatórios estão presentes.
     const data = values as InscricaoFormData;
 
     if (onSuccess) {

@@ -1,7 +1,7 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, Calendar, MapPin, Phone, Mail, Edit, History, Loader2, FileText } from "lucide-react";
+import { ArrowLeft, User, Calendar, MapPin, Phone, Mail, Edit, History, Loader2, FileText, CheckCircle, ListOrdered, School } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useCriancaDetails } from "@/hooks/use-criancas";
@@ -74,6 +74,9 @@ const DetalhesCrianca = () => {
     }
   };
 
+  const isMatriculado = crianca.status === 'Matriculado' || crianca.status === 'Matriculada';
+  const isFila = crianca.status === 'Fila de Espera';
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -82,7 +85,7 @@ const DetalhesCrianca = () => {
             <h1 className="text-3xl font-bold text-foreground">{crianca.nome}</h1>
             <p className="text-muted-foreground flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              {crianca.idade} ({crianca.dataNascimento})
+              {crianca.idade}
             </p>
           </div>
           <div className="flex gap-2">
@@ -113,8 +116,8 @@ const DetalhesCrianca = () => {
           </div>
         </div>
 
-        {/* Status e Localização - Layout ajustado para 2 colunas */}
-        <div className="grid md:grid-cols-2 gap-6">
+        {/* Status e Localização - Layout ajustado para 3 colunas */}
+        <div className="grid md:grid-cols-3 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Status Atual</CardTitle>
@@ -122,26 +125,51 @@ const DetalhesCrianca = () => {
             <CardContent>
               {getStatusBadge(crianca.status)}
               <p className="text-sm text-muted-foreground mt-2">
-                {crianca.status === 'Matriculada' || crianca.status === 'Matriculado' 
+                {isMatriculado 
                   ? `Matriculado(a) no ${crianca.cmei}` 
                   : crianca.status === 'Convocado' 
                   ? `Aguardando resposta para ${crianca.cmei}`
-                  : `Na fila de espera. Preferência: ${crianca.cmei1}`
+                  : `Na fila de espera.`
                 }
               </p>
             </CardContent>
           </Card>
+          
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Prioridade</CardTitle>
+              <CardTitle className="text-lg">Detalhes da Vaga</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {isMatriculado && crianca.turmaAtual ? (
+                <div className="flex items-center gap-2">
+                  <School className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-medium">Turma: {crianca.turmaAtual}</p>
+                </div>
+              ) : isFila && crianca.posicaoFila !== undefined ? (
+                <div className="flex items-center gap-2">
+                  <ListOrdered className="h-4 w-4 text-accent" />
+                  <p className="text-sm font-medium">Posição na Fila: #{crianca.posicaoFila}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhuma turma ou posição na fila definida.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Preferências</CardTitle>
             </CardHeader>
             <CardContent>
               <Badge variant={crianca.programasSociais === 'sim' ? 'default' : 'secondary'}>
                 {crianca.programasSociais === 'sim' ? 'Beneficiário Social' : 'Sem Prioridade Social'}
               </Badge>
-              <p className="text-sm text-muted-foreground mt-2">
-                {crianca.aceitaQualquerCmei === 'sim' ? 'Aceita qualquer CMEI' : 'Prioriza opções selecionadas'}
-              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <CheckCircle className={`h-4 w-4 ${crianca.aceitaQualquerCmei === 'sim' ? 'text-secondary' : 'text-destructive'}`} />
+                <p className="text-sm text-muted-foreground">
+                  Aceita qualquer CMEI: <span className="font-medium capitalize">{crianca.aceitaQualquerCmei === 'sim' ? 'Sim' : 'Não'}</span>
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -163,7 +191,7 @@ const DetalhesCrianca = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-muted-foreground" />
-                  <p className="text-sm">{crianca.dataNascimento} ({crianca.idade})</p>
+                  <p className="text-sm">Data Nasc.: {crianca.dataNascimento}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-muted-foreground font-medium">Sexo:</span>

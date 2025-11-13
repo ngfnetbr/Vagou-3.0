@@ -9,7 +9,7 @@ export interface Crianca {
   id: number;
   nome: string;
   dataNascimento: string; // YYYY-MM-DD format
-  idade: string; // Calculated field for display
+  idade: string; // Calculated field for display (e.g., 1 ano, 6 meses e 10 dias)
   responsavel: string;
   cpfResponsavel: string;
   telefoneResponsavel: string;
@@ -24,6 +24,8 @@ export interface Crianca {
   observacoes?: string;
   status: "Matriculada" | "Matriculado" | "Fila de Espera" | "Convocado";
   cmei: string; // CMEI atual ou preferencial
+  turmaAtual?: string; // Nova informação: Turma atual (se matriculado)
+  posicaoFila?: number; // Nova informação: Posição na fila (se na fila)
   historico: HistoricoEntry[];
 }
 
@@ -32,7 +34,7 @@ let mockCriancas: Crianca[] = [
     id: 1,
     nome: "Ana Silva Santos",
     dataNascimento: "2023-03-15",
-    idade: "1 ano e 10 meses",
+    idade: "", // Será calculado
     responsavel: "Maria Silva",
     cpfResponsavel: "111.111.111-11",
     telefoneResponsavel: "(44) 9 1111-1111",
@@ -43,6 +45,7 @@ let mockCriancas: Crianca[] = [
     cmei2: "CMEI Norte",
     status: "Matriculada",
     cmei: "CMEI Centro",
+    turmaAtual: "Berçário I - Sala A", // Adicionado
     historico: [
       { data: "2024-01-20", acao: "Matrícula Efetivada", detalhes: "Matriculada no Berçário I - Sala A", usuario: "Gestor Centro" },
       { data: "2024-01-10", acao: "Convocação Aceita", detalhes: "Convocação para CMEI Centro aceita", usuario: "Sistema" },
@@ -53,7 +56,7 @@ let mockCriancas: Crianca[] = [
     id: 2,
     nome: "João Pedro Costa",
     dataNascimento: "2023-05-22",
-    idade: "1 ano e 8 meses",
+    idade: "", // Será calculado
     responsavel: "Pedro Costa",
     cpfResponsavel: "222.222.222-22",
     telefoneResponsavel: "(44) 9 2222-2222",
@@ -63,6 +66,7 @@ let mockCriancas: Crianca[] = [
     cmei1: "CMEI Norte",
     status: "Matriculado",
     cmei: "CMEI Norte",
+    turmaAtual: "Maternal I - Sala B", // Adicionado
     historico: [
       { data: "2024-02-01", acao: "Matrícula Efetivada", detalhes: "Matriculado no Maternal I - Sala B", usuario: "Gestor Norte" },
       { data: "2024-01-25", acao: "Convocação Aceita", detalhes: "Convocação para CMEI Norte aceita", usuario: "Sistema" },
@@ -73,7 +77,7 @@ let mockCriancas: Crianca[] = [
     id: 3,
     nome: "Carlos Eduardo Silva",
     dataNascimento: "2023-07-08",
-    idade: "1 ano e 6 meses",
+    idade: "", // Será calculado
     responsavel: "Eduardo Silva",
     cpfResponsavel: "333.333.333-33",
     telefoneResponsavel: "(44) 9 3333-3333",
@@ -83,6 +87,7 @@ let mockCriancas: Crianca[] = [
     cmei1: "CMEI Sul",
     status: "Fila de Espera",
     cmei: "N/A",
+    posicaoFila: 15, // Adicionado
     historico: [
       { data: "2024-03-01", acao: "Inscrição Inicial", detalhes: "Inscrição na fila de espera", usuario: "Responsável" },
     ]
@@ -91,7 +96,7 @@ let mockCriancas: Crianca[] = [
     id: 4,
     nome: "Mariana Costa Santos",
     dataNascimento: "2023-04-30",
-    idade: "1 ano e 9 meses",
+    idade: "", // Será calculado
     responsavel: "Ana Costa",
     cpfResponsavel: "444.444.444-44",
     telefoneResponsavel: "(44) 9 4444-4444",
@@ -108,23 +113,41 @@ let mockCriancas: Crianca[] = [
   },
 ];
 
-// Helper function to calculate age string (simplified)
+// Helper function to calculate age string (years, months, days)
 const calculateAgeString = (dobString: string): string => {
   const today = new Date();
-  const dob = new Date(dobString + 'T00:00:00'); // Ensure date is treated consistently
+  const dob = new Date(dobString + 'T00:00:00');
   
   let years = today.getFullYear() - dob.getFullYear();
   let months = today.getMonth() - dob.getMonth();
-  
-  if (months < 0 || (months === 0 && today.getDate() < dob.getDate())) {
+  let days = today.getDate() - dob.getDate();
+
+  if (days < 0) {
+    months--;
+    // Get the number of days in the previous month
+    days += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+  }
+
+  if (months < 0) {
     years--;
     months += 12;
   }
-  
-  if (years > 0) {
-    return `${years} ano(s) e ${months} meses`;
+
+  const parts = [];
+  if (years > 0) parts.push(`${years} ano(s)`);
+  if (months > 0) parts.push(`${months} meses`);
+  if (days > 0 || parts.length === 0) { // Always show days if no years/months, or if days > 0
+    parts.push(`${days} dia(s)`);
   }
-  return `${months} meses`;
+
+  if (parts.length === 0) return "Recém-nascido";
+  
+  // Format: "1 ano(s), 6 meses e 10 dia(s)"
+  if (parts.length === 1) return parts[0];
+  if (parts.length === 2) return parts.join(' e ');
+  
+  const last = parts.pop();
+  return `${parts.join(', ')} e ${last}`;
 };
 
 
@@ -158,7 +181,7 @@ export interface InscricaoFormData {
 }
 
 // Helper to map InscricaoFormData to Crianca structure
-const mapInscricaoToCrianca = (data: InscricaoFormData, id: number, currentCmei: string, currentStatus: Crianca['status']): Crianca => {
+const mapInscricaoToCrianca = (data: InscricaoFormData, id: number, currentCmei: string, currentStatus: Crianca['status'], existingCrianca?: Crianca): Crianca => {
     return {
         id: id,
         nome: data.nomeCrianca,
@@ -178,6 +201,9 @@ const mapInscricaoToCrianca = (data: InscricaoFormData, id: number, currentCmei:
         observacoes: data.observacoes,
         status: currentStatus,
         cmei: currentCmei,
+        // Preserve existing status-related fields if editing
+        turmaAtual: existingCrianca?.turmaAtual,
+        posicaoFila: existingCrianca?.posicaoFila,
         historico: [{
             data: new Date().toISOString().split('T')[0],
             acao: id ? "Dados Atualizados" : "Inscrição Inicial",
@@ -196,7 +222,11 @@ export const addCriancaFromInscricao = async (data: InscricaoFormData): Promise<
   const initialStatus: Crianca['status'] = "Fila de Espera";
   const initialCmei = "N/A";
   
+  // Simula a atribuição de posição na fila para novos cadastros
+  const newPosicaoFila = mockCriancas.filter(c => c.status === "Fila de Espera").length + 1;
+  
   const newCrianca = mapInscricaoToCrianca(data, newId, initialCmei, initialStatus);
+  newCrianca.posicaoFila = newPosicaoFila;
   
   mockCriancas.push(newCrianca);
   return newCrianca;
@@ -210,8 +240,8 @@ export const updateCrianca = async (id: number, data: InscricaoFormData): Promis
 
     const existingCrianca = mockCriancas[index];
     
-    // Preserve status and current CMEI, but update all other fields
-    const updatedCrianca = mapInscricaoToCrianca(data, id, existingCrianca.cmei, existingCrianca.status);
+    // Preserve status, current CMEI, turmaAtual and posicaoFila
+    const updatedCrianca = mapInscricaoToCrianca(data, id, existingCrianca.cmei, existingCrianca.status, existingCrianca);
     
     // Merge new data with existing history (keeping existing history and adding the update log)
     updatedCrianca.historico = [...existingCrianca.historico, ...updatedCrianca.historico];
