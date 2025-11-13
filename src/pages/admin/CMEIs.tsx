@@ -198,8 +198,9 @@ const CMEIs = () => {
                     <TableHead>Nome do CMEI</TableHead>
                     <TableHead>Endereço</TableHead>
                     <TableHead className="text-center">Capacidade</TableHead>
-                    <TableHead className="text-center">Ocupação</TableHead>
-                    <TableHead className="text-center">Disponíveis</TableHead>
+                    <TableHead className="text-center">Vagas Ocupadas</TableHead>
+                    <TableHead className="text-center">Vagas Disponíveis</TableHead>
+                    <TableHead className="text-center">Ocupação (%)</TableHead> {/* Nova coluna para o badge */}
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -211,19 +212,17 @@ const CMEIs = () => {
                         <TableCell className="font-medium">{cmei.nome}</TableCell>
                         <TableCell>{cmei.endereco}</TableCell>
                         <TableCell className="text-center">{cmei.capacidade}</TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <span>{cmei.ocupacao}</span>
-                            <Badge className={`text-xs font-normal ${
-                              ocupacaoPercent >= 90 
-                                ? 'bg-destructive/20 text-destructive' 
-                                : 'bg-secondary/20 text-secondary'
-                            }`}>
-                              {ocupacaoPercent}%
-                            </Badge>
-                          </div>
+                        <TableCell className="text-center">{cmei.ocupacao}</TableCell> {/* Apenas o número */}
+                        <TableCell className="text-center">{cmei.capacidade - cmei.ocupacao}</TableCell> {/* Apenas o número */}
+                        <TableCell className="text-center"> {/* Coluna para o badge */}
+                          <Badge className={`text-xs font-normal ${
+                            ocupacaoPercent >= 90 
+                              ? 'bg-destructive/20 text-destructive' 
+                              : 'bg-secondary/20 text-secondary'
+                          }`}>
+                            {ocupacaoPercent}%
+                          </Badge>
                         </TableCell>
-                        <TableCell className="text-center">{cmei.capacidade - cmei.ocupacao}</TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
