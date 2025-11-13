@@ -49,8 +49,8 @@ const Fila = () => {
     if (searchTerm) {
       const lowerCaseSearch = searchTerm.toLowerCase();
       filtered = filtered.filter(c => 
-        c.nome.toLowerCase().includes(lowerCaseSearch) ||
-        c.responsavel.toLowerCase().includes(lowerCaseSearch)
+        c.nomeCrianca.toLowerCase().includes(lowerCaseSearch) ||
+        c.nomeResponsavel.toLowerCase().includes(lowerCaseSearch)
       );
     }
 
@@ -102,13 +102,13 @@ const Fila = () => {
   };
 
   const handleConvocar = (crianca: Crianca) => {
-    toast.info(`Convocando ${crianca.nome}...`, {
+    toast.info(`Convocando ${crianca.nomeCrianca}...`, {
       description: `Notificação de matrícula será enviada para ${crianca.cmei1}. (Ação mockada)`,
     });
   };
 
   const handleDesistente = (crianca: Crianca) => {
-    toast.warning(`Marcando ${crianca.nome} como desistente. (Ação mockada)`);
+    toast.warning(`Marcando ${crianca.nomeCrianca} como desistente. (Ação mockada)`);
   };
 
   if (isLoading) {
@@ -214,8 +214,8 @@ const Fila = () => {
                   filteredFila.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-bold text-primary">#{item.posicaoFila}</TableCell>
-                      <TableCell className="font-medium">{item.nome}</TableCell>
-                      <TableCell>{item.responsavel}</TableCell>
+                      <TableCell className="font-medium">{item.nomeCrianca}</TableCell>
+                      <TableCell>{item.nomeResponsavel}</TableCell>
                       <TableCell>{item.cmei1}</TableCell>
                       <TableCell>{getInscriptionDate(item)}</TableCell>
                       <TableCell>

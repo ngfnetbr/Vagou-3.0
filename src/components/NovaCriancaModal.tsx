@@ -1,59 +1,84 @@
-import { DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import Inscricao from "@/pages/Inscricao"; // Import Inscricao
-import { InscricaoFormData } from "@/lib/schemas/inscricao-schema"; // Import type from schema file
-import { Crianca } from "@/lib/mock-data"; // Import Crianca type
+import { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import Inscricao from "@/pages/Inscricao";
+import { Crianca } from "@/lib/mock-data";
+import { InscricaoFormData } from "@/lib/schemas/inscricao-schema";
 
 interface NovaCriancaModalProps {
-  onClose: () => void;
-  initialData?: Crianca; // Data for editing
+  isEditing?: boolean;
+  initialData?: Crianca;
+  criancaId?: number;
+  onSuccess?: () => void;
 }
 
-// Helper to map Crianca data structure to InscricaoFormData for form default values
 const mapCriancaToFormData = (crianca: Crianca): InscricaoFormData => ({
-  nomeCrianca: crianca.nome,
+  nomeCrianca: crianca.nomeCrianca,
   dataNascimento: crianca.dataNascimento,
   sexo: crianca.sexo,
   programasSociais: crianca.programasSociais,
   aceitaQualquerCmei: crianca.aceitaQualquerCmei,
   cmei1: crianca.cmei1,
   cmei2: crianca.cmei2 || '',
-  nomeResponsavel: crianca.responsavel,
-  cpf: crianca.cpfResponsavel,
-  telefone: crianca.telefoneResponsavel,
-  telefone2: crianca.telefoneResponsavel, // Assuming only one phone is stored in mock, using it for both
-  email: crianca.emailResponsavel || '',
+  nomeResponsavel: crianca.nomeResponsavel,
+  // Usando as propriedades corretas que agora estão em Crianca (herdadas de InscricaoFormData)
+  cpf: crianca.cpf,
+  telefone: crianca.telefone,
+  telefone2: crianca.telefone2, 
+  email: crianca.email || '',
   endereco: crianca.endereco || '',
   bairro: crianca.bairro || '',
   observacoes: crianca.observacoes || '',
 });
 
-const NovaCriancaModalContent = ({ onClose, initialData }: NovaCriancaModalProps) => {
-  const isEditing = !!initialData;
-  const defaultValues = isEditing ? mapCriancaToFormData(initialData) : undefined;
+export const NovaCriancaModal = ({ isEditing = false, initialData, criancaId, onSuccess }: NovaCriancaModalProps) => {
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleSuccess = () => {
-    // This handles both successful submission and deletion (via onSuccess in Inscricao)
-    onClose();
+    setIsOpen(false);
+    if (onSuccess) {
+      onSuccess();
+    }
   };
 
+  const handleCancel = () => {
+    setIsOpen(false);
+  };
+
+  const initialFormData = initialData ? mapCriancaToFormData(initialData) : undefined;
+
   return (
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle>{isEditing ? `Editar Criança: ${initialData.nome}` : "Registrar Nova Criança"}</DialogTitle>
-        <DialogDescription>
-          {isEditing ? "Atualize os dados cadastrais da criança." : "Preencha os dados para realizar a inscrição de uma nova criança no sistema."}
-        </DialogDescription>
-      </DialogHeader>
-      {/* Pass onSuccess handler, isModal flag, initialData/id for editing, and onClose for cancellation */}
-      <Inscricao 
-        onSuccess={handleSuccess} 
-        onCancel={onClose} // Passa a função de fechar para o botão Cancelar
-        isModal={true} 
-        initialData={defaultValues}
-        criancaId={initialData?.id}
-      />
-    </DialogContent>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant={isEditing ? "outline" : "default"}>
+          {isEditing ? (
+            "Editar"
+          ) : (
+            <>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Inscrição
+            </>
+          )}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl p-0">
+        <DialogHeader className="p-6 pb-0">
+          <DialogTitle>{isEditing ? `Editar Criança: ${initialData?.nomeCrianca}` : "Registrar Nova Criança"}</DialogTitle>
+          <DialogDescription>
+            {isEditing ? "Atualize os dados da criança e do responsável." : "Preencha o formulário para cadastrar uma nova criança na fila de espera."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="max-h-[80vh] overflow-y-auto p-6 pt-0">
+          <Inscricao 
+            isModal 
+            criancaId={criancaId}
+            initialData={initialFormData}
+            onSuccess={handleSuccess}
+            onCancel={handleCancel}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
-
-export default NovaCriancaModalContent;

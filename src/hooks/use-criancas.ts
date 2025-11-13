@@ -1,67 +1,111 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchCriancas, addCriancaFromInscricao, InscricaoFormData, Crianca, updateCrianca, deleteCrianca, getCriancaById } from "@/lib/mock-data";
+import { useQuery, useMutation, useQueryClient, UseMutateAsyncFunction } from "@tanstack/react-query";
+import {
+  getCriancas,
+  addCriancaMock,
+  updateCriancaMock,
+  deleteCriancaMock,
+  Crianca,
+  updateCriancaStatusMock,
+  CriancaStatus,
+} from "@/lib/mock-data";
+import { InscricaoFormData } from "@/lib/schemas/inscricao-schema";
 import { toast } from "sonner";
 
-const CRIANCAS_QUERY_KEY = ["criancas"];
+// Tipos para as mutações
+interface UpdateCriancaData {
+  id: number;
+  data: InscricaoFormData;
+}
 
-export function useCriancas() {
+interface UpdateStatusData {
+    id: number;
+    newStatus: CriancaStatus;
+    action: string;
+    cmei: string;
+}
+
+export const useCriancas = () => {
   const queryClient = useQueryClient();
 
-  const { data: criancas, isLoading, error } = useQuery<Crianca[]>({
-    queryKey: CRIANCAS_QUERY_KEY,
-    queryFn: fetchCriancas,
+  // Query para buscar todas as crianças
+  const {
+    data: criancas,
+    isLoading,
+    error,
+  } = useQuery<Crianca[], Error>({
+    queryKey: ["criancas"],
+    queryFn: getCriancas,
   });
 
-  const addMutation = useMutation({
-    mutationFn: addCriancaFromInscricao,
-    onSuccess: (newCrianca) => {
-      queryClient.setQueryData<Crianca[]>(CRIANCAS_QUERY_KEY, (old) => {
-        if (old) {
-          return [...old, newCrianca];
-        }
-        return [newCrianca];
-      });
+  // Mutação para adicionar uma nova criança
+  const { mutateAsync: addCrianca, isPending: isAdding } = useMutation<
+    Crianca,
+    Error,
+    InscricaoFormData
+  >({
+    mutationFn: addCriancaMock,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["criancas"] });
       toast.success("Criança cadastrada com sucesso!", {
-        description: `A criança ${newCrianca.nome} foi adicionada à ${newCrianca.status}.`,
+        description: "Adicionada à fila de espera.",
       });
     },
-    onError: () => {
+    onError: (err) => {
       toast.error("Erro ao cadastrar criança.", {
-        description: "Tente novamente mais tarde.",
+        description: err.message,
       });
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number, data: InscricaoFormData }) => updateCrianca(id, data),
-    onSuccess: (updatedCrianca) => {
-      queryClient.setQueryData<Crianca[]>(CRIANCAS_QUERY_KEY, (old) => {
-        return old ? old.map(c => c.id === updatedCrianca.id ? updatedCrianca : c) : [updatedCrianca];
-      });
-      // Invalidate the specific detail query
-      queryClient.invalidateQueries({ queryKey: ['crianca', updatedCrianca.id] });
-      toast.success("Dados da criança atualizados!", {
-        description: `As informações de ${updatedCrianca.nome} foram salvas.`,
-      });
+  // Mutação para atualizar uma criança existente
+  const { mutateAsync: updateCrianca, isPending: isUpdating } = useMutation<
+    Crianca | undefined,
+    Error,
+    UpdateCriancaData
+  >({
+    mutationFn: ({ id, data }) => updateCriancaMock(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["criancas"] });
+      toast.success("Dados da criança atualizados com sucesso!");
     },
-    onError: () => {
+    onError: (err) => {
       toast.error("Erro ao atualizar criança.", {
-        description: "Tente novamente mais tarde.",
+        description: err.message,
       });
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteCrianca,
-    onSuccess: (_, id) => { // FIX: Use the second argument (variables) which is the ID passed to mutate
-      queryClient.setQueryData<Crianca[]>(CRIANCAS_QUERY_KEY, (old) => {
-        return old ? old.filter(c => c.id !== id) : [];
-      });
-      toast.success("Criança excluída com sucesso!");
+  // Mutação para deletar uma criança
+  const { mutateAsync: deleteCrianca, isPending: isDeleting } = useMutation<
+    boolean,
+    Error,
+    number
+  >({
+    mutationFn: deleteCriancaMock,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["criancas"] });
+      toast.success("Criança excluída com sucesso.");
     },
-    onError: () => {
+    onError: (err) => {
       toast.error("Erro ao excluir criança.", {
-        description: "Tente novamente mais tarde.",
+        description: err.message,
+      });
+    },
+  });
+
+  // Mutação para atualizar o status da criança
+  const { mutateAsync: updateCriancaStatus, isPending: isUpdatingStatus } = useMutation<
+    Crianca | undefined,
+    Error,
+    UpdateStatusData
+  >({
+    mutationFn: ({ id, newStatus, action, cmei }) => updateCriancaStatusMock(id, newStatus, action, cmei),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["criancas"] });
+    },
+    onError: (err) => {
+      toast.error("Erro ao atualizar status.", {
+        description: err.message,
       });
     },
   });
@@ -70,19 +114,13 @@ export function useCriancas() {
     criancas: criancas || [],
     isLoading,
     error,
-    addCrianca: addMutation.mutateAsync,
-    isAdding: addMutation.isPending,
-    updateCrianca: updateMutation.mutateAsync,
-    isUpdating: updateMutation.isPending,
-    deleteCrianca: deleteMutation.mutateAsync,
-    isDeleting: deleteMutation.isPending,
+    addCrianca: addCrianca as UseMutateAsyncFunction<Crianca, Error, InscricaoFormData, unknown>,
+    isAdding,
+    updateCrianca: updateCrianca as UseMutateAsyncFunction<Crianca | undefined, Error, UpdateCriancaData, unknown>,
+    isUpdating,
+    deleteCrianca: deleteCrianca as UseMutateAsyncFunction<boolean, Error, number, unknown>,
+    isDeleting,
+    updateCriancaStatus: updateCriancaStatus as UseMutateAsyncFunction<Crianca | undefined, Error, UpdateStatusData, unknown>,
+    isUpdatingStatus,
   };
-}
-
-export function useCriancaDetails(id: number) {
-    return useQuery<Crianca | undefined>({
-        queryKey: ['crianca', id],
-        queryFn: () => getCriancaById(id),
-        enabled: !!id,
-    });
-}
+};

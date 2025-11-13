@@ -1,268 +1,241 @@
+import { InscricaoFormData } from "./schemas/inscricao-schema";
+
+export type CriancaStatus = "Matriculado" | "Fila de Espera" | "Convocado" | "Desistente";
+
 export interface HistoricoEntry {
   data: string; // YYYY-MM-DD
   acao: string;
-  detalhes: string;
-  usuario: string;
+  cmei?: string;
 }
 
-export interface Crianca {
+export interface Crianca extends InscricaoFormData {
   id: number;
-  nome: string;
-  dataNascimento: string; // YYYY-MM-DD format
-  idade: string; // Calculated field for display (e.g., 1 ano, 6 meses e 10 dias)
-  responsavel: string;
-  cpfResponsavel: string;
-  telefoneResponsavel: string;
-  emailResponsavel?: string;
-  endereco?: string;
-  bairro?: string;
-  sexo: "feminino" | "masculino";
-  programasSociais: "sim" | "nao";
-  aceitaQualquerCmei: "sim" | "nao";
-  cmei1: string;
-  cmei2?: string;
-  observacoes?: string;
-  status: "Matriculada" | "Matriculado" | "Fila de Espera" | "Convocado";
-  cmei: string; // CMEI atual ou preferencial
-  turmaAtual?: string; // Nova informação: Turma atual (se matriculado)
-  posicaoFila?: number; // Nova informação: Posição na fila (se na fila)
+  status: CriancaStatus;
+  posicaoFila?: number;
   historico: HistoricoEntry[];
+  // Campos de contato e endereço herdados de InscricaoFormData, garantindo que existam
+  cpf: string;
+  telefone: string;
+  telefone2: string;
+  email: string;
+  endereco: string;
+  bairro: string;
 }
 
-let mockCriancas: Crianca[] = [
+// Mock Data
+const mockCriancas: Crianca[] = [
   {
     id: 1,
-    nome: "Ana Silva Santos",
-    dataNascimento: "2023-03-15",
-    idade: "", // Será calculado
-    responsavel: "Maria Silva",
-    cpfResponsavel: "111.111.111-11",
-    telefoneResponsavel: "(44) 9 1111-1111",
+    nomeCrianca: "Alice Silva",
+    dataNascimento: "2021-05-10",
+    sexo: "feminino",
+    programasSociais: "sim",
+    aceitaQualquerCmei: "nao",
+    cmei1: "CMEI Centro",
+    cmei2: "CMEI Norte",
+    nomeResponsavel: "Mariana Silva",
+    cpf: "123.456.789-00",
+    telefone: "(41) 98765-4321",
+    telefone2: "(41) 99887-7665",
+    email: "mariana@email.com",
+    endereco: "Rua das Flores, 100",
+    bairro: "Centro",
+    observacoes: "Mãe trabalha em período integral.",
+    status: "Fila de Espera",
+    historico: [
+      { data: "2023-10-01", acao: "Inscrição Inicial", cmei: "CMEI Centro" },
+    ],
+  },
+  {
+    id: 2,
+    nomeCrianca: "Bruno Santos",
+    dataNascimento: "2022-01-20",
+    sexo: "masculino",
+    programasSociais: "nao",
+    aceitaQualquerCmei: "sim",
+    cmei1: "CMEI Sul",
+    cmei2: "",
+    nomeResponsavel: "João Santos",
+    cpf: "987.654.321-00",
+    telefone: "(41) 91234-5678",
+    telefone2: "",
+    email: "joao@email.com",
+    endereco: "Avenida Principal, 50",
+    bairro: "Vila Nova",
+    observacoes: "",
+    status: "Fila de Espera",
+    historico: [
+      { data: "2023-11-15", acao: "Inscrição Inicial", cmei: "CMEI Sul" },
+    ],
+  },
+  {
+    id: 3,
+    nomeCrianca: "Carla Oliveira",
+    dataNascimento: "2021-11-05",
+    sexo: "feminino",
+    programasSociais: "sim",
+    aceitaQualquerCmei: "nao",
+    cmei1: "CMEI Leste",
+    cmei2: "",
+    nomeResponsavel: "Fernanda Oliveira",
+    cpf: "111.222.333-44",
+    telefone: "(41) 95555-4444",
+    telefone2: "",
+    email: "fernanda@email.com",
+    endereco: "Rua da Paz, 30",
+    bairro: "Jardim Alegre",
+    observacoes: "Família em situação de vulnerabilidade social.",
+    status: "Convocado",
+    historico: [
+      { data: "2023-09-01", acao: "Inscrição Inicial", cmei: "CMEI Leste" },
+      { data: "2024-01-10", acao: "Convocação para Matrícula", cmei: "CMEI Leste" },
+    ],
+  },
+  {
+    id: 4,
+    nomeCrianca: "David Pereira",
+    dataNascimento: "2020-08-25",
+    sexo: "masculino",
+    programasSociais: "nao",
+    aceitaQualquerCmei: "nao",
+    cmei1: "CMEI Centro",
+    cmei2: "",
+    nomeResponsavel: "Roberto Pereira",
+    cpf: "555.666.777-88",
+    telefone: "(41) 93333-2222",
+    telefone2: "",
+    email: "roberto@email.com",
+    endereco: "Rua Nova, 20",
+    bairro: "Centro",
+    observacoes: "",
+    status: "Matriculado",
+    historico: [
+      { data: "2022-05-01", acao: "Inscrição Inicial", cmei: "CMEI Centro" },
+      { data: "2022-08-15", acao: "Matrícula Efetivada", cmei: "CMEI Centro" },
+    ],
+  },
+  {
+    id: 5,
+    nomeCrianca: "Eva Rocha",
+    dataNascimento: "2023-02-14",
+    sexo: "feminino",
+    programasSociais: "nao",
+    aceitaQualquerCmei: "nao",
+    cmei1: "CMEI Norte",
+    cmei2: "",
+    nomeResponsavel: "Patrícia Rocha",
+    cpf: "444.333.222-11",
+    telefone: "(41) 91111-0000",
+    telefone2: "",
+    email: "patricia@email.com",
+    endereco: "Rua do Sol, 5",
+    bairro: "Aurora",
+    observacoes: "",
+    status: "Fila de Espera",
+    historico: [
+      { data: "2024-01-20", acao: "Inscrição Inicial", cmei: "CMEI Norte" },
+    ],
+  },
+  {
+    id: 6,
+    nomeCrianca: "Felipe Lima",
+    dataNascimento: "2021-09-01",
+    sexo: "masculino",
+    programasSociais: "sim",
+    aceitaQualquerCmei: "nao",
+    cmei1: "CMEI Sul",
+    cmei2: "CMEI Leste",
+    nomeResponsavel: "Gustavo Lima",
+    cpf: "777.888.999-00",
+    telefone: "(41) 96666-5555",
+    telefone2: "",
+    email: "gustavo@email.com",
+    endereco: "Rua da Montanha, 12",
+    bairro: "Alto",
+    observacoes: "Beneficiário do Bolsa Família.",
+    status: "Fila de Espera",
+    historico: [
+      { data: "2023-12-01", acao: "Inscrição Inicial", cmei: "CMEI Sul" },
+    ],
+  },
+  {
+    id: 7,
+    nomeCrianca: "Gabriela Alves",
+    dataNascimento: "2022-03-10",
     sexo: "feminino",
     programasSociais: "nao",
     aceitaQualquerCmei: "nao",
     cmei1: "CMEI Centro",
-    cmei2: "CMEI Norte",
-    status: "Matriculada",
-    cmei: "CMEI Centro",
-    turmaAtual: "Berçário I - Sala A", // Adicionado
+    cmei2: "",
+    nomeResponsavel: "Helena Alves",
+    cpf: "222.333.444-55",
+    telefone: "(41) 94444-3333",
+    telefone2: "",
+    email: "helena@email.com",
+    endereco: "Rua do Comércio, 500",
+    bairro: "Centro",
+    observacoes: "",
+    status: "Desistente",
     historico: [
-      { data: "2024-01-20", acao: "Matrícula Efetivada", detalhes: "Matriculada no Berçário I - Sala A", usuario: "Gestor Centro" },
-      { data: "2024-01-10", acao: "Convocação Aceita", detalhes: "Convocação para CMEI Centro aceita", usuario: "Sistema" },
-      { data: "2023-12-01", acao: "Inscrição Inicial", detalhes: "Inscrição na fila de espera", usuario: "Responsável" },
-    ]
-  },
-  {
-    id: 2,
-    nome: "João Pedro Costa",
-    dataNascimento: "2023-05-22",
-    idade: "", // Será calculado
-    responsavel: "Pedro Costa",
-    cpfResponsavel: "222.222.222-22",
-    telefoneResponsavel: "(44) 9 2222-2222",
-    sexo: "masculino",
-    programasSociais: "sim",
-    aceitaQualquerCmei: "sim",
-    cmei1: "CMEI Norte",
-    status: "Matriculado",
-    cmei: "CMEI Norte",
-    turmaAtual: "Maternal I - Sala B", // Adicionado
-    historico: [
-      { data: "2024-02-01", acao: "Matrícula Efetivada", detalhes: "Matriculado no Maternal I - Sala B", usuario: "Gestor Norte" },
-      { data: "2024-01-25", acao: "Convocação Aceita", detalhes: "Convocação para CMEI Norte aceita", usuario: "Sistema" },
-      { data: "2023-11-15", acao: "Inscrição Inicial", detalhes: "Inscrição na fila de espera (Prioridade Social)", usuario: "Responsável" },
-    ]
-  },
-  {
-    id: 3,
-    nome: "Carlos Eduardo Silva",
-    dataNascimento: "2023-07-08",
-    idade: "", // Será calculado
-    responsavel: "Eduardo Silva",
-    cpfResponsavel: "333.333.333-33",
-    telefoneResponsavel: "(44) 9 3333-3333",
-    sexo: "masculino",
-    programasSociais: "nao",
-    aceitaQualquerCmei: "nao",
-    cmei1: "CMEI Sul",
-    status: "Fila de Espera",
-    cmei: "N/A",
-    posicaoFila: 15, // Adicionado
-    historico: [
-      { data: "2024-03-01", acao: "Inscrição Inicial", detalhes: "Inscrição na fila de espera", usuario: "Responsável" },
-    ]
-  },
-  {
-    id: 4,
-    nome: "Mariana Costa Santos",
-    dataNascimento: "2023-04-30",
-    idade: "", // Será calculado
-    responsavel: "Ana Costa",
-    cpfResponsavel: "444.444.444-44",
-    telefoneResponsavel: "(44) 9 4444-4444",
-    sexo: "feminino",
-    programasSociais: "sim",
-    aceitaQualquerCmei: "sim",
-    cmei1: "CMEI Leste",
-    status: "Convocado",
-    cmei: "CMEI Leste",
-    historico: [
-      { data: "2024-04-10", acao: "Convocação Enviada", detalhes: "Convocação para CMEI Leste", usuario: "Sistema" },
-      { data: "2024-03-20", acao: "Inscrição Inicial", detalhes: "Inscrição na fila de espera (Prioridade Social)", usuario: "Responsável" },
-    ]
+      { data: "2023-05-01", acao: "Inscrição Inicial", cmei: "CMEI Centro" },
+      { data: "2023-08-01", acao: "Marcação como Desistente", cmei: "CMEI Centro" },
+    ],
   },
 ];
 
-// Helper function to calculate age string (years, months, days)
-const calculateAgeString = (dobString: string): string => {
-  const today = new Date();
-  const dob = new Date(dobString + 'T00:00:00');
-  
-  let years = today.getFullYear() - dob.getFullYear();
-  let months = today.getMonth() - dob.getMonth();
-  let days = today.getDate() - dob.getDate();
+export const getCriancas = (): Crianca[] => mockCriancas;
 
-  if (days < 0) {
-    months--;
-    // Get the number of days in the previous month
-    days += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
-  }
-
-  if (months < 0) {
-    years--;
-    months += 12;
-  }
-
-  const parts = [];
-  if (years > 0) parts.push(`${years} ano(s)`);
-  if (months > 0) parts.push(`${months} meses`);
-  if (days > 0 || parts.length === 0) { // Always show days if no years/months, or if days > 0
-    parts.push(`${days} dia(s)`);
-  }
-
-  if (parts.length === 0) return "Recém-nascido";
-  
-  // Format: "1 ano(s), 6 meses e 10 dia(s)"
-  if (parts.length === 1) return parts[0];
-  if (parts.length === 2) return parts.join(' e ');
-  
-  const last = parts.pop();
-  return `${parts.join(', ')} e ${last}`;
-};
-
-
-// Utility functions to simulate API
-export const fetchCriancas = async (): Promise<Crianca[]> => {
-  await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-  // Recalculate age on fetch for dynamic display
-  return mockCriancas.map(c => ({
-    ...c,
-    idade: calculateAgeString(c.dataNascimento)
-  }));
-};
-
-// Type for data coming from the Inscricao form (which is used for new children)
-export interface InscricaoFormData {
-  nomeCrianca: string;
-  dataNascimento: string; // YYYY-MM-DD
-  sexo: "feminino" | "masculino";
-  programasSociais: "sim" | "nao";
-  aceitaQualquerCmei: "sim" | "nao";
-  cmei1: string;
-  cmei2?: string;
-  nomeResponsavel: string;
-  cpf: string;
-  telefone: string;
-  telefone2?: string;
-  email?: string;
-  endereco?: string;
-  bairro?: string;
-  observacoes?: string;
-}
-
-// Helper to map InscricaoFormData to Crianca structure
-const mapInscricaoToCrianca = (data: InscricaoFormData, id: number, currentCmei: string, currentStatus: Crianca['status'], existingCrianca?: Crianca): Crianca => {
-    return {
-        id: id,
-        nome: data.nomeCrianca,
-        dataNascimento: data.dataNascimento,
-        idade: calculateAgeString(data.dataNascimento),
-        responsavel: data.nomeResponsavel,
-        cpfResponsavel: data.cpf,
-        telefoneResponsavel: data.telefone,
-        emailResponsavel: data.email,
-        endereco: data.endereco,
-        bairro: data.bairro,
-        sexo: data.sexo,
-        programasSociais: data.programasSociais,
-        aceitaQualquerCmei: data.aceitaQualquerCmei,
-        cmei1: data.cmei1,
-        cmei2: data.cmei2,
-        observacoes: data.observacoes,
-        status: currentStatus,
-        cmei: currentCmei,
-        // Preserve existing status-related fields if editing
-        turmaAtual: existingCrianca?.turmaAtual,
-        posicaoFila: existingCrianca?.posicaoFila,
-        historico: [{
-            data: new Date().toISOString().split('T')[0],
-            acao: id ? "Dados Atualizados" : "Inscrição Inicial",
-            detalhes: id ? "Dados cadastrais atualizados via painel administrativo." : "Inscrição na fila de espera via painel administrativo.",
-            usuario: "Admin/Gestor",
-        }],
-    };
-};
-
-
-export const addCriancaFromInscricao = async (data: InscricaoFormData): Promise<Crianca> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
+export const addCriancaMock = async (data: InscricaoFormData): Promise<Crianca> => {
+  // Simula delay de API
+  await new Promise(resolve => setTimeout(resolve, 500)); 
   
   const newId = mockCriancas.length > 0 ? Math.max(...mockCriancas.map(c => c.id)) + 1 : 1;
-  
-  const initialStatus: Crianca['status'] = "Fila de Espera";
-  const initialCmei = "N/A";
-  
-  // Simula a atribuição de posição na fila para novos cadastros
-  const newPosicaoFila = mockCriancas.filter(c => c.status === "Fila de Espera").length + 1;
-  
-  const newCrianca = mapInscricaoToCrianca(data, newId, initialCmei, initialStatus);
-  newCrianca.posicaoFila = newPosicaoFila;
-  
+  const newCrianca: Crianca = {
+    id: newId,
+    status: "Fila de Espera",
+    historico: [{ data: new Date().toISOString().split('T')[0], acao: "Inscrição Inicial", cmei: data.cmei1 }],
+    ...data,
+  };
   mockCriancas.push(newCrianca);
   return newCrianca;
 };
 
-export const updateCrianca = async (id: number, data: InscricaoFormData): Promise<Crianca> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+export const updateCriancaMock = async (id: number, data: InscricaoFormData): Promise<Crianca | undefined> => {
+    await new Promise(resolve => setTimeout(resolve, 500)); 
     const index = mockCriancas.findIndex(c => c.id === id);
-    if (index === -1) throw new Error("Criança não encontrada");
-
-    const existingCrianca = mockCriancas[index];
-    
-    // Preserve status, current CMEI, turmaAtual and posicaoFila
-    const updatedCrianca = mapInscricaoToCrianca(data, id, existingCrianca.cmei, existingCrianca.status, existingCrianca);
-    
-    // Merge new data with existing history (keeping existing history and adding the update log)
-    updatedCrianca.historico = [...existingCrianca.historico, ...updatedCrianca.historico];
-
-    mockCriancas[index] = updatedCrianca;
-    return updatedCrianca;
-};
-
-export const deleteCrianca = async (id: number): Promise<void> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    mockCriancas = mockCriancas.filter(c => c.id !== id);
-};
-
-export const getCriancaById = (id: number): Crianca | undefined => {
-    const crianca = mockCriancas.find(c => c.id === id);
-    if (crianca) {
-        // Recalculate age for display consistency
-        return {
-            ...crianca,
-            idade: calculateAgeString(crianca.dataNascimento)
+    if (index !== -1) {
+        const updatedCrianca = {
+            ...mockCriancas[index],
+            ...data,
         };
+        mockCriancas[index] = updatedCrianca;
+        return updatedCrianca;
+    }
+    return undefined;
+};
+
+export const deleteCriancaMock = async (id: number): Promise<boolean> => {
+    await new Promise(resolve => setTimeout(resolve, 500)); 
+    const index = mockCriancas.findIndex(c => c.id === id);
+    if (index !== -1) {
+        mockCriancas.splice(index, 1);
+        return true;
+    }
+    return false;
+};
+
+export const updateCriancaStatusMock = async (id: number, newStatus: CriancaStatus, action: string, cmei: string): Promise<Crianca | undefined> => {
+    await new Promise(resolve => setTimeout(resolve, 500)); 
+    const index = mockCriancas.findIndex(c => c.id === id);
+    if (index !== -1) {
+        const crianca = mockCriancas[index];
+        crianca.status = newStatus;
+        crianca.historico.push({ 
+            data: new Date().toISOString().split('T')[0], 
+            acao: action, 
+            cmei: cmei 
+        });
+        return crianca;
     }
     return undefined;
 };
