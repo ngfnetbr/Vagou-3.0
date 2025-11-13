@@ -26,10 +26,10 @@ interface Cmei {
 
 const CMEIs = () => {
   const [cmeis, setCmeis] = useState<Cmei[]>([
-    { id: 1, nome: "CMEI Centro", endereco: "Rua Central, 123", capacidade: 150, ocupacao: 142, latitude: "-23.5505", longitude: "-46.6333", telefone: "(44) 9 1234-5678", email: "centro@cmei.com.br", diretor: "Maria Silva", coordenador: "Ana Paula" },
-    { id: 2, nome: "CMEI Norte", endereco: "Av. Norte, 456", capacidade: 120, ocupacao: 115, latitude: "-23.4500", longitude: "-46.5500", telefone: "(44) 9 8765-4321", email: "norte@cmei.com.br", diretor: "João Santos", coordenador: "Pedro Lima" },
-    { id: 3, nome: "CMEI Sul", endereco: "Rua Sul, 789", capacidade: 180, ocupacao: 165, latitude: "-23.6500", longitude: "-46.7500", telefone: "(44) 9 1122-3344", email: "sul@cmei.com.br", diretor: "Carla Oliveira", coordenador: "Lucas Costa" },
-    { id: 4, nome: "CMEI Leste", endereco: "Av. Leste, 321", capacidade: 140, ocupacao: 128, latitude: "-23.5000", longitude: "-46.5000", telefone: "(44) 9 5566-7788", email: "leste@cmei.com.br", diretor: "Beatriz Souza", coordenador: "Gabriel Alves" },
+    { id: 1, nome: "CMEI Centro", endereco: "Rua Central, 123", capacidade: 150, ocupacao: 142, latitude: "-23.5505", longitude: "-46.6333", telefone: "(44) 9 1234-5678", email: "centro@cmei.com.br", diretor: "Maria Silva", coordenador: "Ana Paula", observacoes: "CMEI com boa estrutura." },
+    { id: 2, nome: "CMEI Norte", endereco: "Av. Norte, 456", capacidade: 120, ocupacao: 115, latitude: "-23.4500", longitude: "-46.5500", telefone: "(44) 9 8765-4321", email: "norte@cmei.com.br", diretor: "João Santos", coordenador: "Pedro Lima", observacoes: "Em expansão." },
+    { id: 3, nome: "CMEI Sul", endereco: "Rua Sul, 789", capacidade: 180, ocupacao: 165, latitude: "-23.6500", longitude: "-46.7500", telefone: "(44) 9 1122-3344", email: "sul@cmei.com.br", diretor: "Carla Oliveira", coordenador: "Lucas Costa", observacoes: "Recém reformado." },
+    { id: 4, nome: "CMEI Leste", endereco: "Av. Leste, 321", capacidade: 140, ocupacao: 128, latitude: "-23.5000", longitude: "-46.5000", telefone: "(44) 9 5566-7788", email: "leste@cmei.com.br", diretor: "Beatriz Souza", coordenador: "Gabriel Alves", observacoes: "Parceria com a comunidade." },
   ]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCmei, setEditingCmei] = useState<Omit<Cmei, 'capacidade' | 'ocupacao'> & { id?: number } | undefined>(undefined);
@@ -62,7 +62,7 @@ const CMEIs = () => {
       email: cmei.email,
       diretor: cmei.diretor,
       coordenador: cmei.coordenador,
-      observacoes: cmei.observacoes,
+      // observacoes: cmei.observacoes, // Removido para alinhar com o modal
     });
     setIsModalOpen(true);
   };
