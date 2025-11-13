@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useState } from "react"; // Importar useState para a lista de CMEIs
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Save } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Switch } from "@/components/ui/switch"; // Importar o componente Switch
 
 // Funções de máscara
 const formatCpf = (value: string) => {
@@ -54,8 +55,8 @@ const formSchema = z.object({
   nomeCrianca: z.string().min(1, "Nome completo da criança é obrigatório."),
   dataNascimento: z.string().min(1, "Data de nascimento é obrigatória."),
   sexo: z.enum(["feminino", "masculino"], { message: "Selecione o sexo da criança." }),
-  programasSociais: z.enum(["sim", "nao"], { message: "Selecione se é beneficiário de programas sociais." }),
-  aceitaQualquerCmei: z.enum(["sim", "nao"], { message: "Selecione se aceita qualquer CMEI." }),
+  programasSociais: z.boolean(), // Alterado para boolean
+  aceitaQualquerCmei: z.boolean(), // Alterado para boolean
   cmei1: z.string().min(1, "1ª Opção de CMEI é obrigatória."),
   cmei2: z.string().optional().or(z.literal('')),
   nomeResponsavel: z.string().min(1, "Nome completo do responsável é obrigatório."),
@@ -74,8 +75,8 @@ const Inscricao = () => {
       nomeCrianca: "",
       dataNascimento: "",
       sexo: "feminino",
-      programasSociais: "nao",
-      aceitaQualquerCmei: "nao",
+      programasSociais: false, // Valor padrão para Switch
+      aceitaQualquerCmei: false, // Valor padrão para Switch
       cmei1: "",
       cmei2: "",
       nomeResponsavel: "",
@@ -145,98 +146,78 @@ const Inscricao = () => {
                   />
                 </div>
                 
-                <FormField
-                  control={form.control}
-                  name="sexo"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3 p-4 rounded-lg border bg-card">
-                      <FormLabel className="text-base font-semibold">Sexo *</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col gap-3"
-                        >
-                          <FormItem className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
-                            <FormControl>
-                              <RadioGroupItem value="feminino" id="feminino" />
-                            </FormControl>
-                            <FormLabel htmlFor="feminino" className="font-normal cursor-pointer flex-1">Feminino</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
-                            <FormControl>
-                              <RadioGroupItem value="masculino" id="masculino" />
-                            </FormControl>
-                            <FormLabel htmlFor="masculino" className="font-normal cursor-pointer flex-1">Masculino</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="programasSociais"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3 p-4 rounded-lg border bg-card">
-                      <FormLabel className="text-base font-semibold">É beneficiário(a) de programas sociais? *</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col gap-3"
-                        >
-                          <FormItem className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
-                            <FormControl>
-                              <RadioGroupItem value="sim" id="programas-sim" />
-                            </FormControl>
-                            <FormLabel htmlFor="programas-sim" className="font-normal cursor-pointer flex-1">Sim</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
-                            <FormControl>
-                              <RadioGroupItem value="nao" id="programas-nao" />
-                            </FormControl>
-                            <FormLabel htmlFor="programas-nao" className="font-normal cursor-pointer flex-1">Não</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="aceitaQualquerCmei"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3 p-4 rounded-lg border bg-card">
-                      <FormLabel className="text-base font-semibold">Aceita qualquer CMEI? *</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col gap-3"
-                        >
-                          <FormItem className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
-                            <FormControl>
-                              <RadioGroupItem value="sim" id="aceita-sim" />
-                            </FormControl>
-                            <FormLabel htmlFor="aceita-sim" className="font-normal cursor-pointer flex-1">Sim</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
-                            <FormControl>
-                              <RadioGroupItem value="nao" id="aceita-nao" />
-                            </FormControl>
-                            <FormLabel htmlFor="aceita-nao" className="font-normal cursor-pointer flex-1">Não</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid md:grid-cols-3 gap-4"> {/* Layout em grade para os 3 campos */}
+                  <FormField
+                    control={form.control}
+                    name="sexo"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3 p-4 rounded-lg border bg-card">
+                        <FormLabel className="text-base font-semibold">Sexo *</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex gap-4" // Alterado para flex horizontal
+                          >
+                            <FormItem className="flex items-center space-x-2"> {/* Removido padding e hover */}
+                              <FormControl>
+                                <RadioGroupItem value="feminino" id="feminino" />
+                              </FormControl>
+                              <FormLabel htmlFor="feminino" className="font-normal cursor-pointer">Feminino</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-2"> {/* Removido padding e hover */}
+                              <FormControl>
+                                <RadioGroupItem value="masculino" id="masculino" />
+                              </FormControl>
+                              <FormLabel htmlFor="masculino" className="font-normal cursor-pointer">Masculino</FormLabel>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="programasSociais"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3 p-4 rounded-lg border bg-card flex flex-col justify-between"> {/* Ajustado para Switch */}
+                        <FormLabel className="text-base font-semibold">É beneficiário(a) de programas sociais? *</FormLabel>
+                        <div className="flex items-center justify-end"> {/* Alinha o switch à direita */}
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              id="programas-sociais"
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="aceitaQualquerCmei"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3 p-4 rounded-lg border bg-card flex flex-col justify-between"> {/* Ajustado para Switch */}
+                        <FormLabel className="text-base font-semibold">Aceita qualquer CMEI? *</FormLabel>
+                        <div className="flex items-center justify-end"> {/* Alinha o switch à direita */}
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              id="aceita-cmei"
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <FormField
@@ -384,15 +365,15 @@ const Inscricao = () => {
                   control={form.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel htmlFor="email">E-mail</FormLabel>
-                      <FormControl>
-                        <Input id="email" type="email" placeholder="email@exemplo.com (opcional)" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <FormItem className="space-y-2">
+                        <FormLabel htmlFor="email">E-mail</FormLabel>
+                        <FormControl>
+                          <Input id="email" type="email" placeholder="email@exemplo.com (opcional)" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
               </CardContent>
             </Card>
 
