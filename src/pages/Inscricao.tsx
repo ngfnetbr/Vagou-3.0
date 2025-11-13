@@ -30,7 +30,7 @@ const Inscricao = () => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-6 gap-4">
-                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-2"> {/* Alterado de md:col-span-1 para md:col-span-2 */}
+                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-1"> {/* Reduzido para 1 coluna */}
                   <Label className="text-base font-semibold">Sexo *</Label>
                   <RadioGroup defaultValue="feminino" className="flex flex-col gap-3">
                     <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
@@ -44,7 +44,7 @@ const Inscricao = () => {
                   </RadioGroup>
                 </div>
                 
-                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-2"> {/* Ajustado para md:col-span-2 para balancear */}
+                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-4"> {/* Aumentado para 4 colunas */}
                   <Label className="text-base font-semibold">É beneficiário(a) de programas sociais? *</Label>
                   <RadioGroup defaultValue="nao" className="flex flex-col gap-3">
                     <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
@@ -58,7 +58,7 @@ const Inscricao = () => {
                   </RadioGroup>
                 </div>
                 
-                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-2"> {/* Ajustado para md:col-span-2 para balancear */}
+                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-1"> {/* Reduzido para 1 coluna */}
                   <Label className="text-base font-semibold">Aceita qualquer CMEI? *</Label>
                   <RadioGroup defaultValue="nao" className="flex flex-col gap-3">
                     <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
