@@ -146,8 +146,8 @@ const Inscricao = () => {
                   />
                 </div>
                 
-                {/* Alterado para flex-col para empilhar os grupos de rádio */}
-                <div className="flex flex-col gap-4"> 
+                {/* Restaurado para grid md:grid-cols-3 para que os 3 campos fiquem lado a lado */}
+                <div className="grid md:grid-cols-3 gap-4"> 
                   <FormField
                     control={form.control}
                     name="sexo"
