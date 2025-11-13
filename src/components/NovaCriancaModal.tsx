@@ -1,16 +1,15 @@
 import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Inscricao from "@/pages/Inscricao";
 
-// NovaCriancaModal agora é apenas o conteúdo do Dialog, não o Dialog em si.
-// Ele não precisa mais de props isOpen ou onClose.
 const NovaCriancaModalContent = () => {
   return (
     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto"> {/* Ajustado para ser maior e com scroll */}
       <DialogHeader>
-        <DialogTitle>Registrar Nova Criança</DialogTitle>
+        {/* Removido o DialogTitle e DialogDescription */}
+        {/* <DialogTitle>Registrar Nova Criança</DialogTitle>
         <DialogDescription>
           Preencha os dados para realizar a inscrição de uma nova criança no sistema.
-        </DialogDescription>
+        </DialogDescription> */}
       </DialogHeader>
       <Inscricao />
     </DialogContent>
