@@ -10,6 +10,8 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import NovaCriancaModalContent from "@/components/NovaCriancaModal";
 import { useState } from "react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const DetalhesCrianca = () => {
   const navigate = useNavigate();
@@ -158,7 +160,7 @@ const DetalhesCrianca = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Preferências</CardTitle>
+              <CardTitle className="text-lg">Critérios de Prioridade</CardTitle>
             </CardHeader>
             <CardContent>
               <Badge variant={crianca.programasSociais === 'sim' ? 'default' : 'secondary'}>
@@ -232,7 +234,7 @@ const DetalhesCrianca = () => {
 
             {/* Endereço e Observações */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-primary">Localização e Notas</h3>
+              <h3 className="text-lg font-semibold text-primary">Endereço</h3>
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-1" />
                 <p className="text-sm">
@@ -266,7 +268,7 @@ const DetalhesCrianca = () => {
                   <span className="absolute flex items-center justify-center w-3 h-3 bg-primary rounded-full -left-1.5 ring-4 ring-background"></span>
                   <div className="p-3 bg-card border border-border rounded-lg shadow-sm">
                     <time className="mb-1 text-xs font-normal leading-none text-muted-foreground">
-                      {entry.data}
+                      {format(new Date(entry.data + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}
                     </time>
                     <h3 className="text-base font-semibold text-foreground mt-1">{entry.acao}</h3>
                     <p className="text-sm font-normal text-muted-foreground">{entry.detalhes}</p>
