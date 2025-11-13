@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useState } from "react"; // Importar useState para a lista de CMEIs
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,6 +87,18 @@ const Inscricao = () => {
       bairro: "",
     },
   });
+
+  const cmeiOptions = [
+    { value: "cmei1", label: "CMEI Exemplo 1" },
+    { value: "cmei2", label: "CMEI Exemplo 2" },
+    { value: "cmei3", label: "CMEI Exemplo 3" },
+    { value: "cmei4", label: "CMEI Exemplo 4" },
+  ];
+
+  const selectedCmei1 = form.watch("cmei1");
+  const filteredCmei2Options = cmeiOptions.filter(
+    (cmei) => cmei.value !== selectedCmei1
+  );
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     console.log("Dados do formulário:", values);
@@ -239,9 +252,11 @@ const Inscricao = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="cmei1">CMEI Exemplo 1</SelectItem>
-                            <SelectItem value="cmei2">CMEI Exemplo 2</SelectItem>
-                            <SelectItem value="cmei3">CMEI Exemplo 3</SelectItem>
+                            {cmeiOptions.map((cmei) => (
+                              <SelectItem key={cmei.value} value={cmei.value}>
+                                {cmei.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -256,14 +271,16 @@ const Inscricao = () => {
                         <FormLabel htmlFor="cmei-2">2ª Opção de CMEI</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger id="cmei-2">
+                            <SelectTrigger id="cmei-2" disabled={!selectedCmei1}>
                               <SelectValue placeholder="Selecione (opcional)" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="cmei1">CMEI Exemplo 1</SelectItem>
-                            <SelectItem value="cmei2">CMEI Exemplo 2</SelectItem>
-                            <SelectItem value="cmei3">CMEI Exemplo 3</SelectItem>
+                            {filteredCmei2Options.map((cmei) => (
+                              <SelectItem key={cmei.value} value={cmei.value}>
+                                {cmei.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
