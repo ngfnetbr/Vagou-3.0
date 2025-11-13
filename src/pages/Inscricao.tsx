@@ -109,7 +109,7 @@ interface InscricaoProps {
 const Inscricao = ({ onSuccess, isModal = false }: InscricaoProps) => {
   const { addCrianca, isAdding } = useCriancas();
 
-  const form = useForm<InscricaoFormData>({ // FIX APPLIED HERE: Use InscricaoFormData directly
+  const form = useForm<InscricaoFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       nomeCrianca: "",
@@ -146,7 +146,8 @@ const Inscricao = ({ onSuccess, isModal = false }: InscricaoProps) => {
     if (onSuccess) {
       // Admin context: use mutation
       try {
-        await addCrianca(values);
+        // Validation ensures all required fields are present here.
+        await addCrianca(values); // FIX: Removed redundant cast
         onSuccess(values);
         form.reset(); // Reset form after successful submission in admin context
       } catch (error) {
