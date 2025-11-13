@@ -183,7 +183,7 @@ const Inscricao = () => {
                     name="programasSociais"
                     render={({ field }) => (
                       <FormItem className="space-y-3 p-4 rounded-lg border bg-card">
-                        <FormLabel className="text-base font-semibold">É beneficiário(a) de programas sociais? *</FormLabel>
+                        <FormLabel className="text-base font-semibold">Programas Sociais? *</FormLabel> {/* Rótulo encurtado */}
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
@@ -214,7 +214,7 @@ const Inscricao = () => {
                     name="aceitaQualquerCmei"
                     render={({ field }) => (
                       <FormItem className="space-y-3 p-4 rounded-lg border bg-card">
-                        <FormLabel className="text-base font-semibold">Aceita qualquer CMEI? *</FormLabel>
+                        <FormLabel className="text-base font-semibold">Aceita Qualquer CMEI? *</FormLabel> {/* Rótulo encurtado */}
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
