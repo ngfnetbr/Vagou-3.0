@@ -279,7 +279,7 @@ const Inscricao = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">Sem segunda opção</SelectItem> {/* Nova opção adicionada aqui */}
+                            {/* Removido o SelectItem com value="" para evitar o erro */}
                             {filteredCmei2Options.map((cmei) => (
                               <SelectItem key={cmei.value} value={cmei.value}>
                                 {cmei.label}
