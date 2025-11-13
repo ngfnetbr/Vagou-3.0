@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Users, User, Plus, Edit, Eye, Trash2, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom"; // Importando useNavigate
 import { useEffect, useState } from "react";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import NovaTurmaModal, { NovaTurmaFormData } from "@/components/NovaTurmaModal";
@@ -56,7 +56,7 @@ const initialTurmasData: Turma[] = [
     nome: "Berçário I - Sala A",
     capacidade: 15,
     ocupacao: 15,
-    alunos: ["Ana Silva", "João Pedro", "Maria Clara", "Lucas Silva", "Beatriz Costa"],
+    alunos: ["Ana Silva", "João Pedro", "Maria Clara", "Lucas Silva", "Beatriz Costa", "Felipe Souza", "Giovana Lima", "Henrique Rocha", "Isadora Mendes", "Júlia Nunes", "Kevin Pires", "Lívia Martins", "Matheus Gomes", "Nicole Ferreira", "Otávio Barbosa"],
     turmaBaseId: 1,
     sala: "A",
   },
@@ -66,7 +66,7 @@ const initialTurmasData: Turma[] = [
     nome: "Maternal I - Sala B",
     capacidade: 20,
     ocupacao: 18,
-    alunos: ["Carlos Eduardo", "Julia Santos", "Pedro Henrique", "Laura Oliveira"],
+    alunos: ["Carlos Eduardo", "Julia Santos", "Pedro Henrique", "Laura Oliveira", "Ricardo Alves", "Samanta Dias", "Thiago Vieira", "Vitória Castro", "Wallace Neves", "Xavier Rocha", "Yasmin Lopes", "Zoe Pereira", "Alice Ribeiro", "Bruno Fernandes", "Cecília Gonzaga", "Daniela Pinho", "Enzo Queiroz", "Fernanda Ramos"],
     turmaBaseId: 3,
     sala: "B",
   },
@@ -76,7 +76,7 @@ const initialTurmasData: Turma[] = [
     nome: "Maternal II - Sala A",
     capacidade: 20,
     ocupacao: 19,
-    alunos: ["Rafaela Lima", "Gabriel Costa", "Isabela Silva", "Miguel Santos"],
+    alunos: ["Rafaela Lima", "Gabriel Costa", "Isabela Silva", "Miguel Santos", "Heloísa Almeida", "Igor Barbosa", "Janaína Carvalho", "Kauã Dantas", "Larissa Evangelista", "Marcelo Freitas", "Natália Guedes", "Osvaldo Horta", "Patrícia Iunes", "Quiteria Jardim", "Renato Kley", "Silvia Lemos", "Tadeu Moura", "Úrsula Nogueira", "Vitor Oliveira"],
     turmaBaseId: 4,
     sala: "A",
   },
@@ -86,7 +86,7 @@ const initialTurmasData: Turma[] = [
     nome: "Pré I - Sala C",
     capacidade: 25,
     ocupacao: 22,
-    alunos: ["Sofia Alves", "Davi Oliveira", "Helena Costa", "Arthur Silva"],
+    alunos: ["Sofia Alves", "Davi Oliveira", "Helena Costa", "Arthur Silva", "Bernardo Ferreira", "Clara Gomes", "Eduardo Henrique", "Giovanna Iara", "Hugo Jesus", "Ingrid Kelly", "Joaquim Lima", "Kátia Mendes", "Luiz Neto", "Mirella Ortiz", "Nuno Prado", "Olívia Quintela", "Paulo Rocha", "Quésia Santos", "Rafael Toledo", "Sara Uchoa", "Téo Viana", "Ulisses Xavier"],
     turmaBaseId: 5,
     sala: "C",
   },
@@ -94,6 +94,7 @@ const initialTurmasData: Turma[] = [
 
 const Turmas = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate(); // Inicializando useNavigate
   const cmeiFilterParam = searchParams.get("cmei");
   const [selectedCmei, setSelectedCmei] = useState<string>(cmeiFilterParam || "todos");
   const [turmas, setTurmas] = useState<Turma[]>(initialTurmasData);
@@ -183,6 +184,10 @@ const Turmas = () => {
   const handleNewTurmaClick = () => {
     setEditingTurma(undefined);
     setIsModalOpen(true);
+  };
+  
+  const handleViewAllClick = (turma: Turma) => {
+    navigate(`/admin/turmas/${turma.id}`, { state: { turma } });
   };
 
   const getInitialDataForModal = () => {
@@ -313,7 +318,12 @@ const Turmas = () => {
                       </div>
                       
                       <div className="flex gap-2 pt-2">
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleViewAllClick(turma)} // Ação do botão "Ver Todos"
+                        >
                           <Eye className="mr-2 h-4 w-4" />
                           Ver Todos
                         </Button>
