@@ -22,9 +22,10 @@ interface JustificativaModalProps {
   onConfirm: (justificativa: string) => Promise<void>;
   onClose: () => void;
   isPending: boolean;
+  actionVariant?: 'destructive' | 'secondary'; // Novo prop para mudar a cor do botão
 }
 
-const JustificativaModal = ({ title, description, actionLabel, onConfirm, onClose, isPending }: JustificativaModalProps) => {
+const JustificativaModal = ({ title, description, actionLabel, onConfirm, onClose, isPending, actionVariant = 'destructive' }: JustificativaModalProps) => {
   const form = useForm<JustificativaFormData>({
     resolver: zodResolver(justificativaSchema),
     defaultValues: {
@@ -36,6 +37,10 @@ const JustificativaModal = ({ title, description, actionLabel, onConfirm, onClos
     await onConfirm(values.justificativa);
     onClose();
   };
+  
+  const buttonClasses = actionVariant === 'destructive' 
+    ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+    : "bg-secondary text-secondary-foreground hover:bg-secondary/90";
 
   return (
     <DialogContent className="max-w-lg">
@@ -71,7 +76,7 @@ const JustificativaModal = ({ title, description, actionLabel, onConfirm, onClos
               <X className="mr-2 h-4 w-4" />
               Cancelar
             </Button>
-            <Button type="submit" className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isPending}>
+            <Button type="submit" className={buttonClasses} disabled={isPending}>
               {isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (

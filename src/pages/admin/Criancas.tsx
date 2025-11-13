@@ -66,6 +66,8 @@ const Criancas = () => {
       "Convocado": { variant: "default", className: "bg-primary/20 text-primary", text: "Convocado" },
       "Desistente": { variant: "default", className: "bg-destructive/20 text-destructive", text: "Desistente" },
       "Recusada": { variant: "default", className: "bg-destructive/20 text-destructive", text: "Recusada" },
+      "Trancada": { variant: "default", className: "bg-destructive/20 text-destructive", text: "Trancada" },
+      "Remanejamento Solicitado": { variant: "secondary", className: "bg-accent/20 text-foreground", text: "Remanejamento Solicitado" },
     };
     
     const config = variants[status] || { variant: "outline" as const, className: "", text: status };
@@ -148,6 +150,9 @@ const Criancas = () => {
                   <SelectItem value="Matriculado">Matriculado/a</SelectItem>
                   <SelectItem value="Fila de Espera">Fila de Espera</SelectItem>
                   <SelectItem value="Convocado">Convocado</SelectItem>
+                  <SelectItem value="Trancada">Trancada</SelectItem>
+                  <SelectItem value="Remanejamento Solicitado">Remanejamento Solicitado</SelectItem>
+                  <SelectItem value="Desistente">Desistente</SelectItem>
                 </SelectContent>
               </Select>
               <ToggleGroup 

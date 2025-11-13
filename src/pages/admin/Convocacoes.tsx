@@ -117,6 +117,8 @@ const Convocacoes = () => {
       "Recusada": { className: "bg-destructive/20 text-destructive", text: "Recusada" },
       "Matriculada": { className: "bg-secondary/20 text-secondary", text: "Confirmada" },
       "Matriculado": { className: "bg-secondary/20 text-secondary", text: "Confirmada" },
+      "Trancada": { className: "bg-destructive/20 text-destructive", text: "Trancada" },
+      "Remanejamento Solicitado": { className: "bg-accent/20 text-foreground", text: "Remanejamento Solicitado" },
       // Fallback para outros status que podem aparecer no filtro
       "Fila de Espera": { className: "bg-muted/50 text-muted-foreground", text: "Fila de Espera" },
       "Desistente": { className: "bg-destructive/20 text-destructive", text: "Desistente" },

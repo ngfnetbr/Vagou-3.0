@@ -22,7 +22,7 @@ export interface Crianca {
   cmei1: string;
   cmei2?: string;
   observacoes?: string;
-  status: "Matriculada" | "Matriculado" | "Fila de Espera" | "Convocado" | "Desistente" | "Recusada"; // Added Recusada
+  status: "Matriculada" | "Matriculado" | "Fila de Espera" | "Convocado" | "Desistente" | "Recusada" | "Trancada" | "Remanejamento Solicitado"; // Added Trancada and Remanejamento Solicitado
   cmei: string; // CMEI atual ou preferencial
   turmaAtual?: string; // Nova informação: Turma atual (se matriculado)
   posicaoFila?: number; // Nova informação: Posição na fila (se na fila)
@@ -439,7 +439,7 @@ export const marcarDesistente = async (criancaId: number, justificativa: string)
             {
                 data: new Date().toISOString().split('T')[0],
                 acao: "Marcado como Desistente",
-                detalhes: `Criança removida da fila e marcada como desistente. Justificativa: ${justificativa}`,
+                detalhes: `Criança removida da lista de matrículas e marcada como desistente. Justificativa: ${justificativa}`,
                 usuario: "Admin/Gestor",
             }
         ]
@@ -502,6 +502,115 @@ export const marcarFimDeFila = async (criancaId: number, justificativa: string):
                 data: new Date().toISOString().split('T')[0],
                 acao: "Fim de Fila Solicitado",
                 detalhes: `Convocação recusada/expirada e criança movida para o final da fila. Justificativa: ${justificativa}`,
+                usuario: "Admin/Gestor",
+            }
+        ]
+    };
+    
+    mockCriancas[index] = updatedCrianca;
+    return updatedCrianca;
+};
+
+// --- NOVAS FUNÇÕES DE GERENCIAMENTO DE MATRÍCULA ---
+
+export const realocarCrianca = async (criancaId: number, data: ConvocationData): Promise<Crianca> => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const index = mockCriancas.findIndex(c => c.id === criancaId);
+    if (index === -1) throw new Error("Criança não encontrada");
+
+    const existingCrianca = mockCriancas[index];
+    
+    const updatedCrianca = {
+        ...existingCrianca,
+        cmei: data.cmei,
+        turmaAtual: data.turma,
+        historico: [
+            ...existingCrianca.historico,
+            {
+                data: new Date().toISOString().split('T')[0],
+                acao: "Realocação de Turma",
+                detalhes: `Realocado para ${data.turma} no CMEI ${data.cmei}.`,
+                usuario: "Admin/Gestor",
+            }
+        ]
+    };
+    
+    mockCriancas[index] = updatedCrianca;
+    return updatedCrianca;
+};
+
+export const transferirCrianca = async (criancaId: number, data: ConvocationData): Promise<Crianca> => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const index = mockCriancas.findIndex(c => c.id === criancaId);
+    if (index === -1) throw new Error("Criança não encontrada");
+
+    const existingCrianca = mockCriancas[index];
+    
+    const updatedCrianca = {
+        ...existingCrianca,
+        cmei: data.cmei,
+        turmaAtual: data.turma,
+        historico: [
+            ...existingCrianca.historico,
+            {
+                data: new Date().toISOString().split('T')[0],
+                acao: "Transferência de CMEI",
+                detalhes: `Transferido para ${data.turma} no CMEI ${data.cmei}.`,
+                usuario: "Admin/Gestor",
+            }
+        ]
+    };
+    
+    mockCriancas[index] = updatedCrianca;
+    return updatedCrianca;
+};
+
+export const solicitarRemanejamento = async (criancaId: number, justificativa: string): Promise<Crianca> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const index = mockCriancas.findIndex(c => c.id === criancaId);
+    if (index === -1) throw new Error("Criança não encontrada");
+
+    const existingCrianca = mockCriancas[index];
+    
+    const updatedCrianca = {
+        ...existingCrianca,
+        status: "Remanejamento Solicitado" as const,
+        historico: [
+            ...existingCrianca.historico,
+            {
+                data: new Date().toISOString().split('T')[0],
+                acao: "Remanejamento Solicitado",
+                detalhes: `Solicitação de remanejamento registrada. Justificativa: ${justificativa}`,
+                usuario: "Admin/Gestor",
+            }
+        ]
+    };
+    
+    mockCriancas[index] = updatedCrianca;
+    return updatedCrianca;
+};
+
+export const trancarMatricula = async (criancaId: number, justificativa: string): Promise<Crianca> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const index = mockCriancas.findIndex(c => c.id === criancaId);
+    if (index === -1) throw new Error("Criança não encontrada");
+
+    const existingCrianca = mockCriancas[index];
+    
+    const updatedCrianca = {
+        ...existingCrianca,
+        status: "Trancada" as const,
+        turmaAtual: undefined,
+        historico: [
+            ...existingCrianca.historico,
+            {
+                data: new Date().toISOString().split('T')[0],
+                acao: "Matrícula Trancada",
+                detalhes: `Matrícula trancada. Justificativa: ${justificativa}`,
                 usuario: "Admin/Gestor",
             }
         ]

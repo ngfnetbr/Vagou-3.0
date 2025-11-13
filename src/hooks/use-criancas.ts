@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchCriancas, addCriancaFromInscricao, InscricaoFormData, Crianca, updateCrianca, deleteCrianca, getCriancaById, convocarCrianca, marcarDesistente, fetchAvailableTurmas, ConvocationData, reativarCrianca, marcarFimDeFila, confirmarMatricula, marcarRecusada } from "@/lib/mock-data";
+import { fetchCriancas, addCriancaFromInscricao, InscricaoFormData, Crianca, updateCrianca, deleteCrianca, getCriancaById, convocarCrianca, marcarDesistente, fetchAvailableTurmas, ConvocationData, reativarCrianca, marcarFimDeFila, confirmarMatricula, marcarRecusada, realocarCrianca, transferirCrianca, solicitarRemanejamento, trancarMatricula } from "@/lib/mock-data";
 import { toast } from "sonner";
 
 const CRIANCAS_QUERY_KEY = ["criancas"];
@@ -116,7 +116,7 @@ export function useCriancas() {
     onSuccess: (updatedCrianca) => {
       queryClient.invalidateQueries({ queryKey: CRIANCAS_QUERY_KEY }); // Refetch the list to update the queue position
       toast.warning("Criança marcada como desistente.", {
-        description: `${updatedCrianca.nome} foi removido(a) da fila.`,
+        description: `${updatedCrianca.nome} foi removido(a) da lista de matrículas.`,
       });
     },
     onError: () => {
@@ -155,6 +155,68 @@ export function useCriancas() {
       });
     },
   });
+  
+  // --- NOVAS MUTAÇÕES DE MATRÍCULA ---
+  
+  const realocarMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number, data: ConvocationData }) => realocarCrianca(id, data),
+    onSuccess: (updatedCrianca) => {
+      queryClient.invalidateQueries({ queryKey: CRIANCAS_QUERY_KEY });
+      toast.success("Realocação concluída!", {
+        description: `${updatedCrianca.nome} foi realocado(a) para ${updatedCrianca.turmaAtual} no CMEI ${updatedCrianca.cmei}.`,
+      });
+    },
+    onError: () => {
+      toast.error("Erro ao realocar criança.", {
+        description: "Tente novamente mais tarde.",
+      });
+    },
+  });
+  
+  const transferirMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number, data: ConvocationData }) => transferirCrianca(id, data),
+    onSuccess: (updatedCrianca) => {
+      queryClient.invalidateQueries({ queryKey: CRIANCAS_QUERY_KEY });
+      toast.success("Transferência concluída!", {
+        description: `${updatedCrianca.nome} foi transferido(a) para ${updatedCrianca.cmei}.`,
+      });
+    },
+    onError: () => {
+      toast.error("Erro ao transferir criança.", {
+        description: "Tente novamente mais tarde.",
+      });
+    },
+  });
+  
+  const solicitarRemanejamentoMutation = useMutation({
+    mutationFn: ({ id, justificativa }: { id: number, justificativa: string }) => solicitarRemanejamento(id, justificativa),
+    onSuccess: (updatedCrianca) => {
+      queryClient.invalidateQueries({ queryKey: CRIANCAS_QUERY_KEY });
+      toast.info("Solicitação de Remanejamento enviada.", {
+        description: `O status de ${updatedCrianca.nome} foi atualizado para Remanejamento Solicitado.`,
+      });
+    },
+    onError: () => {
+      toast.error("Erro ao solicitar remanejamento.", {
+        description: "Tente novamente mais tarde.",
+      });
+    },
+  });
+  
+  const trancarMatriculaMutation = useMutation({
+    mutationFn: ({ id, justificativa }: { id: number, justificativa: string }) => trancarMatricula(id, justificativa),
+    onSuccess: (updatedCrianca) => {
+      queryClient.invalidateQueries({ queryKey: CRIANCAS_QUERY_KEY });
+      toast.warning("Matrícula Trancada.", {
+        description: `${updatedCrianca.nome} teve a matrícula trancada.`,
+      });
+    },
+    onError: () => {
+      toast.error("Erro ao trancar matrícula.", {
+        description: "Tente novamente mais tarde.",
+      });
+    },
+  });
 
 
   return {
@@ -179,6 +241,16 @@ export function useCriancas() {
     isReactivating: reativarMutation.isPending,
     marcarFimDeFila: fimDeFilaMutation.mutateAsync,
     isMarkingFimDeFila: fimDeFilaMutation.isPending,
+    
+    // Novas mutações
+    realocarCrianca: realocarMutation.mutateAsync,
+    isRealocating: realocarMutation.isPending,
+    transferirCrianca: transferirMutation.mutateAsync,
+    isTransferring: transferirMutation.isPending,
+    solicitarRemanejamento: solicitarRemanejamentoMutation.mutateAsync,
+    isRequestingRemanejamento: solicitarRemanejamentoMutation.isPending,
+    trancarMatricula: trancarMatriculaMutation.mutateAsync,
+    isTrancandoMatricula: trancarMatriculaMutation.isPending,
   };
 }
 
