@@ -1,7 +1,7 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, Calendar, MapPin, Phone, Mail, Edit, History, Loader2, FileText, CheckCircle, ListOrdered, School, Clock, XCircle, RotateCcw, ListRestart, Bell } from "lucide-react";
+import { ArrowLeft, User, Calendar, MapPin, Phone, Mail, Edit, History, Loader2, FileText, CheckCircle, ListOrdered, School, Clock, XCircle, RotateCcw, ListRestart, Bell, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useCriancaDetails, useCriancas } from "@/hooks/use-criancas";
@@ -44,6 +44,8 @@ const DetalhesCrianca = () => {
     isMarkingRecusada,
     confirmarMatricula,
     isConfirmingMatricula,
+    deleteCrianca,
+    isDeleting,
   } = useCriancas();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -105,8 +107,12 @@ const DetalhesCrianca = () => {
   const handleEditSuccess = () => {
     setIsModalOpen(false);
     refetch(); // Refresh data after successful edit/delete
-    if (criancaId && !crianca) { // If deleted, navigate back
-        navigate('/admin/criancas');
+  };
+  
+  const handleDelete = async () => {
+    if (criancaId) {
+      await deleteCrianca(criancaId);
+      navigate('/admin/criancas'); // Navigate back to list after deletion
     }
   };
   
@@ -136,6 +142,8 @@ const DetalhesCrianca = () => {
             break;
         }
         refetch();
+        setIsJustificativaModalOpen(false);
+        setCurrentJustificativaAction(undefined);
     } catch (e) {
         // Erro já tratado pelo hook
     }
@@ -143,27 +151,31 @@ const DetalhesCrianca = () => {
   
   const getJustificativaProps = (action: JustificativaAction) => {
     const criancaNome = crianca.nome;
+    const isPending = action === 'recusada' ? isMarkingRecusada : 
+                      action === 'desistente' ? isMarkingDesistente : 
+                      isMarkingFimDeFila;
+                      
     switch (action) {
       case 'recusada':
         return {
           title: `Recusar Convocação de ${criancaNome}`,
           description: "Confirme a recusa da convocação. A criança será marcada como 'Recusada'.",
           actionLabel: "Confirmar Recusa",
-          isPending: isMarkingRecusada,
+          isPending,
         };
       case 'desistente':
         return {
           title: `Marcar ${criancaNome} como Desistente`,
           description: "Confirme a desistência. A criança será removida permanentemente da fila.",
           actionLabel: "Confirmar Desistência",
-          isPending: isMarkingDesistente,
+          isPending,
         };
       case 'fim_de_fila':
         return {
           title: `Marcar Fim de Fila para ${criancaNome}`,
           description: "Confirme o fim de fila. A criança será movida para o final da fila de espera.",
           actionLabel: "Confirmar Fim de Fila",
-          isPending: isMarkingFimDeFila,
+          isPending,
         };
       default:
         return { title: "", description: "", actionLabel: "", isPending: false };
@@ -191,7 +203,7 @@ const DetalhesCrianca = () => {
   const isRecusada = crianca.status === 'Recusada';
   
   const deadlineInfo = isConvocado && crianca.convocacaoDeadline ? (() => {
-    const deadlineDate = parseISO(crianca.convocacaoDeadline);
+    const deadlineDate = parseISO(crianca.convocacaoDeadline + 'T00:00:00');
     const today = new Date();
     const daysRemaining = differenceInDays(deadlineDate, today);
     
@@ -226,7 +238,7 @@ const DetalhesCrianca = () => {
               {crianca.idade}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
             <Button variant="outline" onClick={() => navigate(-1)}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Voltar para Lista
@@ -280,6 +292,7 @@ const DetalhesCrianca = () => {
                         variant="outline" 
                         className="text-destructive border-destructive hover:bg-destructive/10"
                         onClick={() => handleJustificativaAction('recusada')}
+                        disabled={isMarkingRecusada}
                     >
                         <XCircle className="mr-2 h-4 w-4" />
                         Recusar
@@ -289,6 +302,7 @@ const DetalhesCrianca = () => {
                         variant="outline" 
                         className="text-accent border-accent hover:bg-accent/10"
                         onClick={() => handleJustificativaAction('fim_de_fila')}
+                        disabled={isMarkingFimDeFila}
                     >
                         <ListRestart className="mr-2 h-4 w-4" />
                         Fim de Fila
@@ -356,6 +370,19 @@ const DetalhesCrianca = () => {
                         onClose={handleConvocarSuccess}
                     />
                 </Dialog>
+            )}
+            
+            {/* 4. Se Matriculado: Marcar Desistente */}
+            {isMatriculado && (
+                <Button 
+                    variant="outline" 
+                    className="text-destructive border-destructive hover:bg-destructive/10"
+                    onClick={() => handleJustificativaAction('desistente')}
+                    disabled={isMarkingDesistente}
+                >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Marcar Desistente
+                </Button>
             )}
             
             {/* Botão de Editar Dados (sempre disponível) */}

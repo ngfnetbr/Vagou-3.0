@@ -68,18 +68,18 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
 
   // O parâmetro 'data' é garantido como InscricaoFormData pelo zodResolver
   const onSubmit = async (data: InscricaoFormData) => {
-    // Usamos asserção de tipo para garantir que o compilador aceite o tipo completo
-    const formData = data as InscricaoFormData;
+    // Asserção de tipo direta para garantir que o compilador aceite o tipo completo
+    const finalData = data as InscricaoFormData;
 
     if (onSuccess) {
       // Admin context: use mutation
       try {
         if (isEditing && criancaId) {
-          await updateCrianca({ id: criancaId, data: formData }); 
+          await updateCrianca({ id: criancaId, data: finalData }); 
         } else {
-          await addCrianca(formData); 
+          await addCrianca(finalData); 
         }
-        onSuccess(formData);
+        onSuccess(finalData);
         if (!isEditing) {
           form.reset();
         }
@@ -100,7 +100,7 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
       await deleteCrianca(criancaId);
       if (onSuccess) {
         // O getValues() retorna o tipo correto, que é InscricaoFormData
-        onSuccess(form.getValues()); 
+        onSuccess(form.getValues() as InscricaoFormData); 
       }
     }
   };
