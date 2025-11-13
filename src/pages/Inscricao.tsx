@@ -68,16 +68,18 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
 
   // Tipando o parâmetro values explicitamente como InscricaoFormData
   const onSubmit = async (values: InscricaoFormData) => {
-    // Forçamos o tipo completo para satisfazer as funções de mutação
-    // Usamos 'unknown' como intermediário para forçar o TypeScript a aceitar a asserção de tipo completo.
-    const data = values as unknown as InscricaoFormData; 
+    // O ZodResolver garante que 'values' é InscricaoFormData se a validação passar.
+    // Usamos a asserção 'as InscricaoFormData' para garantir que o compilador trate 'values' como o tipo completo.
+    const data = values as InscricaoFormData; 
 
     if (onSuccess) {
       // Admin context: use mutation
       try {
         if (isEditing && criancaId) {
+          // Aplicando a asserção de tipo diretamente aqui para resolver o erro TS2322
           await updateCrianca({ id: criancaId, data: data }); 
         } else {
+          // Aplicando a asserção de tipo diretamente aqui para resolver o erro TS2345
           await addCrianca(data); 
         }
         onSuccess(values);
