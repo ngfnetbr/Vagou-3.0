@@ -66,11 +66,8 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
     (cmei) => cmei.value !== selectedCmei1
   );
 
-  // Usamos 'any' no parâmetro para evitar conflitos de tipagem com RHF/Zod,
-  // e então forçamos o tipo InscricaoFormData na variável 'data' para as mutações.
-  const onSubmit = async (values: any) => {
-    const data = values as InscricaoFormData; 
-
+  // O handleSubmit do RHF garante que os dados são válidos e completos (InscricaoFormData)
+  const onSubmit = async (data: InscricaoFormData) => {
     if (onSuccess) {
       // Admin context: use mutation
       try {
@@ -79,7 +76,7 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
         } else {
           await addCrianca(data); 
         }
-        onSuccess(values);
+        onSuccess(data);
         if (!isEditing) {
           form.reset();
         }
@@ -99,8 +96,8 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
     if (criancaId) {
       await deleteCrianca(criancaId);
       if (onSuccess) {
-        // O getValues() retorna o tipo correto, mas o cast é mantido aqui para garantir que o onSuccess receba o tipo completo, mesmo que o formulário esteja sendo resetado.
-        onSuccess(form.getValues() as InscricaoFormData); 
+        // O getValues() retorna o tipo correto, que é InscricaoFormData
+        onSuccess(form.getValues()); 
       }
     }
   };
