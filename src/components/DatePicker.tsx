@@ -27,6 +27,25 @@ export function DatePicker({ value, onChange, placeholder = "Selecione uma data"
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState(date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : "");
 
+  // Função para formatar o input para dd/mm/aaaa
+  const formatDateInput = (value: string) => {
+    if (!value) return "";
+    value = value.replace(/\D/g, ""); // Remove tudo que não é dígito
+
+    if (value.length > 8) { // Limita a 8 dígitos para dd/mm/yyyy
+      value = value.substring(0, 8);
+    }
+
+    let formattedValue = value;
+    if (formattedValue.length > 2) {
+      formattedValue = `${formattedValue.substring(0, 2)}/${formattedValue.substring(2)}`;
+    }
+    if (formattedValue.length > 5) {
+      formattedValue = `${formattedValue.substring(0, 5)}/${formattedValue.substring(5)}`;
+    }
+    return formattedValue;
+  };
+
   React.useEffect(() => {
     if (date && isValid(date)) {
       setInputValue(format(date, "dd/MM/yyyy", { locale: ptBR }));
@@ -36,15 +55,24 @@ export function DatePicker({ value, onChange, placeholder = "Selecione uma data"
   }, [date, value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const text = e.target.value;
-    setInputValue(text);
+    const rawText = e.target.value;
+    const maskedText = formatDateInput(rawText); // Aplica a máscara
 
-    const parsedDate = parse(text, "dd/MM/yyyy", new Date(), { locale: ptBR });
+    setInputValue(maskedText); // Atualiza o input com o valor mascarado
 
-    if (isValid(parsedDate) && format(parsedDate, "dd/MM/yyyy", { locale: ptBR }) === text) {
+    // Tenta fazer o parse do texto mascarado
+    const parsedDate = parse(maskedText, "dd/MM/yyyy", new Date(), { locale: ptBR });
+
+    if (isValid(parsedDate) && format(parsedDate, "dd/MM/yyyy", { locale: ptBR }) === maskedText) {
+      // Se o texto mascarado é uma data válida e completa, atualiza o valor do formulário
       onChange(format(parsedDate, "yyyy-MM-dd"));
-    } else if (text === "") {
+    } else if (maskedText === "") {
+      // Se o input está vazio, limpa o valor do formulário
       onChange("");
+    } else {
+      // Se é uma entrada parcial ou inválida, mas não vazia, não atualiza o valor do formulário
+      // Isso permite que o usuário continue digitando sem que o formulário receba um valor inválido
+      onChange(""); // Limpa o valor do formulário para indicar que a data não está completa/válida
     }
   };
 
@@ -61,20 +89,20 @@ export function DatePicker({ value, onChange, placeholder = "Selecione uma data"
   };
 
   return (
-    <div className="relative flex items-center"> {/* Este div agrupa visualmente o input e o botão */}
+    <div className="relative flex items-center">
       <Input
         id="date-input"
         placeholder={placeholder}
         value={inputValue}
         onChange={handleInputChange}
         className={cn(
-          "w-full pr-10", // Adiciona padding-right para o ícone
+          "w-full pr-10",
           !date && "text-muted-foreground",
           "hover:bg-primary/10 hover:text-primary"
         )}
         disabled={disabled}
       />
-      <Popover open={open} onOpenChange={setOpen}> {/* O Popover agora envolve apenas o Trigger e o Content */}
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
