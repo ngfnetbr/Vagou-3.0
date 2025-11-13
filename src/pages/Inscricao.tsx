@@ -29,8 +29,8 @@ const Inscricao = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-6 gap-4">
-                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-1">
+              <div className="space-y-4"> {/* Alterado para um layout empilhado */}
+                <div className="space-y-3 p-4 rounded-lg border bg-card"> {/* Removido md:col-span */}
                   <Label className="text-base font-semibold">Sexo *</Label>
                   <RadioGroup defaultValue="feminino" className="flex flex-col gap-3">
                     <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
@@ -44,8 +44,8 @@ const Inscricao = () => {
                   </RadioGroup>
                 </div>
                 
-                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-4">
-                  <Label className="text-base font-semibold">É beneficiário(a) de programas sociais? *</Label> {/* Alterado de text-sm para text-base */}
+                <div className="space-y-3 p-4 rounded-lg border bg-card"> {/* Removido md:col-span */}
+                  <Label className="text-base font-semibold">É beneficiário(a) de programas sociais? *</Label>
                   <RadioGroup defaultValue="nao" className="flex flex-col gap-3">
                     <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
                       <RadioGroupItem value="sim" id="programas-sim" />
@@ -58,7 +58,7 @@ const Inscricao = () => {
                   </RadioGroup>
                 </div>
                 
-                <div className="space-y-3 p-4 rounded-lg border bg-card md:col-span-1">
+                <div className="space-y-3 p-4 rounded-lg border bg-card"> {/* Removido md:col-span */}
                   <Label className="text-base font-semibold">Aceita qualquer CMEI? *</Label>
                   <RadioGroup defaultValue="nao" className="flex flex-col gap-3">
                     <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
