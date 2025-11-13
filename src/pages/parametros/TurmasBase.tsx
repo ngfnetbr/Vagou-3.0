@@ -30,7 +30,7 @@ const TurmasBase = () => {
       nome: "Berçário I",
       idadeMinima: 4,
       idadeMaxima: 11,
-      capacidade: 15,
+      // capacidade: 15, // Removido
       descricao: "4 a 11 meses"
     },
     {
@@ -38,7 +38,7 @@ const TurmasBase = () => {
       nome: "Berçário II",
       idadeMinima: 12,
       idadeMaxima: 23,
-      capacidade: 15,
+      // capacidade: 15, // Removido
       descricao: "1 ano"
     },
     {
@@ -46,7 +46,7 @@ const TurmasBase = () => {
       nome: "Maternal I",
       idadeMinima: 24,
       idadeMaxima: 35,
-      capacidade: 20,
+      // capacidade: 20, // Removido
       descricao: "2 anos"
     },
     {
@@ -54,7 +54,7 @@ const TurmasBase = () => {
       nome: "Maternal II",
       idadeMinima: 36,
       idadeMaxima: 47,
-      capacidade: 20,
+      // capacidade: 20, // Removido
       descricao: "3 anos"
     },
     {
@@ -62,7 +62,7 @@ const TurmasBase = () => {
       nome: "Pré I",
       idadeMinima: 48,
       idadeMaxima: 59,
-      capacidade: 25,
+      // capacidade: 25, // Removido
       descricao: "4 anos"
     },
     {
@@ -70,7 +70,7 @@ const TurmasBase = () => {
       nome: "Pré II",
       idadeMinima: 60,
       idadeMaxima: 71,
-      capacidade: 25,
+      // capacidade: 25, // Removido
       descricao: "5 anos"
     },
   ]);
@@ -158,10 +158,7 @@ const TurmasBase = () => {
                     <span className="text-muted-foreground">Faixa Etária:</span>
                     <Badge variant="secondary">{turma.descricao || `${turma.idadeMinima} - ${turma.idadeMaxima} meses`}</Badge>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Capacidade:</span>
-                    <span className="font-semibold">{turma.capacidade} alunos</span>
-                  </div>
+                  {/* Capacidade removida da exibição */}
                 </div>
                 
                 <div className="flex gap-2 pt-2">

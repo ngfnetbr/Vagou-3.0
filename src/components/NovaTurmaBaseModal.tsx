@@ -27,7 +27,7 @@ const turmaBaseSchema = z.object({
   nome: z.string().min(1, "Nome da turma é obrigatório."),
   idadeMinima: z.coerce.number().min(0, "Idade mínima deve ser 0 ou maior."),
   idadeMaxima: z.coerce.number().min(0, "Idade máxima deve ser 0 ou maior."),
-  capacidade: z.coerce.number().min(1, "Capacidade deve ser no mínimo 1."),
+  // Capacidade Padrão removida
   descricao: z.string().optional().or(z.literal('')),
 }).refine(data => data.idadeMaxima >= data.idadeMinima, {
   message: "Idade máxima não pode ser menor que a idade mínima.",
@@ -50,7 +50,7 @@ const NovaTurmaBaseModal = ({ initialData, onSave, onClose, onDelete }: NovaTurm
       nome: "",
       idadeMinima: 0,
       idadeMaxima: 0,
-      capacidade: 0,
+      // Capacidade Padrão removida
       descricao: "",
     },
   });
@@ -117,19 +117,7 @@ const NovaTurmaBaseModal = ({ initialData, onSave, onClose, onDelete }: NovaTurm
               )}
             />
           </div>
-          <FormField
-            control={form.control}
-            name="capacidade"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Capacidade Padrão *</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="20" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Campo de Capacidade Padrão removido */}
           <FormField
             control={form.control}
             name="descricao"
