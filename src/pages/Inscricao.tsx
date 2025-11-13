@@ -69,7 +69,8 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
   // Tipando o parâmetro values explicitamente como InscricaoFormData
   const onSubmit = async (values: InscricaoFormData) => {
     // Forçamos o tipo completo para satisfazer as funções de mutação
-    const data = values as InscricaoFormData; 
+    // Usamos 'unknown' como intermediário para forçar o TypeScript a aceitar a asserção de tipo completo.
+    const data = values as unknown as InscricaoFormData; 
 
     if (onSuccess) {
       // Admin context: use mutation

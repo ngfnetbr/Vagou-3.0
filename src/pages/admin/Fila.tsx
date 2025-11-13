@@ -147,6 +147,20 @@ const Fila = () => {
     return 'N/A';
   };
   
+  const getFinalizationDate = (crianca: Crianca) => {
+    const finalizationEntry = crianca.historico.find(h => 
+      h.acao.includes("Matrícula Efetivada") || h.acao.includes("Marcado como Desistente")
+    );
+    if (finalizationEntry) {
+      try {
+        return format(parseISO(finalizationEntry.data), 'dd/MM/yyyy', { locale: ptBR });
+      } catch (e) {
+        return 'N/A';
+      }
+    }
+    return 'N/A';
+  };
+  
   const getDeadlineInfo = (deadline: string) => {
     const deadlineDate = parseISO(deadline);
     const today = new Date();
@@ -292,8 +306,8 @@ const Fila = () => {
                 <TableRow>
                   <TableHead className="w-20">Posição</TableHead>
                   <TableHead>Criança</TableHead>
+                  <TableHead>Idade</TableHead>
                   <TableHead>Responsável</TableHead>
-                  <TableHead>CMEI Preferência</TableHead>
                   <TableHead>Data Insc.</TableHead>
                   <TableHead>Prioridade</TableHead>
                   <TableHead>Status/Prazo</TableHead>
@@ -312,8 +326,8 @@ const Fila = () => {
                             {isConvocado ? <Badge className="bg-primary text-primary-foreground">CONV.</Badge> : `#${item.posicaoFila}`}
                         </TableCell>
                         <TableCell className="font-medium">{item.nome}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{item.idade}</TableCell>
                         <TableCell>{item.responsavel}</TableCell>
-                        <TableCell>{item.cmei1}</TableCell>
                         <TableCell>{getInscriptionDate(item)}</TableCell>
                         <TableCell>
                           <Badge variant={item.programasSociais === "sim" ? "default" : "secondary"}>
@@ -456,6 +470,7 @@ const Fila = () => {
                         <TableHead>Responsável</TableHead>
                         <TableHead>Status Final</TableHead>
                         <TableHead>CMEI/Turma</TableHead>
+                        <TableHead>Data Final</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -467,6 +482,7 @@ const Fila = () => {
                             <TableCell>{item.responsavel}</TableCell>
                             <TableCell>{getStatusBadge(item.status)}</TableCell>
                             <TableCell>{item.cmei !== "N/A" ? `${item.cmei} (${item.turmaAtual || 'N/A'})` : '-'}</TableCell>
+                            <TableCell>{getFinalizationDate(item)}</TableCell>
                             <TableCell className="text-right">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -514,7 +530,7 @@ const Fila = () => {
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={5} className="h-16 text-center text-muted-foreground">
+                          <TableCell colSpan={6} className="h-16 text-center text-muted-foreground">
                             Nenhum registro de matrícula ou desistência encontrado.
                           </TableCell>
                         </TableRow>
