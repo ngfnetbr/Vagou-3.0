@@ -15,6 +15,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 const formatCpf = (value: string) => {
   if (!value) return "";
   value = value.replace(/\D/g, ""); // Remove tudo que não é dígito
+  if (value.length > 11) { // Limita a 11 dígitos
+    value = value.substring(0, 11);
+  }
   value = value.replace(/(\d{3})(\d)/, "$1.$2");
   value = value.replace(/(\d{3})(\d)/, "$1.$2");
   value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
@@ -24,18 +27,25 @@ const formatCpf = (value: string) => {
 const formatPhone = (value: string) => {
   if (!value) return "";
   value = value.replace(/\D/g, ""); // Remove tudo que não é dígito
-  if (value.length > 11) value = value.substring(0, 11); // Limita a 11 dígitos para (XX) 9 XXXX-XXXX
-  
-  if (value.length > 10) { // (XX) 9 XXXX-XXXX
-    value = value.replace(/^(\d\d)(\d{1})(\d{4})(\d{4}).*/, "($1) $2 $3-$4");
-  } else if (value.length > 6) { // (XX) XXXX-XXXX
-    value = value.replace(/^(\d\d)(\d{4})(\d{0,4}).*/, "($1) $2-$3");
-  } else if (value.length > 2) { // (XX) XXXX
-    value = value.replace(/^(\d*)/, "($1) $2");
-  } else { // (XX
-    value = value.replace(/^(\d*)/, "($1");
+
+  if (value.length > 11) {
+    value = value.substring(0, 11); // Limita a 11 dígitos
   }
-  return value;
+
+  let formattedValue = value;
+  if (formattedValue.length > 0) {
+    formattedValue = `(${formattedValue}`;
+  }
+  if (formattedValue.length > 3) { // Depois de (XX
+    formattedValue = `${formattedValue.substring(0, 3)}) ${formattedValue.substring(3)}`;
+  }
+  if (formattedValue.length > 6 && formattedValue.charAt(6) !== ' ') { // Depois de (XX) X
+    formattedValue = `${formattedValue.substring(0, 6)} ${formattedValue.substring(6)}`;
+  }
+  if (formattedValue.length > 11) { // Depois de (XX) X XXXX
+    formattedValue = `${formattedValue.substring(0, 11)}-${formattedValue.substring(11)}`;
+  }
+  return formattedValue;
 };
 
 // Esquema de validação com Zod
