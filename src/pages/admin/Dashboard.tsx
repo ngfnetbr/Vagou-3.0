@@ -1,21 +1,24 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, GraduationCap, ListOrdered, TrendingUp, Loader2 } from "lucide-react";
-import { useCriancas } from "@/hooks/use-criancas";
+import { useCriancas, useCriancaHistorico } from "@/hooks/use-criancas";
 import { useMemo } from "react";
-import { Crianca } from "@/lib/mock-data"; // Importando Crianca
-
-// Mock de histórico para o Dashboard (será substituído pela tabela 'historico' real)
-const mockHistoricoRecente = [
-    { data: "07/11/2025", acao: "Matrícula Confirmada", detalhes: "Ana Silva matriculada no CMEI Centro" },
-    { data: "07/11/2025", acao: "Convocação Enviada", detalhes: "Convocação para João Pedro" },
-    { data: "06/11/2025", acao: "CMEI Atualizado", detalhes: "Capacidade do CMEI Sul alterada" },
-    { data: "05/11/2025", acao: "Nova Inscrição", detalhes: "Maria Clara adicionada à fila" },
-    { data: "04/11/2025", acao: "Usuário Criado", detalhes: "Novo gestor cadastrado" },
-];
+import { Crianca } from "@/integrations/supabase/criancas"; // Importando Crianca do novo local
 
 const Dashboard = () => {
   const { criancas, isLoading } = useCriancas();
+  // Usando useCriancaHistorico para buscar logs gerais (embora o hook useHistoricoGeral seja mais apropriado para o Logs.tsx)
+  // Para o dashboard, vamos manter o mock de histórico por enquanto, mas remover o import de Crianca do mock-data.
+  
+  // Mock de histórico para o Dashboard (será substituído pela tabela 'historico' real)
+  const mockHistoricoRecente = [
+      { data: "07/11/2025", acao: "Matrícula Confirmada", detalhes: "Ana Silva matriculada no CMEI Centro" },
+      { data: "07/11/2025", acao: "Convocação Enviada", detalhes: "Convocação para João Pedro" },
+      { data: "06/11/2025", acao: "CMEI Atualizado", detalhes: "Capacidade do CMEI Sul alterada" },
+      { data: "05/11/2025", acao: "Nova Inscrição", detalhes: "Maria Clara adicionada à fila" },
+      { data: "04/11/2025", acao: "Usuário Criado", detalhes: "Novo gestor cadastrado" },
+  ];
+
 
   const { totalCriancas, matriculasAtivas, filaEspera, convocacoesPendentes, taxaOcupacao } = useMemo(() => {
     if (!criancas || criancas.length === 0) {

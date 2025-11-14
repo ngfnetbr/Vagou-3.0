@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { MoreVertical, Eye, CheckCircle, Bell, XCircle, ListRestart, RotateCcw, Loader2 } from "lucide-react";
-import { Crianca } from "@/lib/mock-data";
+import { Crianca } from "@/integrations/supabase/criancas"; // Importação atualizada
 import { useNavigate } from "react-router-dom";
 import { Clock } from "lucide-react";
 import { toast } from "sonner";

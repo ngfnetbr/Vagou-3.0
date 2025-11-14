@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import NovaCriancaModalContent from "@/components/NovaCriancaModal";
 import { useCriancas } from "@/hooks/use-criancas";
-import { Crianca } from "@/lib/mock-data";
+import { Crianca } from "@/integrations/supabase/criancas"; // Importação atualizada
 import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,

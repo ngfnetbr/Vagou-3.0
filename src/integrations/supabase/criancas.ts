@@ -539,7 +539,7 @@ export const solicitarRemanejamento = async (criancaId: string, justificativa: s
     return updatedCrianca;
 };
 
-// --- Funções de Suporte (Mockadas anteriormente) ---
+// --- Funções de Suporte (Vagas Disponíveis) ---
 
 export const fetchAvailableTurmas = async (criancaId: string): Promise<{ cmei: string, turma: string, vagas: number, cmei_id: string, turma_id: string }[]> => {
     // 1. Buscar a criança para obter preferências
@@ -605,12 +605,6 @@ export const fetchAvailableTurmas = async (criancaId: string): Promise<{ cmei: s
     return availableTurmas;
 };
 
-// --- Mapeamento de Tipos para o Frontend ---
-
-// Exporta a tipagem Crianca para uso nos componentes
-export type { Crianca };
-
-// Exporta a tipagem InscricaoFormData (já importada)
 // Exporta a tipagem ConvocationData (já definida acima)
 
 // Exporta a tipagem para o histórico (se necessário, mas vamos usar a tabela 'historico' real)

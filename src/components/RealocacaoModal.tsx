@@ -8,7 +8,7 @@ import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFoot
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save, X, Loader2, RotateCcw } from "lucide-react";
-import { Crianca, ConvocationData } from "@/lib/mock-data";
+import { Crianca, ConvocationData } from "@/integrations/supabase/criancas"; // Importação atualizada
 import { useAvailableTurmas } from "@/hooks/use-criancas";
 import { toast } from "sonner";
 import { useMemo } from "react";

@@ -8,7 +8,7 @@ import { Search, Download, Loader2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useHistoricoGeral } from "@/hooks/use-historico"; // Importando o novo hook
-import { HistoricoEntry } from "@/lib/mock-data"; // Importando a tipagem
+import { HistoricoEntry } from "@/integrations/supabase/criancas"; // Importando a tipagem do novo local
 import { Button } from "@/components/ui/button"; // Importação adicionada
 
 // Tipagem local para Logs (usando HistoricoEntry)

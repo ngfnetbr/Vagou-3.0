@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import JustificativaModal from "@/components/JustificativaModal";
 import RealocacaoModal from "@/components/RealocacaoModal"; // Importação atualizada
-import { Crianca, ConvocationData } from "@/lib/mock-data";
+import { Crianca, ConvocationData } from "@/integrations/supabase/criancas"; // Importação atualizada
 import { Badge } from "@/components/ui/badge";
 import { HistoricoMatriculasAccordion } from "@/components/matriculas/HistoricoMatriculasAccordion"; // Caminho corrigido
 

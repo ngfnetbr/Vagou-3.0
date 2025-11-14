@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { History, Eye, ListRestart, MoreVertical, Loader2 } from "lucide-react";
-import { Crianca } from "@/lib/mock-data";
+import { Crianca } from "@/integrations/supabase/criancas"; // Importação atualizada
 import { useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";

@@ -1,7 +1,7 @@
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import Inscricao from "@/pages/Inscricao"; // Import Inscricao
 import { InscricaoFormData } from "@/lib/schemas/inscricao-schema"; // Import type from schema file
-import { Crianca } from "@/lib/mock-data"; // Import Crianca type
+import { Crianca } from "@/integrations/supabase/criancas"; // Importação atualizada
 
 interface NovaCriancaModalProps {
   onClose: () => void;

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCriancas, useCriancaHistorico } from "@/hooks/use-criancas";
 import { useMemo, useState } from "react";
-import { Crianca } from "@/lib/mock-data";
+import { Crianca } from "@/integrations/supabase/criancas"; // Importação atualizada
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format, parseISO, differenceInDays } from "date-fns";

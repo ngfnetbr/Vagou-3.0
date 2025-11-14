@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Crianca } from "@/lib/mock-data";
+import { Crianca } from "@/integrations/supabase/criancas"; // Importação atualizada
 import { Dialog } from "@/components/ui/dialog";
 import ConvocarModal from "@/components/ConvocarModal";
 import JustificativaModal from "@/components/JustificativaModal";

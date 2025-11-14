@@ -18,8 +18,9 @@ import {
     realocarCrianca, 
     transferirCrianca, 
     solicitarRemanejamento,
-    fetchHistoricoCrianca, // Nova função de fetch
-} from "@/lib/mock-data"; // Agora este arquivo contém a lógica Supabase
+    fetchHistoricoCrianca,
+    HistoricoEntry, // Importando HistoricoEntry
+} from "@/integrations/supabase/criancas"; // Caminho atualizado
 import { toast } from "sonner";
 
 const CRIANCAS_QUERY_KEY = ["criancas"];
@@ -277,7 +278,7 @@ export function useCriancaDetails(id: string) {
 }
 
 export function useCriancaHistorico(criancaId: string) {
-    return useQuery({
+    return useQuery<HistoricoEntry[]>({
         queryKey: ['historico', criancaId],
         queryFn: () => fetchHistoricoCrianca(criancaId),
         enabled: !!criancaId,

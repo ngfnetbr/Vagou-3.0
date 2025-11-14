@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { HistoricoEntry } from "@/lib/mock-data"; // Reutilizando a tipagem
+import { HistoricoEntry } from "@/integrations/supabase/criancas"; // Corrigido o caminho de importação
 
 const HISTORICO_QUERY_KEY = ["historicoGeral"];
 
