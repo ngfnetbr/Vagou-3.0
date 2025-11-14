@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Edit, Trash2, Users } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import TurmaBaseModal, { TurmaBaseFormData } from "@/components/TurmaBaseModal";
-import { toast } from "sonner";
+import TurmaBaseModal, { TurmaBaseFormInput } from "@/components/TurmaBaseModal";
+import { useTurmasBase } from "@/hooks/use-turmas-base"; // Importando o hook
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,82 +18,34 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-interface TurmaBase extends TurmaBaseFormData {
+// Definindo a interface local para TurmaBase (usando o tipo do hook)
+interface TurmaBase extends TurmaBaseFormInput {
   id: number;
 }
 
 const TurmasBase = () => {
-  const [turmasBase, setTurmasBase] = useState<TurmaBase[]>([
-    {
-      id: 1,
-      nome: "Berçário I",
-      idadeMinima: 4,
-      idadeMaxima: 11,
-      descricao: "4 a 11 meses"
-    },
-    {
-      id: 2,
-      nome: "Berçário II",
-      idadeMinima: 12,
-      idadeMaxima: 23,
-      descricao: "1 ano"
-    },
-    {
-      id: 3,
-      nome: "Maternal I",
-      idadeMinima: 24,
-      idadeMaxima: 35,
-      descricao: "2 anos"
-    },
-    {
-      id: 4,
-      nome: "Maternal II",
-      idadeMinima: 36,
-      idadeMaxima: 47,
-      descricao: "3 anos"
-    },
-    {
-      id: 5,
-      nome: "Pré I",
-      idadeMinima: 48,
-      idadeMaxima: 59,
-      descricao: "4 anos"
-    },
-    {
-      id: 6,
-      nome: "Pré II",
-      idadeMinima: 60,
-      idadeMaxima: 71,
-      descricao: "5 anos"
-    },
-  ]);
+  const { 
+    turmasBase, 
+    isLoading, 
+    error, 
+    deleteTurmaBase, 
+    isDeleting,
+    isCreating,
+    isUpdating
+  } = useTurmasBase();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTurmaBase, setEditingTurmaBase] = useState<TurmaBase | undefined>(undefined);
 
-  const handleSaveTurma = (data: TurmaBaseFormData & { id?: number }) => {
-    if (data.id) {
-      // Edição
-      setTurmasBase(turmasBase.map(t => t.id === data.id ? { ...t, ...data } : t));
-      toast.success("Turma base atualizada com sucesso!");
-    } else {
-      // Nova turma
-      const newId = turmasBase.length > 0 ? Math.max(...turmasBase.map(t => t.id)) + 1 : 1;
-      setTurmasBase([...turmasBase, { id: newId, ...data }]);
-      toast.success("Turma base cadastrada com sucesso!");
-    }
-    setEditingTurmaBase(undefined);
-    setIsModalOpen(false);
-  };
-
-  const handleDeleteTurma = (id: number) => {
-    setTurmasBase(turmasBase.filter(turma => turma.id !== id));
-    toast.success("Turma base excluída com sucesso!");
-    setIsModalOpen(false); // Fecha o modal após a exclusão
-  };
-
   const handleEditClick = (turma: TurmaBase) => {
-    setEditingTurmaBase(turma);
+    // Mapeia TurmaBase (com id_minima_meses) para TurmaBaseFormInput (com idadeMinima)
+    setEditingTurmaBase({
+        id: turma.id,
+        nome: turma.nome,
+        idadeMinima: turma.idade_minima_meses,
+        idadeMaxima: turma.idade_maxima_meses,
+        descricao: turma.descricao || "",
+    });
     setIsModalOpen(true);
   };
 
@@ -101,6 +53,37 @@ const TurmasBase = () => {
     setEditingTurmaBase(undefined);
     setIsModalOpen(true);
   };
+  
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setEditingTurmaBase(undefined);
+  };
+
+  const handleDeleteTurma = async (id: number) => {
+    await deleteTurmaBase(id);
+    handleModalClose();
+  };
+  
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex justify-center items-center h-40">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="ml-3 text-lg text-muted-foreground">Carregando modelos de turmas...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center text-destructive">
+          Erro ao carregar Turmas Base: {error.message}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -114,6 +97,7 @@ const TurmasBase = () => {
             <Button
               className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
               onClick={handleNewTurmaClick}
+              disabled={isCreating || isUpdating}
             >
               <Plus className="mr-2 h-4 w-4" />
               Nova Turma Base
@@ -121,9 +105,7 @@ const TurmasBase = () => {
           </DialogTrigger>
           <TurmaBaseModal
             initialData={editingTurmaBase}
-            onSave={handleSaveTurma}
-            onClose={() => setIsModalOpen(false)}
-            onDelete={handleDeleteTurma}
+            onClose={handleModalClose}
           />
         </Dialog>
       </div>
@@ -148,7 +130,9 @@ const TurmasBase = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Faixa Etária:</span>
-                  <Badge variant="secondary">{turma.descricao || `${turma.idadeMinima} - ${turma.idadeMaxima} meses`}</Badge>
+                  <Badge variant="secondary">
+                    {turma.idade_minima_meses} - {turma.idade_maxima_meses} meses
+                  </Badge>
                 </div>
               </div>
               
@@ -159,7 +143,7 @@ const TurmasBase = () => {
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10">
+                    <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" disabled={isDeleting}>
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </AlertDialogTrigger>
@@ -173,9 +157,9 @@ const TurmasBase = () => {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDeleteTurma(turma.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                        Excluir
+                      <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteTurma(turma.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isDeleting}>
+                        {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Excluir"}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

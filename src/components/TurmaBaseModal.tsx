@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Save, X, Trash2 } from "lucide-react";
+import { Save, X, Trash2, Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useTurmasBase } from "@/hooks/use-turmas-base"; // Importando o novo hook
 
 // Esquema de validação com Zod para Turma Base
 const turmaBaseSchema = z.object({
@@ -32,17 +33,17 @@ const turmaBaseSchema = z.object({
   path: ["idadeMaxima"],
 });
 
-export type TurmaBaseFormData = z.infer<typeof turmaBaseSchema>;
+export type TurmaBaseFormInput = z.infer<typeof turmaBaseSchema>;
 
 interface TurmaBaseModalProps {
-  initialData?: TurmaBaseFormData & { id?: number }; // Inclui id para edição
-  onSave: (data: TurmaBaseFormData & { id?: number }) => void;
+  initialData?: TurmaBaseFormInput & { id?: number }; // Inclui id para edição
   onClose: () => void;
-  onDelete?: (id: number) => void; // Nova prop para exclusão
 }
 
-const TurmaBaseModal = ({ initialData, onSave, onClose, onDelete }: TurmaBaseModalProps) => {
-  const form = useForm<TurmaBaseFormData>({
+const TurmaBaseModal = ({ initialData, onClose }: TurmaBaseModalProps) => {
+  const { createTurmaBase, updateTurmaBase, deleteTurmaBase, isCreating, isUpdating, isDeleting } = useTurmasBase();
+  
+  const form = useForm<TurmaBaseFormInput>({
     resolver: zodResolver(turmaBaseSchema),
     defaultValues: initialData || {
       nome: "",
@@ -52,18 +53,31 @@ const TurmaBaseModal = ({ initialData, onSave, onClose, onDelete }: TurmaBaseMod
     },
   });
 
-  const onSubmit = (values: TurmaBaseFormData) => {
-    onSave({ ...values, id: initialData?.id });
-    // Não fechar o modal aqui, o pai deve controlar o fechamento
+  const onSubmit = async (values: TurmaBaseFormInput) => {
+    const dataToSave = {
+      nome: values.nome,
+      idade_minima_meses: values.idadeMinima,
+      idade_maxima_meses: values.idadeMaxima,
+      descricao: values.descricao,
+    };
+    
+    if (initialData?.id) {
+      await updateTurmaBase({ id: initialData.id, data: dataToSave });
+    } else {
+      await createTurmaBase(dataToSave);
+    }
+    onClose();
   };
 
-  const handleDelete = () => {
-    if (initialData?.id && onDelete) {
-      onDelete(initialData.id);
+  const handleDelete = async () => {
+    if (initialData?.id) {
+      await deleteTurmaBase(initialData.id);
+      onClose();
     }
   };
 
   const isEditing = !!initialData?.id;
+  const isPending = isCreating || isUpdating || isDeleting;
 
   return (
     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -82,7 +96,7 @@ const TurmaBaseModal = ({ initialData, onSave, onClose, onDelete }: TurmaBaseMod
               <FormItem>
                 <FormLabel>Nome da Turma *</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: Maternal III" {...field} />
+                  <Input placeholder="Ex: Maternal III" {...field} disabled={isPending} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -96,7 +110,13 @@ const TurmaBaseModal = ({ initialData, onSave, onClose, onDelete }: TurmaBaseMod
                 <FormItem>
                   <FormLabel>Idade Mínima (meses)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="0" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))} />
+                    <Input 
+                      type="number" 
+                      placeholder="0" 
+                      {...field} 
+                      onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))} 
+                      disabled={isPending}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -109,7 +129,13 @@ const TurmaBaseModal = ({ initialData, onSave, onClose, onDelete }: TurmaBaseMod
                 <FormItem>
                   <FormLabel>Idade Máxima (meses)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="11" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))} />
+                    <Input 
+                      type="number" 
+                      placeholder="11" 
+                      {...field} 
+                      onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))} 
+                      disabled={isPending}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -123,7 +149,7 @@ const TurmaBaseModal = ({ initialData, onSave, onClose, onDelete }: TurmaBaseMod
               <FormItem>
                 <FormLabel>Descrição da Faixa Etária</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: 1 a 2 anos" {...field} />
+                  <Input placeholder="Ex: 1 a 2 anos" {...field} disabled={isPending} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -131,13 +157,14 @@ const TurmaBaseModal = ({ initialData, onSave, onClose, onDelete }: TurmaBaseMod
           />
           
           <DialogFooter className="pt-4 flex-col-reverse sm:flex-row sm:justify-between sm:space-x-2">
-            {initialData && onDelete && (
+            {initialData && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button 
                     type="button" 
                     variant="destructive" 
                     className="w-full sm:w-auto mt-2 sm:mt-0"
+                    disabled={isPending}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Excluir Turma
@@ -153,21 +180,25 @@ const TurmaBaseModal = ({ initialData, onSave, onClose, onDelete }: TurmaBaseMod
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Excluir
+                    <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isPending}>
+                      {isDeleting ? "Excluindo..." : "Excluir"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
             )}
             <div className="flex w-full sm:w-auto gap-2 mt-2 sm:mt-0">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1 sm:flex-none">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1 sm:flex-none" disabled={isPending}>
                 <X className="mr-2 h-4 w-4" />
                 Cancelar
               </Button>
-              <Button type="submit" className="flex-1 sm:flex-none bg-secondary text-secondary-foreground hover:bg-secondary/90">
-                <Save className="mr-2 h-4 w-4" />
+              <Button type="submit" className="flex-1 sm:flex-none bg-secondary text-secondary-foreground hover:bg-secondary/90" disabled={isPending}>
+                {isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
                 {isEditing ? "Salvar Alterações" : "Cadastrar Turma"}
               </Button>
             </div>

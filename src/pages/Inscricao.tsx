@@ -70,13 +70,15 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
   const onSubmit = async (data: InscricaoFormData) => {
     if (onSuccess) {
       try {
-        // Usando a asserção de tipo diretamente no parâmetro 'data'
-        const completeData = data as InscricaoFormData;
+        // Usamos 'data' diretamente, mas forçamos a tipagem para a chamada da mutação
+        const completeData = data;
         
         if (isEditing && criancaId) {
-          await updateCrianca({ id: criancaId, data: completeData }); 
+          // Asserção de tipo para garantir que a mutação receba o tipo esperado
+          await updateCrianca({ id: criancaId, data: completeData as InscricaoFormData }); 
         } else {
-          await addCrianca(completeData); 
+          // Asserção de tipo para garantir que a mutação receba o tipo esperado
+          await addCrianca(completeData as InscricaoFormData); 
         }
         onSuccess(completeData);
         if (!isEditing) {
@@ -98,7 +100,7 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
     if (criancaId) {
       await deleteCrianca(criancaId);
       if (onSuccess) {
-        // Usando asserção de tipo aqui também para resolver o erro de compilação
+        // Usando asserção de tipo aqui para resolver o erro de compilação
         onSuccess(form.getValues() as InscricaoFormData); 
       }
     }

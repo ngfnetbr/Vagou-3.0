@@ -6,11 +6,9 @@ import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Save, X, Trash2 } from "lucide-react";
+import { Save, X, Trash2, Loader2 } from "lucide-react"; // Importando Loader2
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +19,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"; // Importar componentes do AlertDialog
+} from "@/components/ui/alert-dialog";
+import { useCMEIs, CmeiFormData } from "@/hooks/use-cmeis"; // Importar hook e tipagem
 
 // Função de máscara de telefone (copiada de Inscricao.tsx)
 const formatPhone = (value: string) => {
@@ -64,17 +63,17 @@ const cmeiSchema = z.object({
   coordenador: z.string().optional().or(z.literal('')),
 });
 
-type CmeiFormData = z.infer<typeof cmeiSchema>;
+type CmeiFormInput = z.infer<typeof cmeiSchema>;
 
 interface NovaCmeiModalProps {
-  initialData?: CmeiFormData & { id?: number }; // Inclui id para edição
-  onSave: (data: CmeiFormData) => void;
+  initialData?: CmeiFormInput & { id?: string }; // ID agora é string (UUID)
   onClose: () => void;
-  onDelete?: (id: number) => void; // Nova prop para exclusão
 }
 
-const NovaCmeiModal = ({ initialData, onSave, onClose, onDelete }: NovaCmeiModalProps) => {
-  const form = useForm<CmeiFormData>({
+const NovaCmeiModal = ({ initialData, onClose }: NovaCmeiModalProps) => {
+  const { createCmei, updateCmei, deleteCmei, isCreating, isUpdating, isDeleting } = useCMEIs();
+  
+  const form = useForm<CmeiFormInput>({
     resolver: zodResolver(cmeiSchema),
     defaultValues: initialData || {
       nome: "",
@@ -88,23 +87,35 @@ const NovaCmeiModal = ({ initialData, onSave, onClose, onDelete }: NovaCmeiModal
     },
   });
 
-  const onSubmit = (values: CmeiFormData) => {
-    onSave(values);
+  const onSubmit = async (values: CmeiFormInput) => {
+    // Usamos CmeiFormInput, que é o tipo retornado pelo formulário, e o useCMEIs lida com a filtragem de campos vazios.
+    const dataToSave = values; 
+    
+    if (initialData?.id) {
+      // O updateCmei espera CmeiFormData, que é Omit<Cmei, ...>. CmeiFormInput é compatível.
+      await updateCmei({ id: initialData.id, data: dataToSave as CmeiFormData });
+    } else {
+      await createCmei(dataToSave as CmeiFormData);
+    }
     onClose();
   };
 
-  const handleDelete = () => {
-    if (initialData?.id && onDelete) {
-      onDelete(initialData.id);
+  const handleDelete = async () => {
+    if (initialData?.id) {
+      await deleteCmei(initialData.id);
+      onClose();
     }
   };
+
+  const isEditing = !!initialData?.id;
+  const isPending = isCreating || isUpdating || isDeleting;
 
   return (
     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle>{initialData ? "Editar CMEI" : "Novo CMEI"}</DialogTitle>
+        <DialogTitle>{isEditing ? "Editar CMEI" : "Novo CMEI"}</DialogTitle>
         <DialogDescription>
-          {initialData ? "Atualize as informações do CMEI." : "Preencha os dados para cadastrar um novo CMEI."}
+          {isEditing ? "Atualize as informações do CMEI." : "Preencha os dados para cadastrar um novo CMEI."}
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
@@ -116,7 +127,7 @@ const NovaCmeiModal = ({ initialData, onSave, onClose, onDelete }: NovaCmeiModal
               <FormItem>
                 <FormLabel>Nome do CMEI *</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: CMEI Centro" {...field} />
+                  <Input placeholder="Ex: CMEI Centro" {...field} disabled={isPending} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -129,7 +140,7 @@ const NovaCmeiModal = ({ initialData, onSave, onClose, onDelete }: NovaCmeiModal
               <FormItem>
                 <FormLabel>Endereço *</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: Rua das Flores, 123" {...field} />
+                  <Input placeholder="Ex: Rua das Flores, 123" {...field} disabled={isPending} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -143,7 +154,7 @@ const NovaCmeiModal = ({ initialData, onSave, onClose, onDelete }: NovaCmeiModal
                 <FormItem>
                   <FormLabel>Latitude</FormLabel>
                   <FormControl>
-                    <Input placeholder="-23.4567" {...field} />
+                    <Input placeholder="-23.4567" {...field} disabled={isPending} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -156,7 +167,7 @@ const NovaCmeiModal = ({ initialData, onSave, onClose, onDelete }: NovaCmeiModal
                 <FormItem>
                   <FormLabel>Longitude</FormLabel>
                   <FormControl>
-                    <Input placeholder="-46.1234" {...field} />
+                    <Input placeholder="-46.1234" {...field} disabled={isPending} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -174,11 +185,12 @@ const NovaCmeiModal = ({ initialData, onSave, onClose, onDelete }: NovaCmeiModal
                     <Input
                       placeholder="(00) 9 0000-0000"
                       {...field}
-                      value={formatPhone(field.value)}
+                      value={formatPhone(field.value || '')}
                       onChange={(e) => {
                         const formatted = formatPhone(e.target.value);
                         field.onChange(formatted);
                       }}
+                      disabled={isPending}
                     />
                   </FormControl>
                   <FormMessage />
@@ -192,7 +204,7 @@ const NovaCmeiModal = ({ initialData, onSave, onClose, onDelete }: NovaCmeiModal
                 <FormItem>
                   <FormLabel>E-mail</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="email@cmei.com.br" {...field} />
+                    <Input type="email" placeholder="email@cmei.com.br" {...field} disabled={isPending} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -207,7 +219,7 @@ const NovaCmeiModal = ({ initialData, onSave, onClose, onDelete }: NovaCmeiModal
                 <FormItem>
                   <FormLabel>Diretor(a)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nome do(a) diretor(a)" {...field} />
+                    <Input placeholder="Nome do(a) diretor(a)" {...field} disabled={isPending} />
                   </FormControl>
                   <FormMessage />
               </FormItem>
@@ -220,7 +232,7 @@ const NovaCmeiModal = ({ initialData, onSave, onClose, onDelete }: NovaCmeiModal
                 <FormItem>
                   <FormLabel>Coordenador(a)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nome do(a) coordenador(a)" {...field} />
+                    <Input placeholder="Nome do(a) coordenador(a)" {...field} disabled={isPending} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -228,13 +240,14 @@ const NovaCmeiModal = ({ initialData, onSave, onClose, onDelete }: NovaCmeiModal
             />
           </div>
           <DialogFooter className="pt-4 flex-col-reverse sm:flex-row sm:justify-between sm:space-x-2">
-            {initialData && onDelete && (
+            {isEditing && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button 
                     type="button" 
                     variant="destructive" 
                     className="w-full sm:w-auto mt-2 sm:mt-0"
+                    disabled={isPending}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Excluir CMEI
@@ -245,27 +258,31 @@ const NovaCmeiModal = ({ initialData, onSave, onClose, onDelete }: NovaCmeiModal
                     <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
                     <AlertDialogDescription>
                       Esta ação não pode ser desfeita. Isso excluirá permanentemente o CMEI 
-                      <span className="font-semibold"> {initialData.nome} </span>
+                      <span className="font-semibold"> {initialData?.nome} </span>
                       e removerá todos os dados associados.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Excluir
+                    <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isPending}>
+                      {isDeleting ? "Excluindo..." : "Excluir"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
             )}
             <div className="flex w-full sm:w-auto gap-2 mt-2 sm:mt-0">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1 sm:flex-none">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1 sm:flex-none" disabled={isPending}>
                 <X className="mr-2 h-4 w-4" />
                 Cancelar
               </Button>
-              <Button type="submit" className="flex-1 sm:flex-none bg-secondary text-secondary-foreground hover:bg-secondary/90">
-                <Save className="mr-2 h-4 w-4" />
-                {initialData ? "Salvar Alterações" : "Cadastrar CMEI"}
+              <Button type="submit" className="flex-1 sm:flex-none bg-secondary text-secondary-foreground hover:bg-secondary/90" disabled={isPending}>
+                {isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                {isEditing ? "Salvar Alterações" : "Cadastrar CMEI"}
               </Button>
             </div>
           </DialogFooter>

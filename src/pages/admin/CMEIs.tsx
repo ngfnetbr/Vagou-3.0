@@ -2,12 +2,11 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, MapPin, Users, Edit, Eye, List, LayoutGrid, MoreVertical } from "lucide-react";
+import { Plus, Search, MapPin, Users, Edit, Eye, List, LayoutGrid, MoreVertical, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import NovaCmeiModal from "@/components/NovaCmeiModal";
 import { useState } from "react";
-import { toast } from "sonner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -17,64 +16,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-
-interface Cmei {
-  id: number;
-  nome: string;
-  endereco: string;
-  capacidade: number;
-  ocupacao: number;
-  latitude?: string;
-  longitude?: string;
-  telefone?: string;
-  email?: string;
-  diretor?: string;
-  coordenador?: string;
-  observacoes?: string;
-}
+import { useCMEIs, Cmei } from "@/hooks/use-cmeis"; // Importar hook e tipagem
 
 const CMEIs = () => {
-  const [cmeis, setCmeis] = useState<Cmei[]>([
-    { id: 1, nome: "CMEI Centro", endereco: "Rua Central, 123", capacidade: 150, ocupacao: 142, latitude: "-23.5505", longitude: "-46.6333", telefone: "(44) 9 1234-5678", email: "centro@cmei.com.br", diretor: "Maria Silva", coordenador: "Ana Paula", observacoes: "CMEI com boa estrutura." },
-    { id: 2, nome: "CMEI Norte", endereco: "Av. Norte, 456", capacidade: 120, ocupacao: 115, latitude: "-23.4500", longitude: "-46.5500", telefone: "(44) 9 8765-4321", email: "norte@cmei.com.br", diretor: "João Santos", coordenador: "Pedro Lima", observacoes: "Em expansão." },
-    { id: 3, nome: "CMEI Sul", endereco: "Rua Sul, 789", capacidade: 180, ocupacao: 165, latitude: "-23.6500", longitude: "-46.7500", telefone: "(44) 9 1122-3344", email: "sul@cmei.com.br", diretor: "Carla Oliveira", coordenador: "Lucas Costa", observacoes: "Recém reformado." },
-    { id: 4, nome: "CMEI Leste", endereco: "Av. Leste, 321", capacidade: 140, ocupacao: 128, latitude: "-23.5000", longitude: "-46.5000", telefone: "(44) 9 5566-7788", email: "leste@cmei.com.br", diretor: "Beatriz Souza", coordenador: "Gabriel Alves", observacoes: "Parceria com a comunidade." },
-  ]);
+  const { cmeis, isLoading, error } = useCMEIs();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCmei, setEditingCmei] = useState<Omit<Cmei, 'capacidade' | 'ocupacao'> & { id?: number } | undefined>(undefined);
+  const [editingCmei, setEditingCmei] = useState<Cmei | undefined>(undefined);
   const [currentView, setCurrentView] = useState<"grid" | "list">("grid");
-
-  const handleSaveCmei = (data: Omit<Cmei, 'id' | 'capacidade' | 'ocupacao'>) => {
-    if (editingCmei?.id) {
-      setCmeis(cmeis.map(c => c.id === editingCmei.id ? { ...c, ...data } : c));
-      toast.success("CMEI atualizado com sucesso!");
-    } else {
-      const newId = Math.max(...cmeis.map(c => c.id)) + 1;
-      setCmeis([...cmeis, { id: newId, ocupacao: 0, capacidade: 0, ...data }]); 
-      toast.success("CMEI cadastrado com sucesso!");
-    }
-    setEditingCmei(undefined);
-    setIsModalOpen(false);
-  };
-
-  const handleDeleteCmei = (id: number) => {
-    setCmeis(cmeis.filter(cmei => cmei.id !== id));
-    toast.success("CMEI excluído com sucesso!");
-    setIsModalOpen(false); // Fecha o modal após a exclusão
-  };
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleEditClick = (cmei: Cmei) => {
-    setEditingCmei({
-      id: cmei.id,
-      nome: cmei.nome,
-      endereco: cmei.endereco,
-      latitude: cmei.latitude,
-      longitude: cmei.longitude,
-      telefone: cmei.telefone,
-      email: cmei.email,
-      diretor: cmei.diretor,
-      coordenador: cmei.coordenador,
-    });
+    // Mapeia Cmei (com capacidade/ocupacao) para o formato esperado pelo modal (sem esses campos)
+    setEditingCmei(cmei);
     setIsModalOpen(true);
   };
 
@@ -82,6 +35,38 @@ const CMEIs = () => {
     setEditingCmei(undefined);
     setIsModalOpen(true);
   };
+  
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setEditingCmei(undefined);
+  };
+
+  const filteredCmeis = cmeis.filter(cmei => 
+    cmei.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cmei.endereco.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-96">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="ml-3 text-lg text-muted-foreground">Carregando CMEIs...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+  
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="text-center p-8 bg-destructive/10 border border-destructive rounded-lg">
+          <p className="text-destructive font-semibold">Erro ao carregar dados: {error.message}</p>
+          <p className="text-sm text-destructive/80 mt-2">Verifique a conexão com o Supabase e as políticas de RLS.</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -103,9 +88,7 @@ const CMEIs = () => {
             </DialogTrigger>
             <NovaCmeiModal 
               initialData={editingCmei} 
-              onSave={handleSaveCmei} 
-              onClose={() => setIsModalOpen(false)} 
-              onDelete={handleDeleteCmei} // Passa a função de exclusão
+              onClose={handleModalClose} 
             />
           </Dialog>
         </div>
@@ -118,6 +101,8 @@ const CMEIs = () => {
                 <Input 
                   placeholder="Buscar por nome ou endereço..." 
                   className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
               <ToggleGroup 
@@ -140,10 +125,18 @@ const CMEIs = () => {
             </div>
           </CardHeader>
         </Card>
+        
+        {filteredCmeis.length === 0 && (
+            <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                    Nenhum CMEI encontrado.
+                </CardContent>
+            </Card>
+        )}
 
-        {currentView === "grid" ? (
+        {currentView === "grid" && filteredCmeis.length > 0 && (
           <div className="grid md:grid-cols-2 gap-6">
-            {cmeis.map((cmei) => {
+            {filteredCmeis.map((cmei) => {
               const ocupacaoPercent = cmei.capacidade > 0 ? Math.round((cmei.ocupacao / cmei.capacidade) * 100) : 0;
               return (
                 <Card key={cmei.id} className="hover:shadow-lg transition-shadow">
@@ -196,7 +189,9 @@ const CMEIs = () => {
               );
             })}
           </div>
-        ) : (
+        )}
+        
+        {currentView === "list" && filteredCmeis.length > 0 && (
           <Card>
             <CardContent className="pt-6">
               <Table>
@@ -212,7 +207,7 @@ const CMEIs = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {cmeis.map((cmei) => {
+                  {filteredCmeis.map((cmei) => {
                     const ocupacaoPercent = cmei.capacidade > 0 ? Math.round((cmei.ocupacao / cmei.capacidade) * 100) : 0;
                     return (
                       <TableRow key={cmei.id}>
