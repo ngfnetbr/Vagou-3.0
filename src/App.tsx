@@ -11,7 +11,7 @@ import Matriculas from "./pages/admin/Matriculas";
 import Fila from "./pages/admin/Fila";
 import Criancas from "./pages/admin/Criancas";
 import Turmas from "./pages/admin/Turmas";
-// import Convocacoes from "./pages/admin/Convocacoes"; // Removido
+import Convocacoes from "./pages/admin/Convocacoes"; // Reativado
 import Relatorios from "./pages/admin/Relatorios";
 import Configuracoes from "./pages/admin/Configuracoes";
 import Logs from "./pages/Logs";
@@ -32,9 +32,9 @@ const App = () => (
         <SessionContextProvider>
           <Routes>
             {/* Public Routes */}
-            <Route path="/" element={<Inscricao />} />
-            <Route path="/inscricao" element={<Inscricao />} />
+            <Route path="/" element={<Login />} /> {/* Rota raiz agora é Login */}
             <Route path="/login" element={<Login />} />
+            <Route path="/publico/inscricao" element={<Inscricao />} /> {/* Nova rota para Inscrição */}
             
             {/* Admin Routes (Protected) */}
             <Route path="/admin" element={<ProtectedRoute />}>
@@ -46,7 +46,7 @@ const App = () => (
               <Route path="criancas/:id" element={<DetalhesCrianca />} />
               <Route path="turmas" element={<Turmas />} />
               <Route path="turmas/:id" element={<DetalhesTurma />} />
-              {/* <Route path="convocacoes" element={<Convocacoes />} /> */}
+              <Route path="convocacoes" element={<Convocacoes />} /> {/* Reativado */}
               <Route path="relatorios" element={<Relatorios />} />
               <Route path="configuracoes" element={<Configuracoes />} />
               <Route path="/admin/logs" element={<Logs />} /> {/* Logs dentro da área admin */}

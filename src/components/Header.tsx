@@ -16,7 +16,7 @@ export const Header = () => {
             </div>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
-            <Link to="/inscricao" className="text-primary-foreground hover:opacity-80 transition-opacity text-sm font-medium">
+            <Link to="/publico/inscricao" className="text-primary-foreground hover:opacity-80 transition-opacity text-sm font-medium">
               Nova Inscrição
             </Link>
             <Link to="/login" className="bg-primary-foreground text-primary px-4 py-2 rounded text-sm font-medium hover:opacity-90 transition-opacity">
