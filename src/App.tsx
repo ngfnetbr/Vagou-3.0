@@ -18,6 +18,8 @@ import Logs from "./pages/Logs";
 import NotFound from "./pages/NotFound";
 import DetalhesTurma from "./pages/admin/DetalhesTurma";
 import DetalhesCrianca from "./pages/admin/DetalhesCrianca"; // Importando a nova página
+import { SessionContextProvider } from "./components/SessionContextProvider";
+import ProtectedRoute from "./components/ProtectedRoute"; // Importando o ProtectedRoute
 
 const queryClient = new QueryClient();
 
@@ -27,31 +29,36 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Inscricao />} />
-          <Route path="/inscricao" element={<Inscricao />} />
-          <Route path="/login" element={<Login />} />
-          
-          {/* Admin Routes */}
-          <Route path="/admin" element={<Dashboard />} />
-          <Route path="/admin/cmeis" element={<CMEIs />} />
-          <Route path="/admin/matriculas" element={<Matriculas />} />
-          <Route path="/admin/fila" element={<Fila />} />
-          <Route path="/admin/criancas" element={<Criancas />} />
-          <Route path="/admin/criancas/:id" element={<DetalhesCrianca />} /> {/* Nova rota dinâmica */}
-          <Route path="/admin/turmas" element={<Turmas />} />
-          <Route path="/admin/turmas/:id" element={<DetalhesTurma />} />
-          {/* <Route path="/admin/convocacoes" element={<Convocacoes />} /> */} {/* Rota removida */}
-          <Route path="/admin/relatorios" element={<Relatorios />} />
-          <Route path="/admin/configuracoes" element={<Configuracoes />} />
-          
-          {/* Logs Route */}
-          <Route path="/logs" element={<Logs />} />
-          
-          {/* Catch-all route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <SessionContextProvider>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Inscricao />} />
+            <Route path="/inscricao" element={<Inscricao />} />
+            <Route path="/login" element={<Login />} />
+            
+            {/* Admin Routes (Protected) */}
+            <Route path="/admin" element={<ProtectedRoute />}>
+              <Route index element={<Dashboard />} />
+              <Route path="cmeis" element={<CMEIs />} />
+              <Route path="matriculas" element={<Matriculas />} />
+              <Route path="fila" element={<Fila />} />
+              <Route path="criancas" element={<Criancas />} />
+              <Route path="criancas/:id" element={<DetalhesCrianca />} />
+              <Route path="turmas" element={<Turmas />} />
+              <Route path="turmas/:id" element={<DetalhesTurma />} />
+              {/* <Route path="convocacoes" element={<Convocacoes />} /> */}
+              <Route path="relatorios" element={<Relatorios />} />
+              <Route path="configuracoes" element={<Configuracoes />} />
+              <Route path="/admin/logs" element={<Logs />} /> {/* Logs dentro da área admin */}
+            </Route>
+            
+            {/* Logs Route (Movido para dentro de /admin, mas mantendo a rota antiga por enquanto se necessário) */}
+            <Route path="/logs" element={<ProtectedRoute><Logs /></ProtectedRoute>} />
+            
+            {/* Catch-all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </SessionContextProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -21,7 +21,7 @@ const menuItems = [
   // { icon: Bell, label: "Convocações", to: "/admin/convocacoes" }, // Removido
   { icon: FileText, label: "Relatórios", to: "/admin/relatorios" },
   { icon: Settings, label: "Configurações", to: "/admin/configuracoes" },
-  { icon: History, label: "Logs do Sistema", to: "/logs" },
+  { icon: History, label: "Logs do Sistema", to: "/admin/logs" },
 ];
 
 export const AdminSidebar = () => {

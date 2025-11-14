@@ -1,12 +1,23 @@
 import { Header } from "@/components/Header";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
-import { LogIn } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Auth } from "@supabase/auth-ui-react";
+import { ThemeSupa } from "@supabase/auth-ui-shared";
+import { useSession } from "@/components/SessionContextProvider";
+import { Navigate } from "react-router-dom";
 
 const Login = () => {
+  const { session, isLoading } = useSession();
+
+  // Se a sessão estiver carregando, não renderiza nada (o SessionContextProvider já mostra um loader)
+  if (isLoading) {
+    return null;
+  }
+
+  // Se o usuário já estiver logado, redireciona para o dashboard
+  if (session) {
+    return <Navigate to="/admin" replace />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -22,52 +33,67 @@ const Login = () => {
             </p>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Login</CardTitle>
-              <CardDescription>
-                Entre com suas credenciais de acesso
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="seu.email@exemplo.com"
-                  className="border-input"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  placeholder="••••••••"
-                  className="border-input"
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <a href="#" className="text-primary hover:underline">
-                  Esqueceu a senha?
-                </a>
-              </div>
-
-              <Link to="/admin">
-                <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Entrar
-                </Button>
-              </Link>
-
-              <div className="text-center text-sm text-muted-foreground">
-                Não tem acesso administrativo?
-              </div>
-            </CardContent>
-          </Card>
+          <div className="p-6 border rounded-lg bg-card shadow-lg">
+            <Auth
+              supabaseClient={supabase}
+              providers={[]}
+              appearance={{
+                theme: ThemeSupa,
+                variables: {
+                    default: {
+                        colors: {
+                            brand: 'hsl(var(--primary))',
+                            brandAccent: 'hsl(var(--primary-foreground))',
+                            defaultButtonBackground: 'hsl(var(--secondary))',
+                            defaultButtonBackgroundHover: 'hsl(var(--secondary)/90%)',
+                            defaultButtonText: 'hsl(var(--secondary-foreground))',
+                            inputBackground: 'hsl(var(--input))',
+                            inputBorder: 'hsl(var(--border))',
+                            inputBorderHover: 'hsl(var(--ring))',
+                            inputBorderFocus: 'hsl(var(--ring))',
+                        },
+                    },
+                },
+              }}
+              theme="light"
+              view="sign_in"
+              localization={{
+                variables: {
+                    sign_in: {
+                        email_label: 'E-mail',
+                        password_label: 'Senha',
+                        email_input_placeholder: 'seu.email@exemplo.com',
+                        password_input_placeholder: '••••••••',
+                        button_label: 'Entrar',
+                        loading_button_label: 'Entrando...',
+                        link_text: 'Já tem uma conta? Entre',
+                    },
+                    sign_up: {
+                        email_label: 'E-mail',
+                        password_label: 'Senha',
+                        email_input_placeholder: 'seu.email@exemplo.com',
+                        password_input_placeholder: '••••••••',
+                        button_label: 'Cadastrar',
+                        loading_button_label: 'Cadastrando...',
+                        link_text: 'Não tem uma conta? Cadastre-se',
+                    },
+                    forgotten_password: {
+                        email_label: 'E-mail',
+                        email_input_placeholder: 'seu.email@exemplo.com',
+                        button_label: 'Enviar instruções de recuperação',
+                        loading_button_label: 'Enviando...',
+                        link_text: 'Esqueceu sua senha?',
+                    },
+                    update_password: {
+                        password_label: 'Nova Senha',
+                        password_input_placeholder: '••••••••',
+                        button_label: 'Atualizar Senha',
+                        loading_button_label: 'Atualizando...',
+                    },
+                }
+              }}
+            />
+          </div>
 
           <div className="mt-6 p-4 bg-accent/10 border border-accent rounded-lg">
             <p className="text-sm text-foreground">
