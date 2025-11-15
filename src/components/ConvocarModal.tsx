@@ -1,10 +1,9 @@
-import { DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Crianca } from "@/integrations/supabase/types";
-import { useCMEIs, useTurmasByCmei } from "@/hooks/use-cmeis";
-import { useCriancas } from "@/hooks/use-criancas";
-import { useState, useMemo } from "react";
-import { Loader2 } from "lucide-react";
+import { Crianca, ConvocationData } from "@/integrations/supabase/types";
+import { useCriancas, useAvailableTurmas } from "@/hooks/use-criancas";
+import { useMemo } from "react";
+import { Loader2, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +11,8 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
+import { useConfiguracoes } from "@/hooks/use-configuracoes";
 
 interface ConvocarModalProps {
     crianca: Crianca;
@@ -21,66 +21,57 @@ interface ConvocarModalProps {
 
 // Define o esquema de validação
 const convocarSchema = z.object({
-    cmei_id: z.string().uuid({ message: "Selecione um CMEI válido." }),
-    turma_id: z.string().uuid({ message: "Selecione uma Turma válida." }),
+    // O valor do select será uma string combinada: "cmei_id|turma_id|cmei_nome|turma_nome"
+    vagaSelecionada: z.string().min(1, "Selecione uma vaga disponível."),
     deadline_dias: z.coerce.number().min(1, "O prazo deve ser de pelo menos 1 dia."),
 });
 
 type ConvocarFormData = z.infer<typeof convocarSchema>;
 
 const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
-    const { cmeis, isLoading: isLoadingCmeis } = useCMEIs();
     const { convocarCrianca, isConvoking } = useCriancas();
+    const { config, isLoading: isLoadingConfig } = useConfiguracoes();
     
-    const [selectedCmeiId, setSelectedCmeiId] = useState<string | undefined>(crianca.cmei_atual_id);
-    
-    // Busca turmas dinamicamente
-    const { data: turmas, isLoading: isLoadingTurmas } = useTurmasByCmei(selectedCmeiId);
+    // Hook que busca vagas disponíveis filtradas por idade e preferência
+    const { data: availableTurmas, isLoading: isLoadingTurmas } = useAvailableTurmas(crianca.id);
 
     const form = useForm<ConvocarFormData>({
         resolver: zodResolver(convocarSchema),
         defaultValues: {
-            cmei_id: crianca.cmei_atual_id || "",
-            turma_id: crianca.turma_atual_id || "",
-            deadline_dias: 7, // Prazo padrão de 7 dias
+            vagaSelecionada: "",
+            deadline_dias: config?.prazo_resposta_dias || 7, // Usa o prazo configurado
+        },
+        values: {
+            vagaSelecionada: "",
+            deadline_dias: config?.prazo_resposta_dias || 7,
         },
     });
     
-    // Atualiza o estado local quando o CMEI é selecionado no formulário
-    const handleCmeiChange = (value: string) => {
-        setSelectedCmeiId(value);
-        form.setValue('cmei_id', value);
-        form.setValue('turma_id', ''); // Resetar turma ao mudar CMEI
-    };
-    
-    const selectedCmei = useMemo(() => {
-        return (cmeis || []).find(c => c.id === selectedCmeiId);
-    }, [cmeis, selectedCmeiId]);
-    
-    const selectedTurma = useMemo(() => {
-        return (turmas || []).find(t => t.id === form.watch('turma_id'));
-    }, [turmas, form.watch('turma_id')]);
+    const isLoadingData = isLoadingConfig || isLoadingTurmas;
 
     const onSubmit = async (values: ConvocarFormData) => {
-        if (!selectedCmei || !selectedTurma) {
-            toast.error("Erro de seleção", { description: "CMEI ou Turma não encontrados." });
+        // values.vagaSelecionada: "cmei_id|turma_id|cmei_nome|turma_nome"
+        const parts = values.vagaSelecionada.split('|');
+        
+        if (parts.length !== 4) {
+            toast.error("Erro de seleção", { description: "Formato de vaga inválido." });
             return;
         }
         
+        const [cmei_id, turma_id, cmei_nome, turma_nome] = parts;
+
+        const convocationData: ConvocationData = { cmei_id, turma_id };
+        
         try {
             // Calcula o prazo final
-            const deadlineDate = new Date();
-            deadlineDate.setDate(deadlineDate.getDate() + values.deadline_dias);
+            const deadlineDate = addDays(new Date(), values.deadline_dias);
             const deadlineString = format(deadlineDate, 'yyyy-MM-dd');
             
             await convocarCrianca({
                 criancaId: crianca.id,
-                data: {
-                    cmei_id: values.cmei_id,
-                    turma_id: values.turma_id,
-                },
-                cmeiNome: selectedCmei.nome,
-                turmaNome: selectedTurma.nome,
+                data: convocationData,
+                cmeiNome: cmei_nome,
+                turmaNome: turma_nome,
                 deadline: deadlineString,
             });
             
@@ -89,71 +80,70 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
             // Erro tratado pelo hook useCriancas
         }
     };
+    
+    const isReconvocacao = crianca.status === 'Convocado';
 
     return (
         <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-                <DialogTitle>{crianca.status === 'Convocado' ? 'Reconvocar' : 'Convocar'} Criança</DialogTitle>
+                <DialogTitle>{isReconvocacao ? 'Reconvocar' : 'Convocar'} Criança</DialogTitle>
                 <DialogDescription>
-                    Selecione o CMEI e a turma para a qual <span className="font-semibold">{crianca.nome}</span> será convocada.
+                    Selecione a vaga compatível para a qual <span className="font-semibold">{crianca.nome}</span> será convocada.
                 </DialogDescription>
             </DialogHeader>
             
+            <div className="space-y-2 text-sm p-3 bg-primary/5 rounded-lg border border-primary/20">
+                <p className="font-semibold text-primary">Preferências da Criança:</p>
+                <p className="text-muted-foreground">
+                    1ª Opção: {crianca.cmei1_preferencia}
+                    {crianca.cmei2_preferencia && `, 2ª Opção: ${crianca.cmei2_preferencia}`}
+                </p>
+                <p className="text-muted-foreground">
+                    Aceita qualquer CMEI: {crianca.aceita_qualquer_cmei ? 'Sim' : 'Não'}
+                </p>
+            </div>
+
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     
-                    {/* Seleção de CMEI */}
+                    {/* Seleção de Vaga (CMEI + Turma) */}
                     <FormField
                         control={form.control}
-                        name="cmei_id"
+                        name="vagaSelecionada"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>CMEI de Convocação</FormLabel>
-                                <Select onValueChange={handleCmeiChange} value={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger disabled={isLoadingCmeis || isConvoking}>
-                                            <SelectValue placeholder="Selecione o CMEI" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {(cmeis || []).map((cmei) => (
-                                            <SelectItem key={cmei.id} value={cmei.id}>
-                                                {cmei.nome} ({cmei.ocupacao}/{cmei.capacidade})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    
-                    {/* Seleção de Turma */}
-                    <FormField
-                        control={form.control}
-                        name="turma_id"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Turma de Convocação</FormLabel>
+                                <FormLabel>Vaga Disponível *</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
-                                        <SelectTrigger disabled={!selectedCmeiId || isLoadingTurmas || isConvoking}>
-                                            <SelectValue placeholder="Selecione a Turma" />
+                                        <SelectTrigger disabled={isLoadingData || isConvoking}>
+                                            <SelectValue placeholder={isLoadingData ? "Buscando vagas compatíveis..." : "Selecione a Vaga"} />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {isLoadingTurmas ? (
+                                        {isLoadingData ? (
                                             <SelectItem value="loading" disabled>
-                                                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando turmas...
+                                                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando...
                                             </SelectItem>
-                                        ) : (turmas || []).length > 0 ? (
-                                            (turmas || []).map((turma) => (
-                                                <SelectItem key={turma.id} value={turma.id}>
-                                                    {turma.nome} ({turma.ocupacao}/{turma.capacidade})
-                                                </SelectItem>
-                                            ))
+                                        ) : availableTurmas && availableTurmas.length > 0 ? (
+                                            availableTurmas.map((vaga, index) => {
+                                                const isPreferred = crianca.cmei1_preferencia === vaga.cmei || crianca.cmei2_preferencia === vaga.cmei;
+                                                const label = `${vaga.cmei} - ${vaga.turma} (${vaga.vagas} vagas)`;
+                                                
+                                                // Valor combinado: cmei_id|turma_id|cmei_nome|turma_nome
+                                                const value = `${vaga.cmei_id}|${vaga.turma_id}|${vaga.cmei}|${vaga.turma}`;
+                                                
+                                                return (
+                                                    <SelectItem 
+                                                        key={index} 
+                                                        value={value}
+                                                        className={isPreferred ? 'font-semibold text-primary' : ''}
+                                                    >
+                                                        {label}
+                                                    </SelectItem>
+                                                );
+                                            })
                                         ) : (
-                                            <SelectItem value="none" disabled>Nenhuma turma disponível</SelectItem>
+                                            <SelectItem value="none" disabled>Nenhuma vaga compatível encontrada.</SelectItem>
                                         )}
                                     </SelectContent>
                                 </Select>
@@ -183,17 +173,19 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                         )}
                     />
 
-                    <Button type="submit" className="w-full" disabled={isConvoking}>
+                    <Button type="submit" className="w-full" disabled={isConvoking || !form.formState.isValid || (availableTurmas?.length === 0 && !isLoadingData)}>
                         {isConvoking ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : crianca.status === 'Convocado' ? (
-                            'Reconvocar'
                         ) : (
-                            'Convocar Criança'
+                            <Bell className="mr-2 h-4 w-4" />
                         )}
+                        {isReconvocacao ? 'Reconvocar Criança' : 'Convocar Criança'}
                     </Button>
                 </form>
             </Form>
+            <DialogFooter className="text-xs text-muted-foreground pt-2">
+                A lista de vagas é filtrada automaticamente por compatibilidade de idade e preferências.
+            </DialogFooter>
         </DialogContent>
     );
 };
