@@ -36,7 +36,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ deadline }) => {
 
   if (!deadlineDate || secondsRemaining < 0) {
     return (
-      <div className={cn("flex items-center gap-1 text-xs font-medium px-2 py-1 rounded", "bg-destructive/20 text-destructive")}>
+      <div className={cn("flex items-center gap-1 text-xs font-medium px-2 py-1 rounded w-fit", "bg-destructive/20 text-destructive")}>
         <XCircle className="h-3 w-3" />
         Expirado ({expirationDateFormatted})
       </div>
@@ -57,7 +57,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ deadline }) => {
     : "bg-accent/20 text-foreground";
 
   return (
-    <div className={cn("flex flex-col items-start text-xs font-medium px-2 py-1 rounded", className)}>
+    <div className={cn("flex flex-col items-start text-xs font-medium px-2 py-1 rounded w-fit", className)}>
       <div className="flex items-center gap-1">
         <Clock className="h-3 w-3" />
         <span className="font-bold">{timeString}</span>
