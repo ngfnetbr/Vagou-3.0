@@ -102,7 +102,7 @@ export const FilaTable = ({
                     <TableCell>{getInscriptionDate(item)}</TableCell>
                     <TableCell>
                       <Badge variant={item.programas_sociais ? "default" : "secondary"}>
-                        {item.programas_sociais ? "Prior. Social" : "Normal"}
+                        {getPriorityLabel(item)}
                       </Badge>
                     </TableCell>
                     <TableCell>
