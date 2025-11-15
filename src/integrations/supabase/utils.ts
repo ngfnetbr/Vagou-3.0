@@ -66,6 +66,7 @@ export const mapDbToCrianca = (dbData: any): Crianca => {
         posicao_fila: dbData.posicao_fila,
         convocacao_deadline: dbData.convocacao_deadline,
         created_at: dbData.created_at,
+        data_penalidade: dbData.data_penalidade, // Incluindo data_penalidade
         
         // Campos calculados
         idade: calculateAgeString(dbData.data_nascimento),
@@ -98,6 +99,7 @@ export const mapFormToDb = (data: InscricaoFormData) => {
         turma_atual_id: null,
         posicao_fila: null, // Será gerenciado por uma função de fila ou trigger
         convocacao_deadline: null,
+        data_penalidade: null,
     };
 };
 

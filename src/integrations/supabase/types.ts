@@ -32,6 +32,7 @@ export interface Crianca {
   posicao_fila?: number;
   convocacao_deadline?: string; // YYYY-MM-DD for conviction deadline
   created_at: string;
+  data_penalidade?: string; // Novo campo para penalidade de fila
   
   // Campos calculados/relacionados (não vêm diretamente do DB, mas são úteis no frontend)
   idade: string; // Calculado

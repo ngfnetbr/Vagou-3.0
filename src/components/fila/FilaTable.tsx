@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { Clock } from "lucide-react";
 import { toast } from "sonner";
 import { format, differenceInDays, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale"; // Importando ptBR
 
 type JustificativaAction = 'recusada' | 'desistente' | 'fim_de_fila';
 
@@ -33,7 +34,7 @@ const getDeadlineInfo = (deadline: string) => {
 
     if (isExpired) {
         return {
-            text: `Prazo Expirado (${new Date(deadlineDate).toLocaleDateString('pt-BR')})`,
+            text: `Prazo Expirado (${format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR })})`,
             className: "bg-destructive/20 text-destructive",
             icon: XCircle,
             isExpired: true,
@@ -41,7 +42,7 @@ const getDeadlineInfo = (deadline: string) => {
     }
     
     return {
-        text: `Prazo: ${daysRemaining} dias (até ${new Date(deadlineDate).toLocaleDateString('pt-BR')})`,
+        text: `Prazo: ${daysRemaining} dias (até ${format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR })})`,
         className: "bg-accent/20 text-foreground",
         icon: Clock,
         isExpired: false,
@@ -82,6 +83,10 @@ export const FilaTable = ({
                 const isFilaEspera = item.status === "Fila de Espera";
                 const deadlineInfo = isConvocado && item.convocacao_deadline ? getDeadlineInfo(item.convocacao_deadline) : null;
                 
+                // Verifica se há penalidade (Fim de Fila)
+                const isPenalized = isFilaEspera && item.data_penalidade;
+                const penalidadeDate = isPenalized ? format(parseISO(item.data_penalidade + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR }) : null;
+                
                 return (
                   <TableRow key={item.id} className={isConvocado ? "bg-primary/5 hover:bg-primary/10" : ""}>
                     <TableCell className="font-bold text-primary">
@@ -102,6 +107,10 @@ export const FilaTable = ({
                                 <deadlineInfo.icon className="h-3 w-3" />
                                 {deadlineInfo.text}
                             </div>
+                        ) : isPenalized ? (
+                            <Badge variant="destructive" className="bg-destructive/20 text-destructive">
+                                Fim de Fila ({penalidadeDate})
+                            </Badge>
                         ) : (
                             <Badge variant="secondary">Fila de Espera</Badge>
                         )}
