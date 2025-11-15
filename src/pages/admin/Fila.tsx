@@ -139,13 +139,6 @@ const Fila = () => {
     // A posição na fila é agora o campo posicao_fila do DB, não precisamos simular a atribuição de posição
     const sortedFila = filaDeEspera;
     
-    // DEBUG LOG: Exibe a ordenação da fila
-    console.log("--- FILA DE ESPERA ORDENADA (DB) ---");
-    sortedFila.forEach(c => {
-        console.log(`Posição #${c.posicao_fila}: ${c.nome} | Prioridade: ${c.programas_sociais ? 'SIM' : 'NÃO'} | Nasc: ${c.data_nascimento} | Insc: ${c.created_at} | Penalidade: ${c.data_penalidade || 'N/A'}`);
-    });
-    console.log("------------------------------------");
-    
     const totalFila = criancas.filter(c => c.status === "Fila de Espera").length;
     const comPrioridade = criancas.filter(c => c.status === "Fila de Espera" && c.programas_sociais).length;
     const totalConvocados = criancas.filter(c => c.status === "Convocado").length;
