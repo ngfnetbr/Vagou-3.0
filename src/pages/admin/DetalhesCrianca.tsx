@@ -621,7 +621,8 @@ const DetalhesCrianca = () => {
                         <span className="absolute flex items-center justify-center w-3 h-3 bg-primary rounded-full -left-1.5 ring-4 ring-background"></span>
                         <div className="p-3 bg-card border border-border rounded-lg shadow-sm">
                         <time className="mb-1 text-xs font-normal leading-none text-muted-foreground">
-                            {format(parseISO(entry.data + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}
+                            {/* Usamos created_at para o timestamp completo */}
+                            {format(parseISO(entry.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}
                         </time>
                         <h3 className="text-base font-semibold text-foreground mt-1">{entry.acao}</h3>
                         <p className="text-sm font-normal text-muted-foreground">{entry.detalhes}</p>

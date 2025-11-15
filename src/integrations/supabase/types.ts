@@ -7,6 +7,7 @@ export interface HistoricoEntry {
   acao: string;
   detalhes: string;
   usuario: string;
+  created_at: string; // Adicionado para timestamp completo
 }
 
 // Tipagem da tabela 'criancas' no Supabase

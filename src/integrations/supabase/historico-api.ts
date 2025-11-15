@@ -5,7 +5,7 @@ import { HistoricoEntry } from "./types";
 export const fetchHistoricoCrianca = async (criancaId: string): Promise<HistoricoEntry[]> => {
     const { data, error } = await supabase
         .from('historico')
-        .select('data, acao, detalhes, usuario')
+        .select('data, acao, detalhes, usuario, created_at') // Incluindo created_at
         .eq('crianca_id', criancaId)
         .order('created_at', { ascending: false });
         
@@ -20,6 +20,7 @@ export const fetchHistoricoCrianca = async (criancaId: string): Promise<Historic
         acao: h.acao,
         detalhes: h.detalhes,
         usuario: h.usuario,
+        created_at: h.created_at, // Mapeando created_at
     }));
 };
 
@@ -27,7 +28,7 @@ export const fetchHistoricoCrianca = async (criancaId: string): Promise<Historic
 export const fetchHistoricoGeral = async (): Promise<HistoricoEntry[]> => {
     const { data, error } = await supabase
         .from('historico')
-        .select('data, acao, detalhes, usuario')
+        .select('data, acao, detalhes, usuario, created_at') // Incluindo created_at
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -40,5 +41,6 @@ export const fetchHistoricoGeral = async (): Promise<HistoricoEntry[]> => {
         acao: h.acao,
         detalhes: h.detalhes,
         usuario: h.usuario,
+        created_at: h.created_at, // Mapeando created_at
     }));
 };
