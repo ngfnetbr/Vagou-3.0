@@ -114,7 +114,7 @@ export const FilaTable = ({
                 const isFilaEspera = item.status === "Fila de Espera";
                 const deadlineInfo = isConvocado && item.convocacao_deadline ? getDeadlineInfo(item.convocacao_deadline) : null;
                 
-                // O badge de penalidade só aparece se for Fila de Espera, tiver penalidade E for prioritário
+                // Lógica para exibir o badge de penalidade (apenas se for prioritário E penalizado)
                 const isPenalizedPrioritario = isFilaEspera && item.data_penalidade && item.programas_sociais;
                 const isPenalized = isPenalizedPrioritario; 
                 
@@ -123,35 +123,29 @@ export const FilaTable = ({
                 return (
                   <TableRow key={item.id} className={isConvocado ? "bg-primary/5 hover:bg-primary/10" : ""}>
                     <TableCell className="font-bold text-primary">
-                        {isConvocado ? <Badge className="bg-primary text-primary-foreground h-6 px-2 uppercase tracking-wider rounded-none">CONV.</Badge> : `#${item.posicao_fila}`}
+                        {isConvocado ? <Badge className="bg-primary text-primary-foreground">CONV.</Badge> : `#${item.posicao_fila}`}
                     </TableCell>
                     <TableCell className="font-medium">{item.nome}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{item.idade}</TableCell>
                     <TableCell>{item.responsavel_nome}</TableCell>
                     <TableCell>{getInscriptionDate(item)}</TableCell>
                     <TableCell>
-                      <Badge 
-                        variant={item.programas_sociais ? "default" : "secondary"}
-                        className="h-6 px-2 uppercase tracking-wider rounded-none"
-                      >
+                      <Badge variant={item.programas_sociais ? "default" : "secondary"}>
                         {getPriorityLabel(item)}
                       </Badge>
                     </TableCell>
                     <TableCell>
                         {isConvocado && deadlineInfo ? (
-                            <div className={`flex items-center gap-1 text-xs font-medium p-1 rounded-none ${deadlineInfo.className}`}>
+                            <div className={`flex items-center gap-1 text-xs font-medium p-1 rounded ${deadlineInfo.className}`}>
                                 <deadlineInfo.icon className="h-3 w-3" />
                                 {deadlineInfo.text}
                             </div>
                         ) : isPenalized && penalidadeDate ? (
-                            <Badge 
-                                variant="destructive" 
-                                className="bg-destructive/20 text-destructive h-6 px-2 uppercase tracking-wider rounded-none"
-                            >
+                            <Badge variant="destructive" className="bg-destructive/20 text-destructive">
                                 Solicit. Fim de Fila ({penalidadeDate})
                             </Badge>
                         ) : (
-                            <Badge variant="secondary" className="h-6 px-2 uppercase tracking-wider rounded-none">Fila de Espera</Badge>
+                            <Badge variant="secondary">Fila de Espera</Badge>
                         )}
                     </TableCell>
                     <TableCell className="text-right">
