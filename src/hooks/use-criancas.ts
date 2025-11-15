@@ -21,7 +21,7 @@ import { fetchAvailableTurmas } from "@/integrations/supabase/vagas-api";
 import { toast } from "sonner";
 import { Crianca, ConvocationData } from "@/integrations/supabase/types";
 import { InscricaoFormData } from "@/lib/schemas/inscricao-schema";
-import { supabase } from "@/integrations/supabase/client"; // Necessário para buscar nome da turma
+import { supabase } from "@/integrations/supabase/client";
 
 const CRIANCAS_QUERY_KEY = 'criancas';
 const HISTORICO_QUERY_KEY = 'historicoCrianca';
@@ -36,27 +36,36 @@ export const useCriancas = () => {
     queryFn: fetchCriancas,
   });
   
-  // --- Mutações com Logs ---
-
-  const mutationOptions = (successMessage: string, errorMessage: string) => ({
-    onSuccess: () => {
+  // Helper para invalidar queries de criança e histórico
+  const invalidateCriancaQueries = (criancaId: string) => {
       queryClient.invalidateQueries({ queryKey: [CRIANCAS_QUERY_KEY] });
-      toast.success(successMessage);
-    },
-    onError: (e: Error) => {
-      toast.error(errorMessage, { description: e.message });
-    },
-  });
+      queryClient.invalidateQueries({ queryKey: ['historicoGeral'] }); // Key used in useHistoricoGeral
+      queryClient.invalidateQueries({ queryKey: [HISTORICO_QUERY_KEY, criancaId] });
+  };
+  
+  // --- Mutações com Logs ---
   
   // CRUD de Inscrição
   const { mutateAsync: addCrianca, isPending: isAdding } = useMutation({
     mutationFn: apiAddCrianca,
-    ...mutationOptions("Inscrição realizada com sucesso!", "Falha ao cadastrar criança"),
+    onSuccess: (newCrianca) => {
+      invalidateCriancaQueries(newCrianca.id);
+      toast.success("Inscrição realizada com sucesso!");
+    },
+    onError: (e: Error) => {
+      toast.error("Falha ao cadastrar criança", { description: e.message });
+    },
   });
   
   const { mutateAsync: updateCrianca, isPending: isUpdating } = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: InscricaoFormData }) => apiUpdateCrianca(id, data),
-    ...mutationOptions("Dados da criança atualizados com sucesso!", "Falha ao atualizar dados da criança"),
+    mutationFn: ({ id, data }: { id: string, data: InscricaoFormData }) => apiUpdateCrianca(id, data).then(() => id),
+    onSuccess: (criancaId) => {
+      invalidateCriancaQueries(criancaId);
+      toast.success("Dados da criança atualizados com sucesso!");
+    },
+    onError: (e: Error) => {
+      toast.error("Falha ao atualizar dados da criança", { description: e.message });
+    },
   });
 
   // 1. Confirmar Matrícula
@@ -67,43 +76,81 @@ export const useCriancas = () => {
             throw new Error("Dados de CMEI/Turma ausentes para confirmação.");
         }
         await apiConfirmarMatricula(crianca.id, crianca.cmeiNome, crianca.turmaNome);
+        return crianca.id;
     },
-    ...mutationOptions("Matrícula confirmada com sucesso!", "Falha ao confirmar matrícula"),
+    onSuccess: (criancaId) => {
+        invalidateCriancaQueries(criancaId);
+        toast.success("Matrícula confirmada com sucesso!");
+    },
+    onError: (e: Error) => {
+      toast.error("Falha ao confirmar matrícula", { description: e.message });
+    },
   });
 
   // 2. Marcar Recusada
   const { mutateAsync: marcarRecusada, isPending: isMarkingRecusada } = useMutation({
     mutationFn: ({ id, justificativa }: { id: string, justificativa: string }) => 
-        apiMarcarRecusada(id, justificativa),
-    ...mutationOptions("Convocação marcada como recusada.", "Falha ao recusar convocação"),
+        apiMarcarRecusada(id, justificativa).then(() => id),
+    onSuccess: (criancaId) => {
+        invalidateCriancaQueries(criancaId);
+        toast.success("Convocação marcada como recusada.");
+    },
+    onError: (e: Error) => {
+      toast.error("Falha ao recusar convocação", { description: e.message });
+    },
   });
 
   // 3. Marcar Desistente
   const { mutateAsync: marcarDesistente, isPending: isMarkingDesistente } = useMutation({
     mutationFn: ({ id, justificativa }: { id: string, justificativa: string }) => 
-        apiMarcarDesistente(id, justificativa),
-    ...mutationOptions("Criança marcada como desistente.", "Falha ao marcar desistência"),
+        apiMarcarDesistente(id, justificativa).then(() => id),
+    onSuccess: (criancaId) => {
+        invalidateCriancaQueries(criancaId);
+        toast.success("Criança marcada como desistente.");
+    },
+    onError: (e: Error) => {
+      toast.error("Falha ao marcar desistência", { description: e.message });
+    },
   });
 
   // 4. Marcar Fim de Fila
   const { mutateAsync: marcarFimDeFila, isPending: isMarkingFimDeFila } = useMutation({
     mutationFn: ({ id, justificativa }: { id: string, justificativa: string }) => 
-        apiMarcarFimDeFila(id, justificativa),
-    ...mutationOptions("Criança movida para o fim da fila (penalidade aplicada).", "Falha ao aplicar fim de fila"),
+        apiMarcarFimDeFila(id, justificativa).then(() => id),
+    onSuccess: (criancaId) => {
+        invalidateCriancaQueries(criancaId);
+        toast.success("Criança movida para o fim da fila (penalidade aplicada).");
+    },
+    onError: (e: Error) => {
+      toast.error("Falha ao aplicar fim de fila", { description: e.message });
+    },
   });
 
   // 5. Reativar na Fila
   const { mutateAsync: reativarCrianca, isPending: isReactivating } = useMutation({
-    mutationFn: (id: string) => apiReativarCrianca(id),
-    ...mutationOptions("Criança reativada na fila de espera.", "Falha ao reativar criança"),
+    mutationFn: (id: string) => apiReativarCrianca(id).then(() => id),
+    onSuccess: (criancaId) => {
+        invalidateCriancaQueries(criancaId);
+        toast.success("Criança reativada na fila de espera.");
+    },
+    onError: (e: Error) => {
+      toast.error("Falha ao reativar criança", { description: e.message });
+    },
   });
   
   // 6. Convocar Criança
   const { mutateAsync: convocarCrianca, isPending: isConvoking } = useMutation({
     mutationFn: async ({ criancaId, data, cmeiNome, turmaNome, deadline }: { criancaId: string, data: ConvocationData, cmeiNome: string, turmaNome: string, deadline: string }) => {
         await apiConvocarCrianca(criancaId, data, cmeiNome, turmaNome, deadline);
+        return criancaId;
     },
-    ...mutationOptions("Criança convocada com sucesso!", "Falha ao convocar criança"),
+    onSuccess: (criancaId) => {
+        invalidateCriancaQueries(criancaId);
+        toast.success("Criança convocada com sucesso!");
+    },
+    onError: (e: Error) => {
+      toast.error("Falha ao convocar criança", { description: e.message });
+    },
   });
   
   // 7. Realocar Criança (Mudar Turma dentro do mesmo CMEI)
@@ -122,22 +169,41 @@ export const useCriancas = () => {
         const turmaNome = turmaData?.nome || 'Turma Desconhecida';
         
         await apiRealocarCrianca(id, data, cmeiNome, turmaNome);
+        return id;
     },
-    ...mutationOptions("Criança realocada com sucesso!", "Falha ao realocar criança"),
+    onSuccess: (criancaId) => {
+        invalidateCriancaQueries(criancaId);
+        toast.success("Criança realocada com sucesso!");
+    },
+    onError: (e: Error) => {
+      toast.error("Falha ao realocar criança", { description: e.message });
+    },
   });
   
   // 8. Transferir Criança (Encerra matrícula por mudança de cidade)
   const { mutateAsync: transferirCrianca, isPending: isTransferring } = useMutation({
     mutationFn: ({ id, justificativa }: { id: string, justificativa: string }) => 
-        apiTransferirCrianca(id, justificativa),
-    ...mutationOptions("Matrícula encerrada por transferência.", "Falha ao transferir criança"),
+        apiTransferirCrianca(id, justificativa).then(() => id),
+    onSuccess: (criancaId) => {
+        invalidateCriancaQueries(criancaId);
+        toast.success("Matrícula encerrada por transferência.");
+    },
+    onError: (e: Error) => {
+      toast.error("Falha ao transferir criança", { description: e.message });
+    },
   });
   
   // 9. Solicitar Remanejamento
   const { mutateAsync: solicitarRemanejamento, isPending: isRequestingRemanejamento } = useMutation({
     mutationFn: ({ id, justificativa }: { id: string, justificativa: string }) => 
-        apiSolicitarRemanejamento(id, justificativa),
-    ...mutationOptions("Solicitação de remanejamento registrada.", "Falha ao solicitar remanejamento"),
+        apiSolicitarRemanejamento(id, justificativa).then(() => id),
+    onSuccess: (criancaId) => {
+        invalidateCriancaQueries(criancaId);
+        toast.success("Solicitação de remanejamento registrada.");
+    },
+    onError: (e: Error) => {
+      toast.error("Falha ao solicitar remanejamento", { description: e.message });
+    },
   });
   
   // 10. Excluir Criança
@@ -145,9 +211,12 @@ export const useCriancas = () => {
     mutationFn: async (id: string) => {
         const nome = criancas?.find(c => c.id === id)?.nome || 'Criança';
         await apiDeleteCrianca(id, nome);
+        return id;
     },
-    onSuccess: () => {
+    onSuccess: (criancaId) => {
       queryClient.invalidateQueries({ queryKey: [CRIANCAS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['historicoGeral'] });
+      queryClient.invalidateQueries({ queryKey: [HISTORICO_QUERY_KEY, criancaId] });
       toast.success("Criança excluída com sucesso.");
     },
     onError: (e: Error) => {
@@ -164,13 +233,13 @@ export const useCriancas = () => {
     // CRUD
     addCrianca,
     isAdding,
-    updateCrianca,
+    updateCrianca: (args: { id: string, data: InscricaoFormData }) => updateCrianca(args),
     isUpdating,
-    deleteCrianca: (id: string) => deleteCrianca(id), // Assinatura corrigida
+    deleteCrianca: (id: string) => deleteCrianca(id),
     isDeleting,
     
     // Mutações de Status
-    confirmarMatricula: (id: string) => confirmarMatricula(id), // Assinatura corrigida
+    confirmarMatricula: (id: string) => confirmarMatricula(id),
     isConfirmingMatricula,
     marcarRecusada,
     isMarkingRecusada,
