@@ -9,8 +9,8 @@ import { Crianca } from "@/integrations/supabase/types"; // Importação atualiz
 import { useNavigate } from "react-router-dom";
 import { Clock } from "lucide-react";
 import { toast } from "sonner";
-import { format, differenceInDays, parseISO, isValid } from "date-fns"; // Importando isValid
-import { ptBR } from "date-fns/locale"; // Importando ptBR
+import { format, differenceInDays, parseISO, isValid } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type JustificativaAction = 'recusada' | 'desistente' | 'fim_de_fila';
 
@@ -61,6 +61,25 @@ const getDeadlineInfo = (deadline: string) => {
     };
 };
 
+// Nova função helper para formatar a data de penalidade com segurança
+const formatPenalidadeDate = (dateString: string | undefined): string | null => {
+    if (!dateString) return null;
+    
+    try {
+        // Adiciona 'T00:00:00' para garantir que o parse seja feito corretamente
+        const date = parseISO(dateString);
+        
+        if (isValid(date)) {
+            return format(date, 'dd/MM/yyyy', { locale: ptBR });
+        }
+        return null;
+    } catch (e) {
+        console.error("Erro ao formatar data de penalidade:", e);
+        return null;
+    }
+};
+
+
 export const FilaTable = ({
   filteredFila,
   isConfirmingMatricula,
@@ -97,7 +116,7 @@ export const FilaTable = ({
                 
                 // Verifica se há penalidade (Fim de Fila)
                 const isPenalized = isFilaEspera && item.data_penalidade;
-                const penalidadeDate = isPenalized ? format(parseISO(item.data_penalidade + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR }) : null;
+                const penalidadeDate = formatPenalidadeDate(item.data_penalidade);
                 
                 return (
                   <TableRow key={item.id} className={isConvocado ? "bg-primary/5 hover:bg-primary/10" : ""}>
@@ -119,7 +138,7 @@ export const FilaTable = ({
                                 <deadlineInfo.icon className="h-3 w-3" />
                                 {deadlineInfo.text}
                             </div>
-                        ) : isPenalized ? (
+                        ) : isPenalized && penalidadeDate ? (
                             <Badge variant="destructive" className="bg-destructive/20 text-destructive">
                                 Fim de Fila ({penalidadeDate})
                             </Badge>
