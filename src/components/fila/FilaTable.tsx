@@ -136,7 +136,7 @@ export const FilaTable = ({
                     </TableCell>
                     <TableCell>
                         {isConvocado && deadlineInfo ? (
-                            <div className={`flex items-center gap-1 text-xs font-medium p-1 rounded ${deadlineInfo.className}`}>
+                            <div className={`flex items-center gap-1 text-xs font-medium p-1 rounded ${deadlineInfo.className} ${!deadlineInfo.isExpired ? 'animate-pulse' : ''}`}>
                                 <deadlineInfo.icon className="h-3 w-3" />
                                 {deadlineInfo.text}
                             </div>
