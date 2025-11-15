@@ -110,7 +110,12 @@ export const FilaTable = ({
                             <CountdownTimer deadline={item.convocacao_deadline} />
                         ) : (
                             // Se estiver na fila (mesmo que penalizado), exibe apenas Fila de Espera
-                            <Badge variant="secondary" className="w-fit flex justify-center items-center mx-auto">Fila de Espera</Badge>
+                            <Badge 
+                                variant="outline" 
+                                className="w-fit flex justify-center items-center mx-auto bg-accent/20 text-foreground border-accent/50"
+                            >
+                                Fila de Espera
+                            </Badge>
                         )}
                     </TableCell>
                     <TableCell className="text-right">
