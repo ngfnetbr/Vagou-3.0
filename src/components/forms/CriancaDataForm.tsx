@@ -8,9 +8,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { DatePicker } from "@/components/DatePicker";
 import { InscricaoFormData } from "@/lib/schemas/inscricao-schema";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { useAgeInMonths } from "@/hooks/use-age-in-months"; // Importando o novo hook
+import { AlertCircle, Baby } from "lucide-react";
+import { useAgeInMonths } from "@/hooks/use-age-in-months";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface CriancaDataFormProps {
   cmeiOptions: { value: string; label: string }[];
@@ -25,6 +27,18 @@ export const CriancaDataForm = ({ cmeiOptions, filteredCmei2Options, selectedCme
   const ageInMonths = useAgeInMonths(dataNascimento);
   
   const isUnderSixMonths = ageInMonths !== null && ageInMonths < 6;
+  
+  // Estado para controlar a exibição do modal
+  const [showAgeWarningModal, setShowAgeWarningModal] = useState(false);
+  // Estado para garantir que o aviso só apareça uma vez por sessão de preenchimento
+  const [hasShownWarning, setHasShownWarning] = useState(false);
+
+  useEffect(() => {
+    if (isUnderSixMonths && !hasShownWarning) {
+      setShowAgeWarningModal(true);
+      setHasShownWarning(true);
+    }
+  }, [isUnderSixMonths, hasShownWarning]);
 
   return (
     <Card>
@@ -51,17 +65,6 @@ export const CriancaDataForm = ({ cmeiOptions, filteredCmei2Options, selectedCme
             name="dataNascimento"
             render={({ field }) => (
               <FormItem className="space-y-2">
-                
-                {isUnderSixMonths && (
-                    <Alert variant="default" className="bg-accent/10 border-accent text-foreground mb-4">
-                        <AlertCircle className="h-4 w-4 text-accent" />
-                        <AlertTitle>Atenção à Idade Mínima</AlertTitle>
-                        <AlertDescription>
-                            Crianças abaixo de 6 meses de idade continuarão em lista de espera, mesmo que sua vez chegue, pois a idade mínima para início no CMEI é 6 meses.
-                        </AlertDescription>
-                    </Alert>
-                )}
-                
                 <FormLabel htmlFor="data-nascimento">
                   Data de Nascimento *
                   {isUnderSixMonths && (
@@ -227,6 +230,34 @@ export const CriancaDataForm = ({ cmeiOptions, filteredCmei2Options, selectedCme
           />
         </div>
       </CardContent>
+      
+      {/* Modal de Aviso de Idade Mínima */}
+      <Dialog open={showAgeWarningModal} onOpenChange={setShowAgeWarningModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 text-accent">
+                <Baby className="h-6 w-6" />
+                <DialogTitle className="text-xl">Aviso de Idade Mínima</DialogTitle>
+            </div>
+            <DialogDescription className="pt-2">
+              A criança tem menos de 6 meses de idade.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-foreground">
+              **Observação:** Crianças abaixo de 6 meses de idade continuarão em lista de espera, mesmo que sua vez chegue, pois a idade mínima para início no CMEI é 6 meses.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Você pode prosseguir com a inscrição, mas a matrícula só será efetivada após a criança completar 6 meses.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowAgeWarningModal(false)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              Entendi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
