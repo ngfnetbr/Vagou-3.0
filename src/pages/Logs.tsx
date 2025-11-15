@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Loader2 } from "lucide-react";
+import { Search, Download, Loader2, Eye } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useHistoricoGeral } from "@/hooks/use-historico";
@@ -12,6 +12,8 @@ import { HistoricoEntry } from "@/integrations/supabase/types"; // Importando a 
 import { Button } from "@/components/ui/button";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import LogDetailsModal from "@/components/LogDetailsModal"; // Importando o novo modal
 
 // Tipagem local para Logs (usando HistoricoEntry)
 interface LogEntry extends HistoricoEntry {
@@ -25,6 +27,10 @@ const Logs = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterAcao, setFilterAcao] = useState("todas");
   const [filterTipo, setFilterTipo] = useState("todos");
+  
+  // Estado para o modal de detalhes
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<LogEntry | undefined>(undefined);
 
   // Mapeia logs do DB para o formato de exibição e infere o tipo
   const mappedLogs: LogEntry[] = useMemo(() => {
@@ -96,6 +102,11 @@ const Logs = () => {
     toast.success("Exportação de logs iniciada!", {
       description: "O arquivo de logs será gerado e baixado em breve.",
     });
+  };
+  
+  const handleViewDetails = (log: LogEntry) => {
+    setSelectedLog(log);
+    setIsDetailsModalOpen(true);
   };
 
   if (isLoading) {
@@ -185,9 +196,10 @@ const Logs = () => {
                 <TableRow>
                   <TableHead className="w-[180px]">Data/Hora</TableHead>
                   <TableHead className="w-[150px]">Usuário</TableHead>
-                  <TableHead className="w-[250px]">Ação</TableHead>
+                  <TableHead className="w-[200px]">Ação</TableHead>
                   <TableHead>Detalhes</TableHead>
                   <TableHead className="w-[100px]">Tipo</TableHead>
+                  <TableHead className="w-[80px] text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -197,15 +209,20 @@ const Logs = () => {
                       <TableCell className="font-mono text-xs">{log.timestamp}</TableCell>
                       <TableCell className="text-sm">{log.usuario}</TableCell>
                       <TableCell className="font-medium">{log.acao}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-sm text-muted-foreground truncate max-w-xs">
                         {log.detalhes}
                       </TableCell>
                       <TableCell>{getTipoBadge(log.tipo)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewDetails(log)}>
+                            <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                       Nenhum log encontrado com os filtros aplicados.
                     </TableCell>
                   </TableRow>
@@ -215,6 +232,15 @@ const Logs = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Modal de Detalhes do Log */}
+      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+        {selectedLog && (
+          <LogDetailsModal 
+            log={selectedLog}
+          />
+        )}
+      </Dialog>
     </AdminLayout>
   );
 };
