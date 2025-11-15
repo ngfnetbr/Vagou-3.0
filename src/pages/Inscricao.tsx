@@ -97,8 +97,8 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
   const handleDelete = async () => {
     if (criancaId) {
       try {
-        // deleteCrianca agora espera o ID e o nome da criança
-        await deleteCrianca(criancaId, form.watch('nomeCrianca')); 
+        // deleteCrianca agora espera apenas o ID
+        await deleteCrianca(criancaId); 
         if (onSuccess) {
           // Usando asserção de tipo aqui para resolver o erro de compilação
           onSuccess(form.getValues() as InscricaoFormData); 
@@ -204,7 +204,7 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
                   ) : (
                     <Save className="mr-2 h-4 w-4" />
                   )}
-                  {isSubmitting ? "Processando..." : (isEditing ? "Salvar Alterações" : "Cadastrar")}
+                  {isEditing ? "Salvar Alterações" : "Cadastrar"}
                 </Button>
               </div>
             </div>

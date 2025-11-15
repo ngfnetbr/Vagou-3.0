@@ -108,9 +108,19 @@ export const useCriancas = () => {
   // 7. Realocar Criança (Mudar Turma dentro do mesmo CMEI)
   const { mutateAsync: realocarCrianca, isPending: isRealocating } = useMutation({
     mutationFn: async ({ id, data }: { id: string, data: ConvocationData }) => {
-        const cmei = await queryClient.getQueryData([CRIANCAS_QUERY_KEY])?.find(c => c.id === id)?.cmeiNome || 'CMEI Desconhecido';
-        const turma = await queryClient.getQueryData(['turmas', data.cmei_id])?.find((t: any) => t.id === data.turma_id)?.nome || 'Turma Desconhecida';
-        await apiRealocarCrianca(id, data, cmei, turma);
+        const crianca = await getCriancaById(id);
+        const cmeiNome = crianca?.cmeiNome || 'CMEI Desconhecido';
+        
+        // Busca o nome da turma no DB (ou cache)
+        const { data: turmaData } = await supabase
+            .from('turmas')
+            .select('nome')
+            .eq('id', data.turma_id)
+            .single();
+            
+        const turmaNome = turmaData?.nome || 'Turma Desconhecida';
+        
+        await apiRealocarCrianca(id, data, cmeiNome, turmaNome);
     },
     ...mutationOptions("Criança realocada com sucesso!", "Falha ao realocar criança"),
   });
@@ -154,11 +164,11 @@ export const useCriancas = () => {
     isAdding,
     updateCrianca,
     isUpdating,
-    deleteCrianca,
+    deleteCrianca: (id: string) => deleteCrianca({ id, nome: criancas?.find(c => c.id === id)?.nome || 'Criança' }),
     isDeleting,
     
     // Mutações de Status
-    confirmarMatricula,
+    confirmarMatricula: (id: string) => confirmarMatricula(id),
     isConfirmingMatricula,
     marcarRecusada,
     isMarkingRecusada,
