@@ -32,12 +32,13 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ deadline }) => {
     return () => clearInterval(interval);
   }, [deadlineDate]);
 
+  const expirationDateFormatted = deadlineDate ? format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A';
+
   if (!deadlineDate || secondsRemaining < 0) {
-    const expiredDateString = deadlineDate ? format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A';
     return (
-      <div className={cn("flex items-center gap-1 text-xs font-medium p-1 rounded", "bg-destructive/20 text-destructive")}>
+      <div className={cn("flex items-center gap-1 text-xs font-medium px-2 py-1 rounded", "bg-destructive/20 text-destructive")}>
         <XCircle className="h-3 w-3" />
-        Expirado ({expiredDateString})
+        Expirado ({expirationDateFormatted})
       </div>
     );
   }
@@ -54,11 +55,9 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ deadline }) => {
   const className = isUrgent 
     ? "bg-destructive/20 text-destructive animate-pulse" 
     : "bg-accent/20 text-foreground";
-    
-  const expirationDateFormatted = format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR });
 
   return (
-    <div className={cn("flex flex-col items-start gap-1 text-xs font-medium p-1 rounded", className)}>
+    <div className={cn("flex flex-col items-start text-xs font-medium px-2 py-1 rounded", className)}>
       <div className="flex items-center gap-1">
         <Clock className="h-3 w-3" />
         <span className="font-bold">{timeString}</span>
