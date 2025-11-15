@@ -7,10 +7,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { MoreVertical, Eye, CheckCircle, Bell, XCircle, ListRestart, RotateCcw, Loader2, Trash2 } from "lucide-react";
 import { Crianca } from "@/integrations/supabase/types"; // Importação atualizada
 import { useNavigate } from "react-router-dom";
-import { Clock } from "lucide-react";
 import { toast } from "sonner";
-import { format, differenceInDays, parseISO, isValid } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import CountdownTimer from "../CountdownTimer"; // Importando o novo componente
 
 type JustificativaAction = 'recusada' | 'desistente' | 'fim_de_fila';
 
@@ -24,41 +24,12 @@ interface FilaTableProps {
   getInscriptionDate: (crianca: Crianca) => string;
 }
 
-// Helper functions (copied from Fila.tsx to keep FilaTable self-contained regarding display logic)
-const getDeadlineInfo = (deadline: string) => {
-    // Adiciona 'T00:00:00' para garantir que o parse seja feito corretamente e evita problemas de fuso horário
+// Função para verificar se o prazo expirou (usada para habilitar Reconvocar)
+const isDeadlineExpired = (deadline: string | undefined): boolean => {
+    if (!deadline) return false;
     const deadlineDate = parseISO(deadline + 'T00:00:00');
-    
-    if (!isValid(deadlineDate)) {
-        // Retorna um estado seguro se a data for inválida
-        return {
-            text: `Prazo Indefinido`,
-            className: "bg-muted/20 text-muted-foreground",
-            icon: Clock,
-            isExpired: false,
-        };
-    }
-    
-    const today = new Date();
-    const daysRemaining = differenceInDays(deadlineDate, today);
-    
-    const isExpired = daysRemaining < 0;
-
-    if (isExpired) {
-        return {
-            text: `Prazo Expirado (${format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR })})`,
-            className: "bg-destructive/20 text-destructive",
-            icon: XCircle,
-            isExpired: true,
-        };
-    }
-    
-    return {
-        text: `Prazo: ${daysRemaining} dias (até ${format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR })})`,
-        className: "bg-accent/20 text-foreground",
-        icon: Clock,
-        isExpired: false,
-    };
+    if (!isValid(deadlineDate)) return false;
+    return deadlineDate.getTime() < new Date().getTime();
 };
 
 // Nova função helper para formatar a data de penalidade com segurança
@@ -112,7 +83,7 @@ export const FilaTable = ({
               filteredFila.map((item) => {
                 const isConvocado = item.status === "Convocado";
                 const isFilaEspera = item.status === "Fila de Espera";
-                const deadlineInfo = isConvocado && item.convocacao_deadline ? getDeadlineInfo(item.convocacao_deadline) : null;
+                const deadlineExpired = isDeadlineExpired(item.convocacao_deadline);
                 
                 // Lógica para exibir o badge de penalidade (apenas se for prioritário E penalizado)
                 const isPenalizedPrioritario = isFilaEspera && item.data_penalidade && item.programas_sociais;
@@ -135,11 +106,8 @@ export const FilaTable = ({
                       </Badge>
                     </TableCell>
                     <TableCell>
-                        {isConvocado && deadlineInfo ? (
-                            <div className={`flex items-center gap-1 text-xs font-medium p-1 rounded ${deadlineInfo.className} ${!deadlineInfo.isExpired ? 'animate-pulse' : ''}`}>
-                                <deadlineInfo.icon className="h-3 w-3" />
-                                {deadlineInfo.text}
-                            </div>
+                        {isConvocado && item.convocacao_deadline ? (
+                            <CountdownTimer deadline={item.convocacao_deadline} />
                         ) : isPenalized && penalidadeDate ? (
                             <Badge variant="destructive" className="bg-destructive/20 text-destructive">
                                 Solicit. Fim de Fila ({penalidadeDate})
@@ -224,7 +192,7 @@ export const FilaTable = ({
                           )}
                           
                           {/* Opção de Convocar / Reconvocar */}
-                          {(!isConvocado || (isConvocado && deadlineInfo?.isExpired)) && (
+                          {(!isConvocado || (isConvocado && deadlineExpired)) && (
                             <DropdownMenuItem className="text-primary" onSelect={() => handleConvocarClick(item)}>
                               {isConvocado ? (
                                 <>
