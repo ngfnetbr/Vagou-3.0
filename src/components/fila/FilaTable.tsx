@@ -73,8 +73,8 @@ export const FilaTable = ({
               <TableHead>Idade</TableHead>
               <TableHead>Responsável</TableHead>
               <TableHead>Data Insc.</TableHead>
-              <TableHead>Prioridade</TableHead>
-              <TableHead>Status/Prazo</TableHead>
+              <TableHead className="text-center">Prioridade</TableHead>
+              <TableHead className="text-center">Status/Prazo</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -100,23 +100,23 @@ export const FilaTable = ({
                     <TableCell className="text-sm text-muted-foreground">{item.idade}</TableCell>
                     <TableCell>{item.responsavel_nome}</TableCell>
                     <TableCell>{getInscriptionDate(item)}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       <Badge 
                         variant={item.programas_sociais ? "default" : "secondary"}
-                        className="w-fit flex justify-center items-center"
+                        className="w-fit flex justify-center items-center mx-auto"
                       >
                         {getPriorityLabel(item)}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                         {isConvocado && item.convocacao_deadline ? (
                             <CountdownTimer deadline={item.convocacao_deadline} />
                         ) : isPenalized && penalidadeDate ? (
-                            <Badge variant="destructive" className="bg-destructive/20 text-destructive w-fit flex justify-center items-center">
+                            <Badge variant="destructive" className="bg-destructive/20 text-destructive w-fit flex justify-center items-center mx-auto">
                                 Solicit. Fim de Fila ({penalidadeDate})
                             </Badge>
                         ) : (
-                            <Badge variant="secondary" className="w-fit flex justify-center items-center">Fila de Espera</Badge>
+                            <Badge variant="secondary" className="w-fit flex justify-center items-center mx-auto">Fila de Espera</Badge>
                         )}
                     </TableCell>
                     <TableCell className="text-right">
