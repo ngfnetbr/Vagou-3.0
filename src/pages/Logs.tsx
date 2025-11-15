@@ -38,8 +38,8 @@ const Logs = () => {
         tipo = "warning";
       }
       
-      // Usamos parseISO para garantir que a data seja interpretada corretamente
-      const date = parseISO(log.data + 'T00:00:00'); 
+      // Usamos created_at (timestamp completo) para formatar a data e hora exatas
+      const date = parseISO(log.created_at); 
       const timestamp = format(date, 'dd/MM/yyyy HH:mm:ss', { locale: ptBR });
       
       return {
@@ -183,21 +183,21 @@ const Logs = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Data/Hora</TableHead>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Ação</TableHead>
+                  <TableHead className="w-[180px]">Data/Hora</TableHead>
+                  <TableHead className="w-[150px]">Usuário</TableHead>
+                  <TableHead className="w-[250px]">Ação</TableHead>
                   <TableHead>Detalhes</TableHead>
-                  <TableHead>Tipo</TableHead>
+                  <TableHead className="w-[100px]">Tipo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredLogs.length > 0 ? (
                   filteredLogs.map((log) => (
                     <TableRow key={log.id}>
-                      <TableCell className="font-mono text-sm">{log.timestamp}</TableCell>
+                      <TableCell className="font-mono text-xs">{log.timestamp}</TableCell>
                       <TableCell className="text-sm">{log.usuario}</TableCell>
                       <TableCell className="font-medium">{log.acao}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-md">
+                      <TableCell className="text-sm text-muted-foreground">
                         {log.detalhes}
                       </TableCell>
                       <TableCell>{getTipoBadge(log.tipo)}</TableCell>
