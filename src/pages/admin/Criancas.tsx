@@ -91,7 +91,6 @@ const Criancas = () => {
 
   const handleDelete = async (id: string) => {
     try {
-        // deleteCrianca agora espera apenas o ID
         await deleteCrianca(id);
     } catch (e: any) {
         toast.error("Falha na Exclusão", {

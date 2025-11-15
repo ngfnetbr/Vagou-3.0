@@ -94,7 +94,7 @@ const Turmas = () => {
       sala: turma.sala,
       turma_base_id: turma.turma_base_id,
       cmei_id: turma.cmei_id,
-    }));
+    })) as TurmaDisplay[]; // Adicionando asserção de tipo para resolver o erro 21
   }, [turmas, cmeis, turmasBase]);
 
   const allCmeiNames = useMemo(() => cmeis.map(c => c.nome), [cmeis]);
@@ -104,8 +104,19 @@ const Turmas = () => {
   const filteredTurmas = turmasDisplay.filter(turma => {
     if (selectedCmei === "todos") return true;
     
-    // Filtra pelo ID do CMEI (que é o valor do select)
-    return turma.cmei_id === selectedCmei;
+    // Filtra pelo nome do CMEI, se o filtro for um nome (vindo da URL)
+    if (cmeiFilterParam && selectedCmei === cmeiFilterParam) {
+        return turma.cmeiNome === selectedCmei;
+    }
+    
+    // Filtra pelo ID do CMEI, se o filtro for um ID (vindo do Select)
+    const selectedCmeiObject = cmeis.find(c => c.id === selectedCmei);
+    if (selectedCmeiObject) {
+        return turma.cmei_id === selectedCmei;
+    }
+    
+    // Fallback para o caso de o filtro ser um nome (vindo da URL)
+    return turma.cmeiNome === selectedCmei;
   });
 
   const groupedTurmas = filteredTurmas.reduce((acc, turma) => {
@@ -158,9 +169,12 @@ const Turmas = () => {
         sala: editingTurma.sala as NovaTurmaFormInput['sala'],
       };
     }
-    // Preenche o CMEI se houver um filtro ativo (usamos o ID do CMEI)
-    if (selectedCmei && selectedCmei !== "todos") {
-        return { cmei_id: selectedCmei, turma_base_id: 0, capacidade: 0, sala: "A" };
+    // Preenche o CMEI se houver um filtro ativo (buscamos o ID do CMEI pelo nome)
+    if (cmeiFilterParam && cmeiFilterParam !== "todos") {
+        const cmeiObj = cmeis.find(c => c.nome === cmeiFilterParam);
+        if (cmeiObj) {
+            return { cmei_id: cmeiObj.id, turma_base_id: 0, capacidade: 0, sala: "A" };
+        }
     }
     return undefined;
   };

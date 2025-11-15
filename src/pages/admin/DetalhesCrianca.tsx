@@ -117,7 +117,6 @@ const DetalhesCrianca = () => {
   const handleDelete = async () => {
     if (criancaId) {
       try {
-        // deleteCrianca agora espera apenas o ID
         await deleteCrianca(criancaId);
         navigate('/admin/criancas'); // Navigate back to list after deletion
       } catch (e: any) {
@@ -203,7 +202,6 @@ const DetalhesCrianca = () => {
   
   const handleConfirmarMatricula = async () => {
     if (criancaId) {
-      // confirmarMatricula agora espera apenas o ID
       await confirmarMatricula(criancaId);
       refetch();
     }

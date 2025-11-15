@@ -109,7 +109,7 @@ const NovaTurmaModal = ({ initialData, onClose }: NovaTurmaModalProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>CMEI *</FormLabel>
-                <Select onValueChange={handleCmeiChange} value={field.value} disabled={isEditing || isLoadingCmeis}>
+                <Select onValueChange={field.onChange} value={field.value} disabled={isEditing || isLoadingCmeis}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder={isLoadingCmeis ? "Carregando CMEIs..." : "Selecione o CMEI"} />

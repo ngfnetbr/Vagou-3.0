@@ -172,6 +172,7 @@ const Fila = () => {
   };
   
   const handleConfirmarMatricula = async (id: string) => {
+    // A função confirmarMatricula agora espera o ID da criança
     await confirmarMatricula(id);
   };
   

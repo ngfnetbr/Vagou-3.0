@@ -21,6 +21,7 @@ import { fetchAvailableTurmas } from "@/integrations/supabase/vagas-api";
 import { toast } from "sonner";
 import { Crianca, ConvocationData } from "@/integrations/supabase/types";
 import { InscricaoFormData } from "@/lib/schemas/inscricao-schema";
+import { supabase } from "@/integrations/supabase/client"; // Necessário para buscar nome da turma
 
 const CRIANCAS_QUERY_KEY = 'criancas';
 const HISTORICO_QUERY_KEY = 'historicoCrianca';
@@ -141,7 +142,8 @@ export const useCriancas = () => {
   
   // 10. Excluir Criança
   const { mutateAsync: deleteCrianca, isPending: isDeleting } = useMutation({
-    mutationFn: async ({ id, nome }: { id: string, nome: string }) => {
+    mutationFn: async (id: string) => {
+        const nome = criancas?.find(c => c.id === id)?.nome || 'Criança';
         await apiDeleteCrianca(id, nome);
     },
     onSuccess: () => {
@@ -164,11 +166,11 @@ export const useCriancas = () => {
     isAdding,
     updateCrianca,
     isUpdating,
-    deleteCrianca: (id: string) => deleteCrianca({ id, nome: criancas?.find(c => c.id === id)?.nome || 'Criança' }),
+    deleteCrianca: (id: string) => deleteCrianca(id), // Assinatura corrigida
     isDeleting,
     
     // Mutações de Status
-    confirmarMatricula: (id: string) => confirmarMatricula(id),
+    confirmarMatricula: (id: string) => confirmarMatricula(id), // Assinatura corrigida
     isConfirmingMatricula,
     marcarRecusada,
     isMarkingRecusada,
