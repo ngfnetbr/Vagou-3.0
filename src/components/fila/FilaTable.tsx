@@ -9,7 +9,7 @@ import { Crianca } from "@/integrations/supabase/types"; // Importação atualiz
 import { useNavigate } from "react-router-dom";
 import { Clock } from "lucide-react";
 import { toast } from "sonner";
-import { format, differenceInDays, parseISO } from "date-fns";
+import { format, differenceInDays, parseISO, isValid } from "date-fns"; // Importando isValid
 import { ptBR } from "date-fns/locale"; // Importando ptBR
 
 type JustificativaAction = 'recusada' | 'desistente' | 'fim_de_fila';
@@ -26,7 +26,19 @@ interface FilaTableProps {
 
 // Helper functions (copied from Fila.tsx to keep FilaTable self-contained regarding display logic)
 const getDeadlineInfo = (deadline: string) => {
+    // Adiciona 'T00:00:00' para garantir que o parse seja feito corretamente e evita problemas de fuso horário
     const deadlineDate = parseISO(deadline + 'T00:00:00');
+    
+    if (!isValid(deadlineDate)) {
+        // Retorna um estado seguro se a data for inválida
+        return {
+            text: `Prazo Indefinido`,
+            className: "bg-muted/20 text-muted-foreground",
+            icon: Clock,
+            isExpired: false,
+        };
+    }
+    
     const today = new Date();
     const daysRemaining = differenceInDays(deadlineDate, today);
     
