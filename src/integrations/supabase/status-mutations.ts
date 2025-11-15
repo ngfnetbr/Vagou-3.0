@@ -21,6 +21,7 @@ export const convocarCrianca = async (criancaId: string, data: ConvocationData):
             turma_atual_id: data.turma_id,
             posicao_fila: null,
             convocacao_deadline: deadline,
+            data_penalidade: null, // Limpa penalidade ao convocar
         })
         .eq('id', criancaId)
         .select(SELECT_FIELDS)
@@ -43,6 +44,7 @@ export const confirmarMatricula = async (criancaId: string): Promise<Crianca> =>
             status: "Matriculado",
             posicao_fila: null,
             convocacao_deadline: null,
+            data_penalidade: null, // Limpa penalidade ao matricular
         })
         .eq('id', criancaId)
         .select(SELECT_FIELDS)
@@ -65,6 +67,7 @@ export const marcarRecusada = async (criancaId: string, justificativa: string): 
             status: "Recusada",
             posicao_fila: null,
             convocacao_deadline: null,
+            data_penalidade: null, // Limpa penalidade ao marcar como recusada (status final)
         })
         .eq('id', criancaId)
         .select(SELECT_FIELDS)
@@ -89,6 +92,7 @@ export const marcarDesistente = async (criancaId: string, justificativa: string)
             turma_atual_id: null,
             posicao_fila: null,
             convocacao_deadline: null,
+            data_penalidade: null, // Limpa penalidade ao marcar como desistente (status final)
         })
         .eq('id', criancaId)
         .select(SELECT_FIELDS)
@@ -105,6 +109,8 @@ export const marcarDesistente = async (criancaId: string, justificativa: string)
 };
 
 export const reativarCrianca = async (criancaId: string): Promise<Crianca> => {
+    // A posição na fila será atualizada pelo trigger handle_fila_recalculation
+    
     const { data: updatedCriancaDb, error } = await supabase
         .from('criancas')
         .update({
@@ -112,6 +118,7 @@ export const reativarCrianca = async (criancaId: string): Promise<Crianca> => {
             cmei_atual_id: null,
             turma_atual_id: null,
             convocacao_deadline: null,
+            data_penalidade: null, // Limpa penalidade ao reativar
         })
         .eq('id', criancaId)
         .select(SELECT_FIELDS)
@@ -128,6 +135,7 @@ export const reativarCrianca = async (criancaId: string): Promise<Crianca> => {
 };
 
 export const marcarFimDeFila = async (criancaId: string, justificativa: string): Promise<Crianca> => {
+    // Aplica a penalidade de data/hora atual para garantir que vá para o final da fila
     const { data: updatedCriancaDb, error } = await supabase
         .from('criancas')
         .update({
@@ -135,6 +143,7 @@ export const marcarFimDeFila = async (criancaId: string, justificativa: string):
             cmei_atual_id: null,
             turma_atual_id: null,
             convocacao_deadline: null,
+            data_penalidade: new Date().toISOString(), // Aplica penalidade de tempo
         })
         .eq('id', criancaId)
         .select(SELECT_FIELDS)
@@ -180,6 +189,7 @@ export const transferirCrianca = async (criancaId: string, justificativa: string
             turma_atual_id: null,
             posicao_fila: null,
             convocacao_deadline: null,
+            data_penalidade: null,
         })
         .eq('id', criancaId)
         .select(SELECT_FIELDS)

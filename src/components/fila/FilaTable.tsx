@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MoreVertical, Eye, CheckCircle, Bell, XCircle, ListRestart, RotateCcw, Loader2 } from "lucide-react";
+import { MoreVertical, Eye, CheckCircle, Bell, XCircle, ListRestart, RotateCcw, Loader2, Trash2 } from "lucide-react";
 import { Crianca } from "@/integrations/supabase/types"; // Importação atualizada
 import { useNavigate } from "react-router-dom";
 import { Clock } from "lucide-react";
@@ -79,6 +79,7 @@ export const FilaTable = ({
             {filteredFila.length > 0 ? (
               filteredFila.map((item) => {
                 const isConvocado = item.status === "Convocado";
+                const isFilaEspera = item.status === "Fila de Espera";
                 const deadlineInfo = isConvocado && item.convocacao_deadline ? getDeadlineInfo(item.convocacao_deadline) : null;
                 
                 return (
@@ -164,9 +165,19 @@ export const FilaTable = ({
                               </DropdownMenuItem>
                               
                               <DropdownMenuItem onSelect={() => handleJustificativaAction(item, 'desistente')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                <XCircle className="mr-2 h-4 w-4" />
+                                <Trash2 className="mr-2 h-4 w-4" />
                                 Marcar como desistente (Justificativa)
                               </DropdownMenuItem>
+                            </>
+                          )}
+                          
+                          {/* Ações para Fila de Espera */}
+                          {isFilaEspera && (
+                            <>
+                                <DropdownMenuItem onSelect={() => handleJustificativaAction(item, 'desistente')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Marcar como desistente (Justificativa)
+                                </DropdownMenuItem>
                             </>
                           )}
                           
