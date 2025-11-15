@@ -63,7 +63,7 @@ const CMEIs = () => {
     }
   };
 
-  const filteredCmeis = cmeis.filter(cmei => 
+  const filteredCmeis = (cmeis || []).filter(cmei => 
     cmei.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cmei.endereco.toLowerCase().includes(searchTerm.toLowerCase())
   );

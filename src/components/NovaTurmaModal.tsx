@@ -48,8 +48,8 @@ const NovaTurmaModal = ({ initialData, onClose }: NovaTurmaModalProps) => {
   });
 
   const onSubmit = async (values: NovaTurmaFormInput) => {
-    const baseTurma = turmasBase.find(t => t.id === values.turma_base_id);
-    const cmei = cmeis.find(c => c.id === values.cmei_id);
+    const baseTurma = (turmasBase || []).find(t => t.id === values.turma_base_id);
+    const cmei = (cmeis || []).find(c => c.id === values.cmei_id);
 
     if (!baseTurma || !cmei) {
         toast.error("Erro de validação", { description: "CMEI ou Modelo de Turma não encontrado." });
@@ -90,8 +90,8 @@ const NovaTurmaModal = ({ initialData, onClose }: NovaTurmaModalProps) => {
   const isEditing = !!initialData?.id;
   const isPending = isCreating || isUpdating || isLoadingCmeis || isLoadingTurmasBase;
 
-  const cmeiOptions = cmeis.map(c => ({ value: c.id, label: c.nome }));
-  const turmaBaseOptions = turmasBase.map(t => ({ id: t.id, nome: t.nome }));
+  const cmeiOptions = (cmeis || []).map(c => ({ value: c.id, label: c.nome }));
+  const turmaBaseOptions = (turmasBase || []).map(t => ({ id: t.id, nome: t.nome }));
 
   return (
     <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">

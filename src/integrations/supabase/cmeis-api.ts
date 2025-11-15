@@ -1,26 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export interface Cmei {
-    id: string;
-    nome: string;
-    capacidade: number;
-    ocupacao: number;
-}
+// Tipagens Cmei e Turma foram movidas para src/hooks/use-cmeis.ts para evitar conflitos de tipagem.
 
-export interface Turma {
-    id: string;
-    cmei_id: string;
-    nome: string;
-    sala: string;
-    capacidade: number;
-    ocupacao: number;
-    turma_base_id: number;
-}
-
-export const fetchCmeis = async (): Promise<Cmei[]> => {
+export const fetchCmeis = async (): Promise<any[]> => {
     const { data, error } = await supabase
         .from('cmeis')
-        .select('id, nome, capacidade, ocupacao')
+        .select('id, nome, endereco, latitude, longitude, telefone, email, diretor, coordenador, capacidade, ocupacao, created_at')
         .order('nome', { ascending: true });
 
     if (error) {
@@ -30,7 +15,7 @@ export const fetchCmeis = async (): Promise<Cmei[]> => {
     return data;
 };
 
-export const fetchTurmasByCmei = async (cmeiId: string): Promise<Turma[]> => {
+export const fetchTurmasByCmei = async (cmeiId: string): Promise<any[]> => {
     const { data, error } = await supabase
         .from('turmas')
         .select('id, cmei_id, nome, sala, capacidade, ocupacao, turma_base_id')

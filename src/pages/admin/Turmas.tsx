@@ -81,8 +81,8 @@ const Turmas = () => {
   const turmasDisplay: TurmaDisplay[] = useMemo(() => {
     if (!turmas || !cmeis || !turmasBase) return [];
 
-    const cmeiMap = new Map(cmeis.map(c => [c.id, c.nome]));
-    const turmaBaseMap = new Map(turmasBase.map(t => [t.id, t.nome]));
+    const cmeiMap = new Map((cmeis || []).map(c => [c.id, c.nome]));
+    const turmaBaseMap = new Map((turmasBase || []).map(t => [t.id, t.nome]));
 
     return turmas.map(turma => ({
       id: turma.id,
@@ -97,9 +97,9 @@ const Turmas = () => {
     })) as TurmaDisplay[]; // Adicionando asserção de tipo para resolver o erro 21
   }, [turmas, cmeis, turmasBase]);
 
-  const allCmeiNames = useMemo(() => cmeis.map(c => c.nome), [cmeis]);
-  const cmeiOptions = useMemo(() => cmeis.map(c => ({ value: c.id, label: c.nome })), [cmeis]);
-  const turmaBaseOptions = useMemo(() => turmasBase.map(t => ({ id: t.id, nome: t.nome })), [turmasBase]);
+  const allCmeiNames = useMemo(() => (cmeis || []).map(c => c.nome), [cmeis]);
+  const cmeiOptions = useMemo(() => (cmeis || []).map(c => ({ value: c.id, label: c.nome })), [cmeis]);
+  const turmaBaseOptions = useMemo(() => (turmasBase || []).map(t => ({ id: t.id, nome: t.nome })), [turmasBase]);
 
   const filteredTurmas = turmasDisplay.filter(turma => {
     if (selectedCmei === "todos") return true;
@@ -110,7 +110,7 @@ const Turmas = () => {
     }
     
     // Filtra pelo ID do CMEI, se o filtro for um ID (vindo do Select)
-    const selectedCmeiObject = cmeis.find(c => c.id === selectedCmei);
+    const selectedCmeiObject = (cmeis || []).find(c => c.id === selectedCmei);
     if (selectedCmeiObject) {
         return turma.cmei_id === selectedCmei;
     }
@@ -171,7 +171,7 @@ const Turmas = () => {
     }
     // Preenche o CMEI se houver um filtro ativo (buscamos o ID do CMEI pelo nome)
     if (cmeiFilterParam && cmeiFilterParam !== "todos") {
-        const cmeiObj = cmeis.find(c => c.nome === cmeiFilterParam);
+        const cmeiObj = (cmeis || []).find(c => c.nome === cmeiFilterParam);
         if (cmeiObj) {
             return { cmei_id: cmeiObj.id, turma_base_id: 0, capacidade: 0, sala: "A" };
         }
@@ -387,7 +387,7 @@ const Turmas = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os CMEIs</SelectItem>
-                  {cmeis.map(cmei => (
+                  {(cmeis || []).map(cmei => (
                     <SelectItem key={cmei.id} value={cmei.id}>{cmei.nome}</SelectItem>
                   ))}
                 </SelectContent>

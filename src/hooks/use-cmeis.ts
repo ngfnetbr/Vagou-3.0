@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient, UseQueryResult } from "@tanstack/react-query";
-import { fetchCmeis, fetchTurmasByCmei, Turma } from "@/integrations/supabase/cmeis-api";
+import { fetchCmeis, fetchTurmasByCmei } from "@/integrations/supabase/cmeis-api";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { checkCmeiHasTurmas, checkCmeiHasActiveCriancas } from "@/integrations/supabase/cmeis-turmas-api";
@@ -19,6 +19,16 @@ export interface Cmei {
     capacidade: number;
     ocupacao: number;
     created_at: string;
+}
+
+export interface Turma {
+    id: string;
+    cmei_id: string;
+    nome: string;
+    sala: string;
+    capacidade: number;
+    ocupacao: number;
+    turma_base_id: number;
 }
 
 // Tipagem para dados de formulário (sem campos gerados automaticamente)

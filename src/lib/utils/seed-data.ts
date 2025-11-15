@@ -11,7 +11,7 @@ import { format, addDays } from "date-fns"; // Importando addDays
 const mockCmeis: CmeiSeedData[] = [ // Usando CmeiSeedData
   { nome: "CMEI Centro", endereco: "Rua Principal, 100", capacidade: 100, diretor: "Maria Silva", coordenador: "João Santos", email: "centro@cmei.com", telefone: "(99) 9 9999-0001", latitude: "-23.5505", longitude: "-46.6333" },
   { nome: "CMEI Norte", endereco: "Av. Norte, 500", capacidade: 120, diretor: "Ana Costa", coordenador: "Pedro Lima", email: "norte@cmei.com", telefone: "(99) 9 9999-0002", latitude: "-23.5000", longitude: "-46.6000" },
-  { nome: "CMEI Sul", endereco: "Rua do Sul, 200", capacidade: 80, diretor: "Carla Rocha", coordenador: "Lucas Mendes", email: "sul@cmei.com", telefone: "(99) 9 9999-0003", telefone: "(99) 9 9999-0003", latitude: "-23.6000", longitude: "-46.7000" },
+  { nome: "CMEI Sul", endereco: "Rua do Sul, 200", capacidade: 80, diretor: "Carla Rocha", coordenador: "Lucas Mendes", email: "sul@cmei.com", telefone: "(99) 9 9999-0003", latitude: "-23.6000", longitude: "-46.7000" },
   { nome: "CMEI Leste", endereco: "Estrada Leste, 300", capacidade: 150, diretor: "Bruno Alves", coordenador: "Fernanda Dias", email: "leste@cmei.com", telefone: "(99) 9 9999-0004", latitude: "-23.5500", longitude: "-46.5500" },
 ];
 

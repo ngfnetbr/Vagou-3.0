@@ -1,7 +1,7 @@
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Crianca } from "@/integrations/supabase/types";
-import { useCmeis, useTurmasByCmei } from "@/hooks/use-cmeis";
+import { useCMEIs, useTurmasByCmei } from "@/hooks/use-cmeis";
 import { useCriancas } from "@/hooks/use-criancas";
 import { useState, useMemo } from "react";
 import { Loader2 } from "lucide-react";
@@ -29,7 +29,7 @@ const convocarSchema = z.object({
 type ConvocarFormData = z.infer<typeof convocarSchema>;
 
 const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
-    const { data: cmeis, isLoading: isLoadingCmeis } = useCmeis();
+    const { cmeis, isLoading: isLoadingCmeis } = useCMEIs();
     const { convocarCrianca, isConvoking } = useCriancas();
     
     const [selectedCmeiId, setSelectedCmeiId] = useState<string | undefined>(crianca.cmei_atual_id);
@@ -54,11 +54,11 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
     };
     
     const selectedCmei = useMemo(() => {
-        return cmeis?.find(c => c.id === selectedCmeiId);
+        return (cmeis || []).find(c => c.id === selectedCmeiId);
     }, [cmeis, selectedCmeiId]);
     
     const selectedTurma = useMemo(() => {
-        return turmas?.find(t => t.id === form.watch('turma_id'));
+        return (turmas || []).find(t => t.id === form.watch('turma_id'));
     }, [turmas, form.watch('turma_id')]);
 
     const onSubmit = async (values: ConvocarFormData) => {
@@ -116,7 +116,7 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {cmeis?.map((cmei) => (
+                                        {(cmeis || []).map((cmei) => (
                                             <SelectItem key={cmei.id} value={cmei.id}>
                                                 {cmei.nome} ({cmei.ocupacao}/{cmei.capacidade})
                                             </SelectItem>
@@ -146,8 +146,8 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                                             <SelectItem value="loading" disabled>
                                                 <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando turmas...
                                             </SelectItem>
-                                        ) : turmas && turmas.length > 0 ? (
-                                            turmas.map((turma) => (
+                                        ) : (turmas || []).length > 0 ? (
+                                            (turmas || []).map((turma) => (
                                                 <SelectItem key={turma.id} value={turma.id}>
                                                     {turma.nome} ({turma.ocupacao}/{turma.capacidade})
                                                 </SelectItem>
@@ -174,6 +174,7 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                                         type="number" 
                                         placeholder="Ex: 7" 
                                         {...field} 
+                                        onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))} 
                                         disabled={isConvoking}
                                     />
                                 </FormControl>
