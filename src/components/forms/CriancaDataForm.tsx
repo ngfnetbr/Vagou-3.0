@@ -245,7 +245,7 @@ export const CriancaDataForm = ({ cmeiOptions, filteredCmei2Options, selectedCme
           </DialogHeader>
           <div className="space-y-4 py-2">
             <p className="text-sm text-foreground">
-              **Observação:** Crianças abaixo de 6 meses de idade continuarão em lista de espera, mesmo que sua vez chegue, pois a idade mínima para início no CMEI é 6 meses.
+              Observação: Crianças abaixo de 6 meses de idade continuarão em lista de espera, mesmo que sua vez chegue, pois a idade mínima para início no CMEI é 6 meses.
             </p>
             <p className="text-xs text-muted-foreground">
               Você pode prosseguir com a inscrição, mas a matrícula só será efetivada após a criança completar 6 meses.
