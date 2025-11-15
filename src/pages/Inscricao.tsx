@@ -96,10 +96,17 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
   
   const handleDelete = async () => {
     if (criancaId) {
-      await deleteCrianca(criancaId);
-      if (onSuccess) {
-        // Usando asserção de tipo aqui para resolver o erro de compilação
-        onSuccess(form.getValues() as InscricaoFormData); 
+      try {
+        await deleteCrianca(criancaId);
+        if (onSuccess) {
+          // Usando asserção de tipo aqui para resolver o erro de compilação
+          onSuccess(form.getValues() as InscricaoFormData); 
+        }
+      } catch (e: any) {
+        // Exibe o erro de integridade retornado pelo hook
+        toast.error("Falha na Exclusão", {
+          description: e.message,
+        });
       }
     }
   };
@@ -161,6 +168,7 @@ const Inscricao = ({ onSuccess, onCancel, isModal = false, initialData, criancaI
                         Esta ação não pode ser desfeita. Isso excluirá permanentemente a criança 
                         <span className="font-semibold"> {form.watch('nomeCrianca')} </span>
                         e todos os seus registros.
+                        <p className="mt-2 text-sm text-destructive font-semibold">A exclusão só é permitida se a criança não estiver em status ativo (Fila, Convocado ou Matriculado).</p>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

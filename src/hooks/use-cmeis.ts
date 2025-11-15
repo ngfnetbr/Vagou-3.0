@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { checkCmeiHasTurmas, checkCmeiHasActiveCriancas } from "@/integrations/supabase/cmeis-turmas-api"; // Importando verificações
 
 // Tipagem baseada na estrutura da tabela 'cmeis'
 export interface Cmei {
@@ -91,6 +92,18 @@ const updateCmei = async (id: string, data: CmeiFormData): Promise<Cmei> => {
 };
 
 const deleteCmei = async (id: string): Promise<void> => {
+  // 1. Verificar se há turmas associadas
+  const hasTurmas = await checkCmeiHasTurmas(id);
+  if (hasTurmas) {
+    throw new Error("Não é possível excluir. Este CMEI possui turmas cadastradas.");
+  }
+  
+  // 2. Verificar se há crianças ativas (matriculadas/convocadas)
+  const hasActiveCriancas = await checkCmeiHasActiveCriancas(id);
+  if (hasActiveCriancas) {
+    throw new Error("Não é possível excluir. Este CMEI possui crianças matriculadas ou convocadas.");
+  }
+  
   const { error } = await supabase
     .from('cmeis')
     .delete()

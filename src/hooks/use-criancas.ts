@@ -10,6 +10,23 @@ import { fetchHistoricoCrianca } from "@/integrations/supabase/historico-api";
 
 const CRIANCAS_QUERY_KEY = ["criancas"];
 
+// Função de exclusão com verificação de status
+const deleteCriancaWithCheck = async (id: string): Promise<void> => {
+    const crianca = await getCriancaById(id);
+    if (!crianca) {
+        throw new Error("Criança não encontrada.");
+    }
+    
+    const activeStatuses = ["Matriculado", "Matriculada", "Fila de Espera", "Convocado", "Remanejamento Solicitado"];
+    if (activeStatuses.includes(crianca.status)) {
+        throw new Error(`Não é possível excluir. A criança está com status ativo: ${crianca.status}. Marque como 'Desistente' ou 'Recusada' primeiro.`);
+    }
+    
+    // Se o status não for ativo, procede com a exclusão
+    return deleteCrianca(id);
+};
+
+
 export function useCriancas() {
   const queryClient = useQueryClient();
 
@@ -59,7 +76,7 @@ export function useCriancas() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteCrianca,
+    mutationFn: deleteCriancaWithCheck, // Usando a função com a verificação
     onSuccess: (_, id) => { 
       queryClient.invalidateQueries({ queryKey: CRIANCAS_QUERY_KEY });
       toast.success("Criança excluída com sucesso!");

@@ -127,9 +127,15 @@ const Turmas = () => {
     return acc;
   }, {} as Record<string, TurmaDisplay[]>);
 
-  const handleDeleteTurma = async (id: string) => {
-    await deleteTurma(id);
-    setIsModalOpen(false);
+  const handleDeleteTurma = async (id: string, nome: string) => {
+    try {
+        await deleteTurma(id);
+        setIsModalOpen(false);
+    } catch (e: any) {
+        toast.error("Falha na Exclusão", {
+            description: e.message,
+        });
+    }
   };
 
   const handleEditClick = (turma: TurmaDisplay) => {
@@ -203,11 +209,14 @@ const Turmas = () => {
                 Esta ação não pode ser desfeita. Isso excluirá permanentemente a turma 
                 <span className="font-semibold"> {turma.nomeCompleto} </span>
                 do CMEI {turma.cmeiNome}.
+                {turma.ocupacao > 0 && (
+                    <p className="mt-2 text-destructive font-semibold">Atenção: Esta turma possui {turma.ocupacao} crianças matriculadas/convocadas. A exclusão falhará se houver vínculos ativos.</p>
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={() => handleDeleteTurma(turma.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isDeleting}>
+              <AlertDialogAction onClick={() => handleDeleteTurma(turma.id, turma.nomeCompleto)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isDeleting}>
                 {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Excluir"}
               </AlertDialogAction>
             </AlertDialogFooter>

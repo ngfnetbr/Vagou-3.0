@@ -88,8 +88,14 @@ const DetalhesTurma = () => {
   };
   
   const handleDelete = async () => {
-    await deleteTurma(turma.id);
-    navigate('/admin/turmas');
+    try {
+        await deleteTurma(turma.id);
+        navigate('/admin/turmas');
+    } catch (e: any) {
+        toast.error("Falha na Exclusão", {
+            description: e.message,
+        });
+    }
   };
   
   const getInitialDataForModal = (): NovaTurmaFormInput & { id?: string } => ({
@@ -144,6 +150,9 @@ const DetalhesTurma = () => {
                             Esta ação não pode ser desfeita. Isso excluirá permanentemente a turma 
                             <span className="font-semibold"> {turma.nomeCompleto} </span>
                             e removerá todos os dados associados.
+                            {turma.ocupacao > 0 && (
+                                <p className="mt-2 text-destructive font-semibold">Atenção: Esta turma possui {turma.ocupacao} crianças matriculadas/convocadas. A exclusão falhará se houver vínculos ativos.</p>
+                            )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

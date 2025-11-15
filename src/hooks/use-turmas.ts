@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { checkTurmaHasActiveCriancas } from "@/integrations/supabase/cmeis-turmas-api"; // Importando verificação
 
 // Tipagem baseada na estrutura da tabela 'turmas'
 export interface Turma {
@@ -84,6 +85,12 @@ const updateTurma = async (id: string, data: Partial<TurmaFormData>): Promise<Tu
 };
 
 const deleteTurma = async (id: string): Promise<void> => {
+  // 1. Verificar se há crianças ativas na turma
+  const hasActiveCriancas = await checkTurmaHasActiveCriancas(id);
+  if (hasActiveCriancas) {
+    throw new Error("Não é possível excluir. Esta turma possui crianças matriculadas ou convocadas.");
+  }
+  
   const { error } = await supabase
     .from('turmas')
     .delete()

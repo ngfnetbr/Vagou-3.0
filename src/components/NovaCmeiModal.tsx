@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useCMEIs, CmeiFormData } from "@/hooks/use-cmeis"; // Importar hook e tipagem
+import { toast } from "sonner"; // Importando toast
 
 // Função de máscara de telefone (copiada de Inscricao.tsx)
 const formatPhone = (value: string) => {
@@ -102,8 +103,15 @@ const NovaCmeiModal = ({ initialData, onClose }: NovaCmeiModalProps) => {
 
   const handleDelete = async () => {
     if (initialData?.id) {
-      await deleteCmei(initialData.id);
-      onClose();
+      try {
+        await deleteCmei(initialData.id);
+        onClose();
+      } catch (e: any) {
+        // Exibe o erro de integridade retornado pelo hook
+        toast.error("Falha na Exclusão", {
+          description: e.message,
+        });
+      }
     }
   };
 

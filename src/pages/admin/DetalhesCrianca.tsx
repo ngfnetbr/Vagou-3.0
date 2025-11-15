@@ -116,8 +116,14 @@ const DetalhesCrianca = () => {
   
   const handleDelete = async () => {
     if (criancaId) {
-      await deleteCrianca(criancaId);
-      navigate('/admin/criancas'); // Navigate back to list after deletion
+      try {
+        await deleteCrianca(criancaId);
+        navigate('/admin/criancas'); // Navigate back to list after deletion
+      } catch (e: any) {
+        toast.error("Falha na Exclusão", {
+          description: e.message,
+        });
+      }
     }
   };
   
@@ -408,6 +414,37 @@ const DetalhesCrianca = () => {
                 initialData={crianca}
               />
             </Dialog>
+            
+            {/* Botão de Excluir (Apenas se não estiver em status ativo) */}
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={isDeleting || isMatriculado || isFila || isConvocado}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. Isso excluirá permanentemente a criança 
+                            <span className="font-semibold"> {crianca.nome} </span>
+                            e todos os seus registros.
+                            <p className="mt-2 text-sm text-destructive font-semibold">A exclusão só é permitida se a criança não estiver em status ativo (Fila, Convocado ou Matriculado).</p>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={handleDelete} 
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Excluir"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
 

@@ -14,6 +14,7 @@ import NovaCriancaModalContent from "@/components/NovaCriancaModal";
 import { useCriancas } from "@/hooks/use-criancas";
 import { Crianca } from "@/integrations/supabase/types"; // Importação atualizada
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,7 +90,13 @@ const Criancas = () => {
   };
 
   const handleDelete = async (id: string) => {
-    await deleteCrianca(id);
+    try {
+        await deleteCrianca(id);
+    } catch (e: any) {
+        toast.error("Falha na Exclusão", {
+            description: e.message,
+        });
+    }
   };
 
   if (isLoading) {
@@ -297,6 +304,7 @@ const Criancas = () => {
                                     Esta ação não pode ser desfeita. Isso excluirá permanentemente a criança 
                                     <span className="font-semibold"> {crianca.nome} </span>
                                     e todos os seus registros.
+                                    <p className="mt-2 text-sm text-destructive font-semibold">A exclusão só é permitida se a criança não estiver em status ativo (Fila, Convocado ou Matriculado).</p>
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
