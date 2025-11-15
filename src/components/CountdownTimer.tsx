@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { differenceInSeconds, parseISO, isValid } from 'date-fns';
+import { differenceInSeconds, parseISO, isValid, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Clock, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -32,10 +33,11 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ deadline }) => {
   }, [deadlineDate]);
 
   if (!deadlineDate || secondsRemaining < 0) {
+    const expiredDateString = deadlineDate ? format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A';
     return (
       <div className={cn("flex items-center gap-1 text-xs font-medium p-1 rounded", "bg-destructive/20 text-destructive")}>
         <XCircle className="h-3 w-3" />
-        Prazo Expirado
+        Expirado ({expiredDateString})
       </div>
     );
   }
@@ -52,11 +54,18 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ deadline }) => {
   const className = isUrgent 
     ? "bg-destructive/20 text-destructive animate-pulse" 
     : "bg-accent/20 text-foreground";
+    
+  const expirationDateFormatted = format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR });
 
   return (
-    <div className={cn("flex items-center gap-1 text-xs font-medium p-1 rounded", className)}>
-      <Clock className="h-3 w-3" />
-      {timeString}
+    <div className={cn("flex flex-col items-start gap-1 text-xs font-medium p-1 rounded", className)}>
+      <div className="flex items-center gap-1">
+        <Clock className="h-3 w-3" />
+        <span className="font-bold">{timeString}</span>
+      </div>
+      <span className="text-[10px] opacity-80">
+        Prazo final: {expirationDateFormatted}
+      </span>
     </div>
   );
 };
