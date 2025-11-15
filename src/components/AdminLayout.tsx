@@ -1,11 +1,14 @@
 import { ReactNode } from "react";
 import { AdminSidebar } from "./AdminSidebar";
-import { Building2, LogOut, User } from "lucide-react";
+import { Building2, LogOut, User, Menu } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSession } from "./SessionContextProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button"; // Importação adicionada
+import { Button } from "@/components/ui/button";
+import { useSidebarStore } from "@/hooks/use-sidebar-store";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -14,6 +17,8 @@ interface AdminLayoutProps {
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { user } = useSession();
   const navigate = useNavigate();
+  const { isOpen, toggle } = useSidebarStore();
+  const isMobile = useIsMobile();
   
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -30,11 +35,39 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   
   return (
     <div className="flex h-screen bg-govbr-gray2">
+      {/* Sidebar (Visível em desktop, oculta/fixa em mobile) */}
       <AdminSidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-card border-b border-border px-6 py-4">
+      
+      {/* Overlay para mobile quando a sidebar está aberta */}
+      {isMobile && isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-20"
+          onClick={toggle}
+        />
+      )}
+      
+      <div 
+        className={cn(
+          "flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out",
+          // Em desktop, ajusta a margem se a sidebar estiver aberta (64) ou fechada (16)
+          // Em mobile, a sidebar é fixed, então o conteúdo não precisa de margem
+          !isMobile && (isOpen ? "ml-0" : "ml-0") // A sidebar é static, então o flex-1 cuida do espaço
+        )}
+      >
+        <header className="bg-card border-b border-border px-6 py-4 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
+              {/* Botão de toggle para mobile */}
+              {isMobile && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={toggle}
+                  className="text-primary"
+                >
+                  <Menu className="h-6 w-6" />
+                </Button>
+              )}
               <Building2 className="h-6 w-6 text-primary" />
               <div>
                 <h1 className="text-lg font-bold text-foreground">VAGOU</h1>
