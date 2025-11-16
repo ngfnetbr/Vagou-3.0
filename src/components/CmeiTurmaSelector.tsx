@@ -144,7 +144,7 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
                                     key={vaga.turma_id}
                                     onClick={() => handleSelectTurma(vaga)}
                                     className={cn(
-                                        "flex flex-col items-center justify-center p-1.5 rounded-md text-xs cursor-pointer transition-colors border h-14", // Altura reduzida para h-14, padding para p-1.5
+                                        "flex flex-col items-center justify-center p-1 rounded-md text-xs cursor-pointer transition-colors border h-12", // Altura reduzida para h-12, padding para p-1
                                         isSelected 
                                             ? "bg-primary text-primary-foreground border-primary shadow-md" 
                                             : isLotada
@@ -153,10 +153,10 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
                                     )}
                                     aria-disabled={isLotada}
                                 >
-                                    <span className="font-semibold text-center leading-tight text-xs">{vaga.turma}</span> {/* Fonte reduzida para text-xs */}
+                                    <span className="font-semibold text-center leading-tight text-xs">{vaga.turma}</span>
                                     <Badge 
                                         variant="secondary" 
-                                        className={cn("mt-1 text-[9px] h-3.5 px-1.5", isSelected && "bg-primary-foreground text-primary hover:bg-primary-foreground", isLotada && "bg-destructive text-destructive-foreground hover:bg-destructive")} // Badge menor
+                                        className={cn("mt-1 text-[9px] h-3.5 px-1.5", isSelected && "bg-primary-foreground text-primary hover:bg-primary-foreground", isLotada && "bg-destructive text-destructive-foreground hover:bg-destructive")}
                                     >
                                         {isLotada ? 'LOTADA' : `${vaga.vagas} vagas`}
                                     </Badge>
