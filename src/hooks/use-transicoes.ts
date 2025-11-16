@@ -101,15 +101,26 @@ export function useTransicoes() {
     };
 
     const updateCriancaVagaInPlanning = (criancaId: string, cmei_id: string, turma_id: string, cmei_nome: string, turma_nome: string) => {
-        updateCriancaInPlanning(criancaId, {
-            planned_cmei_id: cmei_id,
-            planned_turma_id: turma_id,
-            planned_cmei_nome: cmei_nome,
-            planned_turma_nome: turma_nome,
-            // Garante que o status seja Matriculado se for realocação
-            planned_status: 'Matriculado', 
-            planned_justificativa: null,
-        });
+        setPlanningData(prev => prev.map(c => {
+            if (c.id === criancaId) {
+                // Determina o status planejado: se já estava matriculado, mantém o status de matrícula (Matriculado/Matriculada).
+                // Se estava na fila/convocado, força para Matriculado.
+                const newPlannedStatus = (c.status === 'Matriculado' || c.status === 'Matriculada') 
+                    ? c.status 
+                    : 'Matriculado';
+                    
+                return {
+                    ...c,
+                    planned_cmei_id: cmei_id,
+                    planned_turma_id: turma_id,
+                    planned_cmei_nome: cmei_nome,
+                    planned_turma_nome: turma_nome,
+                    planned_status: newPlannedStatus, 
+                    planned_justificativa: null,
+                };
+            }
+            return c;
+        }));
     };
     
     const massUpdateStatusInPlanning = (criancaIds: string[], newStatus: Crianca['status'], justificativa: string) => {
@@ -132,13 +143,18 @@ export function useTransicoes() {
     const massUpdateVagaInPlanning = (criancaIds: string[], cmei_id: string, turma_id: string, cmei_nome: string, turma_nome: string) => {
         setPlanningData(prev => prev.map(c => {
             if (criancaIds.includes(c.id)) {
+                // Mantém o status de matrícula se já estiver matriculado, senão força para Matriculado
+                const newPlannedStatus = (c.status === 'Matriculado' || c.status === 'Matriculada') 
+                    ? c.status 
+                    : 'Matriculado';
+                    
                 return {
                     ...c,
                     planned_cmei_id: cmei_id,
                     planned_turma_id: turma_id,
                     planned_cmei_nome: cmei_nome,
                     planned_turma_nome: turma_nome,
-                    planned_status: 'Matriculado',
+                    planned_status: newPlannedStatus,
                     planned_justificativa: null,
                 };
             }
@@ -181,7 +197,7 @@ export function useTransicoes() {
         const promises: Promise<any>[] = [];
         
         // Agrupamento para Realocação em Massa (otimização)
-        const realocacoes: { [key: string]: string[] } = {}; // key: cmei_id|turma_id, value: criancaIds
+        const realocacoes: { [key: string]: string[] } = {}; // key: cmei_id|turma_id|cmei_nome|turma_nome, value: criancaIds
         
         for (const crianca of changesToApply) {
             const { id, planned_status, planned_cmei_id, planned_turma_id, planned_justificativa, planned_cmei_nome, planned_turma_nome } = crianca;
@@ -202,16 +218,16 @@ export function useTransicoes() {
             } 
             
             // 2. Mudança de Vaga (Realocação)
-            if (planned_cmei_id !== crianca.cmei_atual_id || planned_turma_id !== crianca.turma_atual_id) {
-                if (planned_cmei_id && planned_turma_id) {
-                    // Se o status for 'Matriculado' e a vaga mudou, é Realocação.
-                    if (planned_status === 'Matriculado' || planned_status === 'Matriculada') {
-                        const key = `${planned_cmei_id}|${planned_turma_id}|${planned_cmei_nome}|${planned_turma_nome}`;
-                        if (!realocacoes[key]) {
-                            realocacoes[key] = [];
-                        }
-                        realocacoes[key].push(id);
+            // Se o status planejado for Matriculado/Matriculada E a vaga mudou
+            if ((planned_status === 'Matriculado' || planned_status === 'Matriculada') && 
+                (planned_cmei_id !== crianca.cmei_atual_id || planned_turma_id !== crianca.turma_atual_id)) {
+                
+                if (planned_cmei_id && planned_turma_id && planned_cmei_nome && planned_turma_nome) {
+                    const key = `${planned_cmei_id}|${planned_turma_id}|${planned_cmei_nome}|${planned_turma_nome}`;
+                    if (!realocacoes[key]) {
+                        realocacoes[key] = [];
                     }
+                    realocacoes[key].push(id);
                 }
             }
         }
