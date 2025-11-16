@@ -2,7 +2,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Loader2, ArrowRight, CheckCircle, ListOrdered, GraduationCap, Users, Save, RotateCcw, Trash2 } from "lucide-react";
+import { AlertCircle, Loader2, ArrowRight, CheckCircle, Save, RotateCcw, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useTransicoes, CriancaClassificada } from "@/hooks/use-transicoes";
 import { format } from "date-fns";
@@ -72,15 +72,6 @@ const Transicoes = () => {
     );
   };
   
-  const toggleAllSelection = (ids: string[]) => {
-    const allSelected = ids.length > 0 && ids.every(id => selectedIds.includes(id));
-    if (allSelected) {
-        setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
-    } else {
-        setSelectedIds(prev => Array.from(new Set([...prev, ...ids])));
-    }
-  };
-  
   // --- Data Processing ---
   
   // 1. Grouping by CMEI
@@ -96,17 +87,7 @@ const Transicoes = () => {
     }, {} as Record<string, CriancaClassificada[]>);
   }, [classificacao]);
   
-  // 2. Recalculate stats based on the full classification list
-  const { totalAtivos, matriculados, fila, concluintes } = useMemo(() => {
-    const totalAtivos = classificacao.length;
-    const matriculados = classificacao.filter(c => c.status === 'Matriculado' || c.status === 'Matriculada' || c.status === 'Remanejamento Solicitado');
-    const fila = classificacao.filter(c => c.status === 'Fila de Espera' || c.status === 'Convocado');
-    const concluintes = classificacao.filter(c => c.statusTransicao === 'Concluinte');
-    
-    return { totalAtivos, matriculados, fila, concluintes };
-  }, [classificacao]);
-  
-  // --- Handlers de Ação em Massa (Mock) ---
+  // --- Handlers de Ação em Massa ---
   const handleMassAction = (action: 'realocar' | 'status') => {
       if (selectedIds.length === 0) {
           toast.warning("Selecione pelo menos uma criança para realizar a ação em massa.");
@@ -211,15 +192,15 @@ const Transicoes = () => {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Planejamento de Remanejamento</h1>
-          <p className="text-muted-foreground">Revise a classificação etária e planeje a movimentação de crianças para o próximo ciclo.</p>
+          <h1 className="text-3xl font-bold text-foreground">Transição Anual de Turmas</h1>
+          <p className="text-muted-foreground">Planejamento e execução do remanejamento de crianças para o próximo ciclo letivo.</p>
         </div>
 
         <Card className="bg-muted/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ArrowRight className="h-5 w-5 text-primary" />
-              Status do Planejamento
+              Ações de Transição
             </CardTitle>
             <CardDescription>
               A classificação etária é baseada na idade da criança em 31 de Março de {currentYear}.
@@ -235,39 +216,6 @@ const Transicoes = () => {
                     <span className="font-semibold"> {cutoffDate} </span>.
                 </AlertDescription>
             </Alert>
-            
-            <div className="pt-4 border-t border-border">
-                <h3 className="text-lg font-semibold mb-2">Resumo do Planejamento ({totalAtivos} crianças ativas)</h3>
-                <div className="grid grid-cols-3 gap-4">
-                    <Card className="bg-secondary/10 border-secondary">
-                        <CardContent className="pt-4">
-                            <div className="flex items-center gap-2">
-                                <GraduationCap className="h-5 w-5 text-secondary" />
-                                <p className="text-xl font-bold text-secondary">{matriculados.length}</p>
-                            </div>
-                            <p className="text-sm text-muted-foreground">Remanejamento Interno</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-accent/10 border-accent">
-                        <CardContent className="pt-4">
-                            <div className="flex items-center gap-2">
-                                <ListOrdered className="h-5 w-5 text-foreground" />
-                                <p className="text-xl font-bold text-foreground">{fila.length}</p>
-                            </div>
-                            <p className="text-sm text-muted-foreground">Fila Reclassificada</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-destructive/10 border-destructive">
-                        <CardContent className="pt-4">
-                            <div className="flex items-center gap-2">
-                                <Users className="h-5 w-5 text-destructive" />
-                                <p className="text-xl font-bold text-destructive">{concluintes.length}</p>
-                            </div>
-                            <p className="text-sm text-muted-foreground">Concluintes (Evasão)</p>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
             
             <div className="flex gap-4 pt-4 border-t border-border">
                 <Button 
@@ -295,12 +243,12 @@ const Transicoes = () => {
                             ) : (
                                 <CheckCircle className="mr-2 h-4 w-4" />
                             )}
-                            {isExecuting ? "Aplicando..." : `Aplicar Remanejamento`}
+                            {isExecuting ? "Aplicando..." : `Aplicar Transição`}
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Confirmar Aplicação do Remanejamento?</AlertDialogTitle>
+                            <AlertDialogTitle>Confirmar Aplicação da Transição?</AlertDialogTitle>
                             <AlertDialogDescription>
                                 Esta ação irá aplicar o planejamento atual, alterando o status de {classificacao.length} crianças. 
                                 <span className="font-semibold text-destructive block mt-2">Esta ação é irreversível e irá atualizar as turmas e a fila de espera.</span>
@@ -351,7 +299,7 @@ const Transicoes = () => {
             </Card>
         )}
         
-        {/* NOVO LAYOUT: Agrupado por CMEI e Horizontal */}
+        {/* LAYOUT HORIZONTAL AGRUPADO */}
         <h2 className="text-2xl font-bold text-foreground pt-4">Planejamento Detalhado por CMEI</h2>
         <CardDescription className="mb-4">
             Revise e ajuste a ação sugerida para cada criança.

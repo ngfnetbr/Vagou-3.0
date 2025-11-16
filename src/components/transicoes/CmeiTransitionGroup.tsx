@@ -79,7 +79,7 @@ export const CmeiTransitionGroup = ({
                         <TableRow>
                             <TableHead className="w-12">Sel.</TableHead>
                             <TableHead>Criança</TableHead>
-                            <TableHead>Status Atual</TableHead>
+                            <TableHead>Turma Atual</TableHead>
                             <TableHead>Próxima Turma Base</TableHead>
                             <TableHead className="w-[180px]">Ação Planejada</TableHead>
                             <TableHead className="text-right w-[80px]">Ações</TableHead>
@@ -110,9 +110,10 @@ export const CmeiTransitionGroup = ({
                                         <div className="text-xs text-muted-foreground">{c.idade}</div>
                                     </TableCell>
                                     <TableCell>
-                                        {getStatusBadge(c.status)}
-                                        {isMatriculado && c.turmaNome && (
-                                            <div className="text-xs text-muted-foreground mt-1">{c.turmaNome}</div>
+                                        {isMatriculado && c.turmaNome ? (
+                                            <div className="text-sm font-medium">{c.turmaNome}</div>
+                                        ) : (
+                                            <div className="text-sm text-muted-foreground">Fila</div>
                                         )}
                                     </TableCell>
                                     <TableCell>
