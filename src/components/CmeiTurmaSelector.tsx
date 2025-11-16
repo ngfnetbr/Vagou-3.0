@@ -109,7 +109,7 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
                         <span className="font-semibold text-sm truncate">{selectedCmeiName}</span>
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 p-1">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-1 p-1">
                         {currentTurmas.map((vaga) => {
                             const vagaValue = `${vaga.cmei_id}|${vaga.turma_id}|${vaga.cmei}|${vaga.turma}`;
                             const isSelected = value === vagaValue;
