@@ -153,7 +153,7 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                                             <SelectValue placeholder={isLoadingData ? "Buscando vagas compatíveis..." : "Selecione a Vaga"} />
                                         </SelectTrigger>
                                     </FormControl>
-                                    <SelectContent>
+                                    <SelectContent side="bottom" position="popper">
                                         {isLoadingData ? (
                                             <SelectItem value="loading" disabled>
                                                 <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando...
@@ -164,11 +164,10 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                                                 const isPreferred = !isRemanejamento && (crianca.cmei1_preferencia === vaga.cmei || crianca.cmei2_preferencia === vaga.cmei);
                                                 
                                                 // Formatação do texto de vagas
-                                                const vagasText = vaga.vagas <= 0 ? '(LOTADA)' : `(${vaga.vagas} vagas)`;
+                                                const vagasText = `(${vaga.vagas} vagas)`;
                                                     
                                                 const isLotada = vaga.vagas <= 0;
                                                 
-                                                // NOVO LABEL: Apenas Turma + Vagas (se não for remanejamento, adiciona o CMEI para clareza)
                                                 const label = isRemanejamento 
                                                     ? `${vaga.turma} ${vagasText}`
                                                     : `${vaga.cmei} - ${vaga.turma} ${vagasText}`;
