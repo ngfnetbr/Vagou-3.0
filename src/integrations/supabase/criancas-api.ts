@@ -11,8 +11,12 @@ const getAdminUser = async (): Promise<string> => {
     return user?.email || "Usuário Admin";
 };
 
-// Simplificando para apenas '*' para isolar o problema de JOINs
-const SELECT_FIELDS = `*`;
+// Reintroduzindo os JOINs necessários para CMEI e Turma
+const SELECT_FIELDS = `
+    *,
+    cmeis (nome),
+    turmas (nome)
+`;
 
 // --- Funções de Busca ---
 
