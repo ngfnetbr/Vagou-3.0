@@ -12,7 +12,7 @@ import CmeiTurmaSelector from "../CmeiTurmaSelector"; // Importando o novo compo
 interface RealocacaoMassaModalProps {
     selectedIds: string[]; // Recebe os IDs selecionados
     onClose: () => void;
-    onConfirmMassRealocate: (criancaIds: string[], cmei_id: string, turma_id: string) => void; // Função de planejamento
+    onConfirmMassRealocate: (criancaIds: string[], cmei_id: string, turma_id: string, cmei_nome: string, turma_nome: string) => void; // Função de planejamento atualizada
 }
 
 const RealocacaoMassaModal = ({ selectedIds, onClose, onConfirmMassRealocate }: RealocacaoMassaModalProps) => {
@@ -46,7 +46,7 @@ const RealocacaoMassaModal = ({ selectedIds, onClose, onConfirmMassRealocate }: 
         }
         
         // Chama a função de planejamento
-        onConfirmMassRealocate(selectedIds, cmei_id, turma_id);
+        onConfirmMassRealocate(selectedIds, cmei_id, turma_id, cmei_nome, turma_nome);
         toast.success("Realocação em massa planejada!", {
             description: `${selectedIds.length} crianças marcadas para realocação para ${cmei_nome} - ${turma_nome}.`,
         });

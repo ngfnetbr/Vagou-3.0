@@ -123,10 +123,10 @@ const Transicoes = () => {
   };
   
   // Esta função agora atualiza o estado de planejamento, não o DB
-  const handleRealocacaoIndividualConfirm = async (criancaId: string, data: ConvocationData) => {
+  const handleRealocacaoIndividualConfirm = async (criancaId: string, data: ConvocationData, cmeiNome: string, turmaNome: string) => {
       // Não usamos await realocarCrianca({ id: criancaId, data });
-      updateCriancaVagaInPlanning(criancaId, data.cmei_id, data.turma_id);
-      toast.success("Realocação planejada!", { description: "A mudança será aplicada ao executar a transição." });
+      updateCriancaVagaInPlanning(criancaId, data.cmei_id, data.turma_id, cmeiNome, turmaNome);
+      toast.success("Realocação planejada!", { description: `A criança será movida para ${cmeiNome} - ${turmaNome} ao executar a transição.` });
       setIsRealocacaoIndividualModalOpen(false);
       setCriancaToAction(undefined);
   };

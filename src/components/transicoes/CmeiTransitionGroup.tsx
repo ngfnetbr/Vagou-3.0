@@ -1,3 +1,4 @@
+cmeiNome, turmaName -> turmaNome).">
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -50,18 +51,27 @@ export const CmeiTransitionGroup = ({
 }: CmeiTransitionGroupProps) => {
     const navigate = useNavigate();
     
-    // Função para obter o nome da turma planejada (se houver mudança)
+    // Função para obter o nome da vaga planejada (se houver mudança)
     const getPlannedVaga = (crianca: CriancaClassificada) => {
-        if (crianca.planned_cmei_id && crianca.planned_turma_id) {
-            // Se a vaga planejada for diferente da atual
-            if (crianca.planned_cmei_id !== crianca.cmei_atual_id || crianca.planned_turma_id !== crianca.turma_atual_id) {
-                return (
-                    <Badge variant="secondary" className="bg-primary/10 text-primary">
-                        Vaga Planejada
-                    </Badge>
-                );
-            }
+        const isVagaChanged = crianca.planned_cmei_id !== crianca.cmei_atual_id || crianca.planned_turma_id !== crianca.turma_atual_id;
+        
+        if (isVagaChanged && crianca.planned_cmei_nome && crianca.planned_turma_nome) {
+            return (
+                <Badge variant="secondary" className="bg-primary/10 text-primary font-normal">
+                    {crianca.planned_cmei_nome} - {crianca.planned_turma_nome}
+                </Badge>
+            );
         }
+        
+        // Se não houver mudança, exibe a vaga atual (se houver)
+        if (crianca.cmeiNome && crianca.turmaNome) {
+            return (
+                <span className="text-xs text-muted-foreground">
+                    {crianca.cmeiNome} - {crianca.turmaNome}
+                </span>
+            );
+        }
+        
         return null;
     };
     
