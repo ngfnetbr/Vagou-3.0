@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { format, addDays } from "date-fns";
 import { useConfiguracoes } from "@/hooks/use-configuracoes";
+import { useAllCompatibleTurmas } from "@/hooks/use-all-compatible-turmas"; // NOVO HOOK
 
 interface ConvocarModalProps {
     crianca: Crianca;
@@ -32,10 +33,20 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
     const { convocarCrianca, isConvoking } = useCriancas();
     const { config, isLoading: isLoadingConfig } = useConfiguracoes();
     
-    // Hook que busca vagas disponíveis filtradas por idade e preferência (ou remanejamento)
-    const { data: availableTurmas, isLoading: isLoadingTurmas } = useAvailableTurmas(crianca.id);
-
     const isRemanejamento = crianca.status === 'Remanejamento Solicitado';
+    
+    // Se for remanejamento, buscamos TODAS as turmas compatíveis no CMEI de destino (incluindo lotadas)
+    const { data: allCompatibleTurmas, isLoading: isLoadingCompatible } = useAllCompatibleTurmas(
+        crianca.id, 
+        isRemanejamento ? crianca.cmei_remanejamento_id : undefined
+    );
+    
+    // Se NÃO for remanejamento, usamos o hook original que filtra apenas por vagas disponíveis e preferências
+    const { data: availableTurmas, isLoading: isLoadingAvailable } = useAvailableTurmas(crianca.id);
+
+    // Define a lista de turmas a ser usada no Select
+    const turmasToDisplay = isRemanejamento ? allCompatibleTurmas : availableTurmas;
+    const isLoadingData = isLoadingConfig || isLoadingCompatible || isLoadingAvailable;
 
     const form = useForm<ConvocarFormData>({
         resolver: zodResolver(convocarSchema),
@@ -49,8 +60,6 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
         },
     });
     
-    const isLoadingData = isLoadingConfig || isLoadingTurmas;
-
     const onSubmit = async (values: ConvocarFormData) => {
         // values.vagaSelecionada: "cmei_id|turma_id|cmei_nome|turma_nome"
         const parts = values.vagaSelecionada.split('|');
@@ -112,7 +121,7 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                         </p>
                     </div>
                     <p className="text-xs text-muted-foreground italic pt-2 border-t border-primary/10">
-                        A lista de vagas abaixo é filtrada apenas para o CMEI desejado.
+                        A lista de vagas abaixo mostra todas as turmas compatíveis com a idade no CMEI desejado, incluindo as lotadas.
                     </p>
                 </div>
             ) : (
@@ -150,11 +159,19 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                                             <SelectItem value="loading" disabled>
                                                 <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando...
                                             </SelectItem>
-                                        ) : availableTurmas && availableTurmas.length > 0 ? (
-                                            availableTurmas.map((vaga, index) => {
-                                                // Se for remanejamento, não precisamos de destaque de preferência, pois já está filtrado
+                                        ) : turmasToDisplay && turmasToDisplay.length > 0 ? (
+                                            turmasToDisplay.map((vaga, index) => {
+                                                // Se for remanejamento, não precisamos de destaque de preferência
                                                 const isPreferred = !isRemanejamento && (crianca.cmei1_preferencia === vaga.cmei || crianca.cmei2_preferencia === vaga.cmei);
-                                                const label = `${vaga.cmei} - ${vaga.turma} (${vaga.vagas} vagas)`;
+                                                
+                                                // Se for remanejamento, mostramos o status de vagas
+                                                const vagasText = isRemanejamento 
+                                                    ? `(${vaga.vagas} vagas)` 
+                                                    : `(${vaga.vagas} vagas)`;
+                                                    
+                                                const isLotada = isRemanejamento && vaga.vagas <= 0;
+                                                
+                                                const label = `${vaga.cmei} - ${vaga.turma} ${vagasText}`;
                                                 
                                                 // Valor combinado: cmei_id|turma_id|cmei_nome|turma_nome
                                                 const value = `${vaga.cmei_id}|${vaga.turma_id}|${vaga.cmei}|${vaga.turma}`;
@@ -163,7 +180,7 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                                                     <SelectItem 
                                                         key={index} 
                                                         value={value}
-                                                        className={isPreferred ? 'font-semibold text-primary' : ''}
+                                                        className={isPreferred ? 'font-semibold text-primary' : isLotada ? 'text-destructive' : ''}
                                                     >
                                                         {label}
                                                     </SelectItem>
@@ -200,7 +217,7 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                         )}
                     />
 
-                    <Button type="submit" className="w-full" disabled={isConvoking || !form.formState.isValid || (availableTurmas?.length === 0 && !isLoadingData)}>
+                    <Button type="submit" className="w-full" disabled={isConvoking || !form.formState.isValid || (turmasToDisplay?.length === 0 && !isLoadingData)}>
                         {isConvoking ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
