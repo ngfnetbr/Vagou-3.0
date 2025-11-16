@@ -1,18 +1,35 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, GraduationCap, ListOrdered, TrendingUp, Loader2, History } from "lucide-react";
+import { Users, GraduationCap, ListOrdered, TrendingUp, Loader2, History, Clock } from "lucide-react";
 import { useCriancas } from "@/hooks/use-criancas";
 import { useHistoricoGeral } from "@/hooks/use-historico"; // Importando hook de histórico
 import { useCmeisTotalCapacity } from "@/hooks/use-cmeis-total-capacity"; // Novo hook
+import { useAverageWaitTime } from "@/hooks/use-average-wait-time"; // Novo hook
 import { useMemo } from "react";
 import { Crianca } from "@/integrations/supabase/types";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+// Helper para formatar dias em meses e dias
+const formatDaysToTime = (days: number | null): string => {
+    if (days === null || days <= 0) return "N/A";
+    
+    const totalDays = Math.round(days);
+    const months = Math.floor(totalDays / 30.44); // Média de dias por mês
+    const remainingDays = totalDays % 30;
+    
+    const parts = [];
+    if (months > 0) parts.push(`${months} mês(es)`);
+    if (remainingDays > 0 || months === 0) parts.push(`${remainingDays} dia(s)`);
+    
+    return parts.join(' e ');
+};
+
 const Dashboard = () => {
   const { criancas, isLoading: isLoadingCriancas } = useCriancas();
   const { data: capacidadeTotal, isLoading: isLoadingCapacidade } = useCmeisTotalCapacity();
   const { logs: historicoRecente, isLoading: isLoadingHistorico } = useHistoricoGeral();
+  const { data: averageWaitTimeDays, isLoading: isLoadingWaitTime } = useAverageWaitTime(); // Novo hook
   
   const { totalCriancas, matriculasAtivas, filaEspera, convocacoesPendentes, taxaOcupacao } = useMemo(() => {
     if (!criancas || criancas.length === 0) {
@@ -47,6 +64,8 @@ const Dashboard = () => {
     };
   }, [criancas, capacidadeTotal]);
   
+  const formattedWaitTime = formatDaysToTime(averageWaitTimeDays);
+  
   const stats = [
     {
       title: "Total de Crianças",
@@ -76,13 +95,21 @@ const Dashboard = () => {
       title: "Taxa de Ocupação",
       value: taxaOcupacao,
       icon: TrendingUp,
-      description: "Capacidade utilizada", // Removido (Mock)
+      description: "Capacidade utilizada",
       color: "text-secondary",
       bgColor: "bg-secondary/10",
     },
+    {
+      title: "Média Tempo de Espera",
+      value: formattedWaitTime,
+      icon: Clock,
+      description: "Tempo médio até a convocação",
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+    },
   ];
   
-  if (isLoadingCriancas || isLoadingHistorico || isLoadingCapacidade) {
+  if (isLoadingCriancas || isLoadingHistorico || isLoadingCapacidade || isLoadingWaitTime) {
     return (
       <AdminLayout>
         <div className="flex justify-center items-center h-96">
@@ -101,7 +128,7 @@ const Dashboard = () => {
           <p className="text-muted-foreground">Visão geral do sistema de gestão de vagas</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
