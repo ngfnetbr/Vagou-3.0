@@ -30,21 +30,6 @@ const statusOptions: { value: StatusTransicao, label: string }[] = [
     { value: 'Manter Status', label: 'Manter Status Atual' },
 ];
 
-const getStatusBadge = (status: CriancaClassificada['status']) => {
-    const variants: Record<CriancaClassificada['status'], { className: string, text: string }> = {
-      "Matriculada": { className: "bg-secondary/20 text-secondary", text: "Matriculada" },
-      "Matriculado": { className: "bg-secondary/20 text-secondary", text: "Matriculado" },
-      "Fila de Espera": { className: "bg-accent/20 text-foreground", text: "Fila de Espera" },
-      "Convocado": { className: "bg-primary/20 text-primary", text: "Convocado" },
-      "Desistente": { className: "bg-destructive/20 text-destructive", text: "Desistente" },
-      "Recusada": { className: "bg-destructive/20 text-destructive", text: "Recusada" },
-      "Remanejamento Solicitado": { className: "bg-accent/20 text-foreground", text: "Remanejamento Solicitado" },
-    };
-    
-    const config = variants[status] || { className: "bg-muted text-muted-foreground", text: status };
-    return <Badge className={`text-xs ${config.className}`}>{config.text}</Badge>;
-};
-
 export const CmeiTransitionGroup = ({
     cmeiName,
     criancas,
@@ -107,13 +92,12 @@ export const CmeiTransitionGroup = ({
                                     </TableCell>
                                     <TableCell>
                                         <div className="font-medium">{c.nome}</div>
-                                        <div className="text-xs text-muted-foreground">{c.idade}</div>
                                     </TableCell>
                                     <TableCell>
                                         {isMatriculado && c.turmaNome ? (
                                             <div className="text-sm font-medium">{c.turmaNome}</div>
                                         ) : (
-                                            <div className="text-sm text-muted-foreground">Fila</div>
+                                            <div className="text-sm text-muted-foreground">Fila de Espera</div>
                                         )}
                                     </TableCell>
                                     <TableCell>

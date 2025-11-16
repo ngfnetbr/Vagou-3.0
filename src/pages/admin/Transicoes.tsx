@@ -299,15 +299,16 @@ const Transicoes = () => {
             </Card>
         )}
         
-        {/* LAYOUT HORIZONTAL AGRUPADO */}
+        {/* LAYOUT VERTICAL AGRUPADO */}
         <h2 className="text-2xl font-bold text-foreground pt-4">Planejamento Detalhado por CMEI</h2>
         <CardDescription className="mb-4">
             Revise e ajuste a ação sugerida para cada criança.
         </CardDescription>
 
-        <div className="flex space-x-6 overflow-x-auto pb-4">
+        {/* Removendo overflow-x-auto e flex space-x-6 */}
+        <div className="space-y-6"> 
             {Object.entries(groupedByCmei).map(([cmeiName, criancasList]) => (
-                <div key={cmeiName} className="flex-shrink-0 w-[450px]">
+                <div key={cmeiName} className="w-full">
                     <CmeiTransitionGroup
                         cmeiName={cmeiName}
                         criancas={criancasList}
