@@ -8,7 +8,7 @@ import { MoreVertical, Eye, CheckCircle, Bell, XCircle, ListRestart, RotateCcw, 
 import { Crianca } from "@/integrations/supabase/types"; // Importação atualizada
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { format, parseISO, isValid } from "date-fns";
+import { format, parseISO, isValid, differenceInMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import CountdownTimer from "../CountdownTimer"; // Importando o novo componente
 
@@ -85,6 +85,12 @@ export const FilaTable = ({
                 const isFilaEspera = item.status === "Fila de Espera";
                 const deadlineExpired = isDeadlineExpired(item.convocacao_deadline);
                 
+                // --- START: Age Calculation Logic ---
+                const dob = parseISO(item.data_nascimento + 'T00:00:00');
+                const ageInMonths = isValid(dob) ? differenceInMonths(new Date(), dob) : Infinity;
+                const isUnderSixMonths = ageInMonths < 6;
+                // --- END: Age Calculation Logic ---
+                
                 // Lógica para exibir o badge de penalidade: se está na fila E tem data de penalidade
                 const isPenalized = isFilaEspera && !!item.data_penalidade;
                 
@@ -94,7 +100,15 @@ export const FilaTable = ({
                         {isConvocado ? <Badge className="bg-primary text-primary-foreground w-fit flex justify-center items-center">CONV.</Badge> : `#${item.posicao_fila}`}
                     </TableCell>
                     <TableCell className="font-medium">{item.nome}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{item.idade}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                        {/* Display Age with Warning if under 6 months */}
+                        <div className="flex flex-col items-start">
+                            {isUnderSixMonths && (
+                                <span className="font-bold text-destructive text-xs mb-1">Menor de 6 meses</span>
+                            )}
+                            <span>{item.idade}</span>
+                        </div>
+                    </TableCell>
                     <TableCell>{item.responsavel_nome}</TableCell>
                     <TableCell>{getInscriptionDate(item)}</TableCell>
                     <TableCell className="text-center">
@@ -195,7 +209,11 @@ export const FilaTable = ({
                           
                           {/* Opção de Convocar / Reconvocar */}
                           {(!isConvocado || (isConvocado && deadlineExpired)) && (
-                            <DropdownMenuItem className="text-primary" onSelect={() => handleConvocarClick(item)}>
+                            <DropdownMenuItem 
+                                className="text-primary" 
+                                onSelect={() => handleConvocarClick(item)}
+                                disabled={isUnderSixMonths} // BLOQUEIO AQUI
+                            >
                               {isConvocado ? (
                                 <>
                                   <RotateCcw className="mr-2 h-4 w-4" />
