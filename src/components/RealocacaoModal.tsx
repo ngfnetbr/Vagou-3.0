@@ -94,7 +94,7 @@ const RealocacaoModal = ({ crianca, onClose, onConfirm, isPending }: RealocacaoM
                       <SelectValue placeholder={isLoadingTurmas ? "Buscando turmas..." : "Selecione a Turma"} />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent className="max-h-72">
                     {isLoadingTurmas ? (
                         <SelectItem value="loading" disabled>Carregando...</SelectItem>
                     ) : allAvailableTurmas.length > 0 ? (

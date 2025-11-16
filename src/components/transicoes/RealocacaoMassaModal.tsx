@@ -30,9 +30,6 @@ const RealocacaoMassaModal = ({ selectedIds, onClose, onConfirmMassRealocate }: 
         }
         
         // Valor combinado: cmei_id|turma_id|cmei_nome|turma_nome
-        // Nota: O valor no SelectItem foi ajustado para cmei_id|turma_id|cmei_nome|turma_nome no RealocacaoModal.tsx
-        // Mas o valor que estamos usando aqui é turma_id|cmei_id|turma_nome|cmei_nome. Vamos padronizar para o formato do RealocacaoModal.tsx
-        // Revertendo a ordem de split para o formato que o SelectItem está gerando: cmei_id|turma_id|cmei_nome|turma_nome
         const parts = selectedVaga.split('|');
         
         if (parts.length !== 4) {
@@ -74,7 +71,7 @@ const RealocacaoMassaModal = ({ selectedIds, onClose, onConfirmMassRealocate }: 
                         <SelectTrigger id="turma-destino">
                             <SelectValue placeholder={isLoadingTurmas ? "Carregando turmas..." : "Selecione a Turma"} />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-72">
                             {isLoadingTurmas ? (
                                 <SelectItem value="loading" disabled>Carregando...</SelectItem>
                             ) : allAvailableTurmas.length > 0 ? (
