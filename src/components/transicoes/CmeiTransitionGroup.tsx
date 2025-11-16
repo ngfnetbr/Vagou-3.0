@@ -123,10 +123,17 @@ export const CmeiTransitionGroup = ({
                                             <div className="text-xs text-muted-foreground">{c.idade}</div>
                                         </TableCell>
                                         <TableCell>
-                                            {getStatusBadge(c.status)}
+                                            <div className="flex flex-col gap-1 items-start">
+                                                {getStatusBadge(c.status)}
+                                                {(c.cmeiNome || c.turmaNome) && (
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {c.cmeiNome} - {c.turmaNome}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="flex flex-col gap-1">
+                                            <div className="flex flex-col gap-1 items-start">
                                                 {getPlannedStatus(c)}
                                                 {getPlannedVaga(c)}
                                             </div>
