@@ -130,7 +130,7 @@ export const FilaTable = ({
                             variant="default"
                             className="w-fit flex justify-center items-center mx-auto bg-accent hover:bg-accent/80 text-accent-foreground"
                         >
-                            REMANEJAMENTO
+                            Remanejamento
                         </Badge>
                       ) : (
                         <Badge 
