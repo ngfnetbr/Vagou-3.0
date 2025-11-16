@@ -80,9 +80,9 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
         align="start"
         side="bottom" 
       >
-        {/* A ScrollArea agora define a altura máxima e a rolagem */}
+        {/* A ScrollArea define a altura máxima e a rolagem */}
         <ScrollArea className="h-auto max-h-[70vh]">
-          <div className="p-1">
+          <div className="w-full">
             {isLoading ? (
                 <div className="flex items-center justify-center p-4 text-muted-foreground text-sm">
                     <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando vagas...
