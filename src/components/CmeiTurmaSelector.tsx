@@ -76,11 +76,11 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-[var(--radix-popover-trigger-width)] p-0 max-h-[90vh]" // Mantém a altura máxima do popover
+        className="w-[var(--radix-popover-trigger-width)] p-0" // Removendo max-h-[90vh]
         align="start"
         side="bottom" 
       >
-        {/* A ScrollArea agora garante a rolagem interna se o conteúdo exceder 70vh */}
+        {/* A ScrollArea agora define a altura máxima e a rolagem */}
         <ScrollArea className="h-auto max-h-[70vh]">
           <div className="p-1">
             {allAvailableTurmas.length === 0 && !isLoading ? (
