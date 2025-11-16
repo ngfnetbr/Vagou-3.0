@@ -51,6 +51,19 @@ const mockCriancas: InscricaoFormData[] = [
     nomeCrianca: "Eloá Ferreira", dataNascimento: "2023-01-05", sexo: "feminino", programasSociais: "sim", aceitaQualquerCmei: "nao", cmei1: "CMEI Centro", cmei2: "CMEI Sul",
     nomeResponsavel: "Fábio Ferreira", cpf: "555.555.555-55", telefone: "(99) 9 8888-5555", telefone2: "", email: "fabio@exemplo.com", endereco: "Rua E, 50", bairro: "Centro", observacoes: ""
   },
+  // Novos dados para teste de transição
+  {
+    nomeCrianca: "Igor Matr. I0", dataNascimento: "2024-02-01", sexo: "masculino", programasSociais: "nao", aceitaQualquerCmei: "sim", cmei1: "CMEI Centro", cmei2: "",
+    nomeResponsavel: "Pai Igor", cpf: "888.888.888-88", telefone: "(99) 9 8888-8888", telefone2: "", email: "", endereco: "Rua F, 60", bairro: "Centro", observacoes: ""
+  },
+  {
+    nomeCrianca: "Júlia Matr. I1", dataNascimento: "2023-01-01", sexo: "feminino", programasSociais: "sim", aceitaQualquerCmei: "nao", cmei1: "CMEI Norte", cmei2: "CMEI Leste",
+    nomeResponsavel: "Mãe Júlia", cpf: "999.999.999-99", telefone: "(99) 9 8888-9999", telefone2: "", email: "julia@exemplo.com", endereco: "Rua G, 70", bairro: "Norte", observacoes: ""
+  },
+  {
+    nomeCrianca: "Kauã Matr. I2", dataNascimento: "2022-01-01", sexo: "masculino", programasSociais: "nao", aceitaQualquerCmei: "sim", cmei1: "CMEI Sul", cmei2: "",
+    nomeResponsavel: "Pai Kauã", cpf: "000.000.000-00", telefone: "(99) 9 8888-0000", telefone2: "", email: "", endereco: "Rua H, 80", bairro: "Sul", observacoes: ""
+  },
 ];
 
 // --- Funções de Inserção ---
@@ -121,38 +134,52 @@ export async function seedTurmas(cmeis: any[], turmasBase: any[]) {
 export async function seedCriancas() {
   const criancasPayload = mockCriancas.map(c => mapFormToDb(c));
   
-  // Adiciona uma criança matriculada para teste
-  const matriculadoPayload = mapFormToDb({
-    nomeCrianca: "Gabriel Teste Matr.", dataNascimento: "2022-01-01", sexo: "masculino", programasSociais: "nao", aceitaQualquerCmei: "sim", cmei1: "CMEI Centro", cmei2: "",
-    nomeResponsavel: "Pai Teste", cpf: "666.666.666-66", telefone: "(99) 9 8888-6666", telefone2: "", email: "", endereco: "", bairro: "", observacoes: ""
-  });
+  // Busca turmas específicas para matricular
+  const { data: turmasData } = await supabase.from('turmas').select('id, cmei_id, turma_base_id, nome').limit(5);
   
-  // Busca uma turma para matricular
-  const { data: turmaData } = await supabase.from('turmas').select('id, cmei_id').limit(1).single();
-  
-  if (turmaData) {
-      matriculadoPayload.status = "Matriculado";
-      matriculadoPayload.cmei_atual_id = turmaData.cmei_id;
-      matriculadoPayload.turma_atual_id = turmaData.id;
+  if (turmasData && turmasData.length >= 4) {
+      // 1. Criança Matriculada (Infantil 0)
+      const matriculado1 = mapFormToDb({
+        nomeCrianca: "Gabriel Teste Matr. I0", dataNascimento: "2024-01-01", sexo: "masculino", programasSociais: "nao", aceitaQualquerCmei: "sim", cmei1: "CMEI Centro", cmei2: "",
+        nomeResponsavel: "Pai Teste 1", cpf: "666.666.666-66", telefone: "(99) 9 8888-6666", telefone2: "", email: "", endereco: "", bairro: "", observacoes: ""
+      });
+      matriculado1.status = "Matriculado";
+      matriculado1.cmei_atual_id = turmasData[0].cmei_id;
+      matriculado1.turma_atual_id = turmasData[0].id;
+      criancasPayload.push(matriculado1);
+      
+      // 2. Criança Matriculada (Infantil 2)
+      const matriculado2 = mapFormToDb({
+        nomeCrianca: "Laura Teste Matr. I2", dataNascimento: "2022-01-01", sexo: "feminino", programasSociais: "sim", aceitaQualquerCmei: "nao", cmei1: "CMEI Norte", cmei2: "",
+        nomeResponsavel: "Mãe Teste 2", cpf: "123.456.789-00", telefone: "(99) 9 8888-1234", telefone2: "", email: "", endereco: "", bairro: "", observacoes: ""
+      });
+      matriculado2.status = "Matriculado";
+      matriculado2.cmei_atual_id = turmasData[1].cmei_id;
+      matriculado2.turma_atual_id = turmasData[1].id;
+      criancasPayload.push(matriculado2);
+      
+      // 3. Criança Matriculada (Concluinte - 4 anos na data de corte)
+      const concluinte = mapFormToDb({
+        nomeCrianca: "Pedro Teste Concl.", dataNascimento: "2020-01-01", sexo: "masculino", programasSociais: "nao", aceitaQualquerCmei: "sim", cmei1: "CMEI Sul", cmei2: "",
+        nomeResponsavel: "Pai Teste 3", cpf: "987.654.321-00", telefone: "(99) 9 8888-4321", telefone2: "", email: "", endereco: "", bairro: "", observacoes: ""
+      });
+      concluinte.status = "Matriculado";
+      concluinte.cmei_atual_id = turmasData[2].cmei_id;
+      concluinte.turma_atual_id = turmasData[2].id;
+      criancasPayload.push(concluinte);
+      
+      // 4. Criança Convocada (Infantil 1)
+      const convocado = mapFormToDb({
+        nomeCrianca: "Helena Teste Conv. I1", dataNascimento: "2023-08-01", sexo: "feminino", programasSociais: "sim", aceitaQualquerCmei: "nao", cmei1: "CMEI Leste", cmei2: "CMEI Sul",
+        nomeResponsavel: "Mãe Teste Conv", cpf: "777.777.777-77", telefone: "(99) 9 8888-7777", telefone2: "", email: "", endereco: "", bairro: "", observacoes: ""
+      });
+      convocado.status = "Convocado";
+      convocado.cmei_atual_id = turmasData[3].cmei_id;
+      convocado.turma_atual_id = turmasData[3].id;
+      convocado.convocacao_deadline = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+      criancasPayload.push(convocado);
   }
   
-  // Adiciona uma criança convocada para teste
-  const convocadoPayload = mapFormToDb({
-    nomeCrianca: "Helena Teste Conv.", dataNascimento: "2023-08-01", sexo: "feminino", programasSociais: "sim", aceitaQualquerCmei: "nao", cmei1: "CMEI Norte", cmei2: "CMEI Sul",
-    nomeResponsavel: "Mãe Teste", cpf: "777.777.777-77", telefone: "(99) 9 8888-7777", telefone2: "", email: "", endereco: "", bairro: "", observacoes: ""
-  });
-  
-  if (turmaData) {
-      convocadoPayload.status = "Convocado";
-      convocadoPayload.cmei_atual_id = turmaData.cmei_id;
-      convocadoPayload.turma_atual_id = turmaData.id;
-      // Define um prazo de convocação para amanhã
-      convocadoPayload.convocacao_deadline = format(addDays(new Date(), 1), 'yyyy-MM-dd');
-  }
-  
-  criancasPayload.push(matriculadoPayload);
-  criancasPayload.push(convocadoPayload);
-
   const { error } = await supabase.from('criancas').insert(criancasPayload).select();
   if (error) throw new Error(`Erro ao inserir Crianças: ${error.message}`);
 }
