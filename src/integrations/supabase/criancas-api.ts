@@ -12,10 +12,11 @@ const getAdminUser = async (): Promise<string> => {
 };
 
 // Reintroduzindo os JOINs necessários para CMEI e Turma
+// Usamos a sintaxe de relacionamento para garantir que a consulta não falhe se cmei_atual_id for NULL.
 const SELECT_FIELDS = `
     *,
-    cmeis (nome),
-    turmas (nome)
+    cmeis!criancas_cmei_atual_id_fkey(nome),
+    turmas!criancas_turma_atual_id_fkey(nome)
 `;
 
 // --- Funções de Busca ---
