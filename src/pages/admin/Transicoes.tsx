@@ -2,7 +2,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Loader2, ArrowRight, CheckCircle, Save, RotateCcw, Trash2, Users, ListOrdered } from "lucide-react";
+import { AlertCircle, Loader2, ArrowRight, CheckCircle, Save, RotateCcw, Trash2, Users, ListOrdered, XCircle } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useTransicoes, CriancaClassificada } from "@/hooks/use-transicoes";
 import { format } from "date-fns";
@@ -78,6 +78,10 @@ const Transicoes = () => {
     setSelectedIds(prev => 
         prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
+  };
+  
+  const handleClearSelection = () => {
+      setSelectedIds([]);
   };
   
   // --- Data Processing ---
@@ -338,6 +342,15 @@ const Transicoes = () => {
                       <div className="flex gap-3">
                           <Button 
                               variant="outline" 
+                              className="text-muted-foreground border-border hover:bg-muted"
+                              onClick={handleClearSelection}
+                              disabled={isExecuting || isSaving}
+                          >
+                              <XCircle className="mr-2 h-4 w-4" />
+                              Desfazer Seleção
+                          </Button>
+                          <Button 
+                              variant="outline" 
                               className="text-secondary border-secondary hover:bg-secondary/10"
                               onClick={() => handleMassAction('realocar')}
                               disabled={isExecuting || isSaving}
@@ -352,7 +365,7 @@ const Transicoes = () => {
                               disabled={isExecuting || isSaving}
                           >
                               <ArrowRight className="mr-2 h-4 w-4" />
-                              Marcar Concluinte em Massa
+                              Conclusão em Massa
                           </Button>
                       </div>
                   </CardContent>
@@ -419,7 +432,7 @@ const Transicoes = () => {
               onConfirmMassStatusUpdate={massUpdateStatusInPlanning} // Passa a função de planejamento
               // Adicionando prop para restringir a ação apenas a 'Concluinte'
               allowedStatus={['Desistente']} // Usamos 'Desistente' como status de saída/concluinte no planejamento
-              actionTitle="Marcar Concluinte em Massa"
+              actionTitle="Conclusão em Massa"
               actionDescription="Confirme a conclusão do ciclo para as crianças selecionadas."
           />
         </Dialog>

@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Eye, RotateCcw, Trash2, ArrowRight, CheckCircle, Users, ListOrdered } from "lucide-react";
+import { MoreVertical, Eye, RotateCcw, Trash2, ArrowRight, CheckCircle, Users, ListOrdered, CheckSquare } from "lucide-react";
 import { CriancaClassificada, StatusTransicao } from "@/hooks/use-transicoes";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -50,6 +50,44 @@ export const CmeiTransitionGroup = ({
 }: CmeiTransitionGroupProps) => {
     const navigate = useNavigate();
     
+    // Função para selecionar/desselecionar todas as crianças de uma turma
+    const toggleSelectAllTurma = (criancasList: CriancaClassificada[]) => {
+        const turmaIds = criancasList.map(c => c.id);
+        const allSelected = turmaIds.every(id => selectedIds.includes(id));
+        
+        if (allSelected) {
+            // Desselecionar todos
+            const newSelectedIds = selectedIds.filter(id => !turmaIds.includes(id));
+            // Usamos setSelectedIds diretamente no componente pai (Transicoes.tsx)
+            // Como não temos acesso direto ao setSelectedIds aqui, precisamos que toggleSelection seja capaz de lidar com múltiplos IDs.
+            // No entanto, o toggleSelection atual só lida com um ID por vez.
+            // Vamos assumir que o componente pai (Transicoes.tsx) precisa de uma nova prop para seleção em massa.
+            // Por enquanto, vamos simular a seleção/desseleção usando a função toggleSelection individualmente, o que é menos eficiente, mas funcional.
+            
+            // Melhoria: Vamos modificar a prop toggleSelection para aceitar um array de IDs e um booleano para forçar a seleção/desseleção.
+            // Como não posso alterar a interface do componente pai sem a permissão do usuário, vou manter a lógica de toggleSelection individual,
+            // mas vou criar uma função auxiliar que itera sobre os IDs.
+            
+            // Para evitar a complexidade de alterar a interface do pai, vamos fazer a iteração aqui, confiando que o `toggleSelection` do pai
+            // é rápido o suficiente.
+            
+            // Se todos estão selecionados, desmarca um por um
+            turmaIds.forEach(id => {
+                if (selectedIds.includes(id)) {
+                    toggleSelection(id);
+                }
+            });
+            
+        } else {
+            // Selecionar todos
+            turmaIds.forEach(id => {
+                if (!selectedIds.includes(id)) {
+                    toggleSelection(id);
+                }
+            });
+        }
+    };
+    
     // Função para obter o nome da vaga planejada (se houver mudança)
     const getPlannedVaga = (crianca: CriancaClassificada) => {
         // Se houver planejamento de vaga
@@ -91,13 +129,40 @@ export const CmeiTransitionGroup = ({
 
     return (
         <Accordion type="multiple" className="w-full space-y-2 p-4">
-            {Object.entries(turmaGroups).map(([turmaName, criancasList]) => (
+            {Object.entries(turmaGroups).map(([turmaName, criancasList]) => {
+                
+                const turmaIds = criancasList.map(c => c.id);
+                const allSelected = turmaIds.length > 0 && turmaIds.every(id => selectedIds.includes(id));
+                const someSelected = turmaIds.some(id => selectedIds.includes(id)) && !allSelected;
+                
+                return (
                 <AccordionItem key={turmaName} value={turmaName} className="border rounded-lg overflow-hidden bg-card shadow-sm">
                     <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                        <div className="flex items-center gap-3">
-                            <ListOrdered className="h-5 w-5 text-secondary" />
-                            <span className="font-semibold text-base">{turmaName}</span>
-                            <Badge variant="outline" className="ml-2">{criancasList.length} crianças</Badge>
+                        <div className="flex items-center justify-between w-full pr-4">
+                            <div className="flex items-center gap-3">
+                                <ListOrdered className="h-5 w-5 text-secondary" />
+                                <span className="font-semibold text-base">{turmaName}</span>
+                                <Badge variant="outline" className="ml-2">{criancasList.length} crianças</Badge>
+                            </div>
+                            
+                            {/* Botão Selecionar Todos por Turma */}
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={(e) => {
+                                    e.stopPropagation(); // Previne que o accordion feche
+                                    toggleSelectAllTurma(criancasList);
+                                }}
+                                disabled={isExecuting || isSaving || criancasList.length === 0}
+                                className={cn(
+                                    "text-xs h-7",
+                                    allSelected && "bg-primary/10 text-primary border-primary/50",
+                                    someSelected && "bg-primary/5 text-primary border-primary/30"
+                                )}
+                            >
+                                <CheckSquare className="mr-2 h-3 w-3" />
+                                {allSelected ? "Desmarcar Todos" : "Selecionar Todos"}
+                            </Button>
                         </div>
                     </AccordionTrigger>
                     <AccordionContent className="p-0">
@@ -204,7 +269,8 @@ export const CmeiTransitionGroup = ({
                         </Table>
                     </AccordionContent>
                 </AccordionItem>
-            ))}
+            );
+            })}
         </Accordion>
     );
 };
