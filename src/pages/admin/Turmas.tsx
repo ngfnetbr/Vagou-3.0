@@ -291,42 +291,51 @@ const Turmas = () => {
     }
 
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>CMEI</TableHead>
-                <TableHead>Turma</TableHead>
-                <TableHead>Modelo Base</TableHead>
-                <TableHead className="text-center">Capacidade</TableHead>
-                <TableHead className="text-center">Ocupação</TableHead>
-                <TableHead className="text-center">Vagas Livres</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTurmas.map((turma) => (
-                <TableRow key={turma.id}>
-                  <TableCell className="font-medium">{turma.cmeiNome}</TableCell>
-                  <TableCell>{turma.nomeCompleto}</TableCell>
-                  <TableCell>{turma.turmaBaseNome}</TableCell>
-                  <TableCell className="text-center">{turma.capacidade}</TableCell>
-                  <TableCell className="text-center">{turma.ocupacao}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant={turma.capacidade - turma.ocupacao === 0 ? "destructive" : "secondary"}>
-                      {turma.capacidade - turma.ocupacao}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {renderTurmaActions(turma)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        {Object.entries(groupedTurmas).map(([cmeiName, turmasList]) => (
+          <Card key={cmeiName}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Users className="h-5 w-5 text-primary" />
+                {cmeiName}
+              </CardTitle>
+              <CardDescription>Lista de turmas ativas neste CMEI.</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Turma</TableHead>
+                    <TableHead>Modelo Base</TableHead>
+                    <TableHead className="text-center">Capacidade</TableHead>
+                    <TableHead className="text-center">Ocupação</TableHead>
+                    <TableHead className="text-center">Vagas Livres</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {turmasList.map((turma) => (
+                    <TableRow key={turma.id}>
+                      <TableCell className="font-medium">{turma.nomeCompleto}</TableCell>
+                      <TableCell>{turma.turmaBaseNome}</TableCell>
+                      <TableCell className="text-center">{turma.capacidade}</TableCell>
+                      <TableCell className="text-center">{turma.ocupacao}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={turma.capacidade - turma.ocupacao === 0 ? "destructive" : "secondary"}>
+                          {turma.capacidade - turma.ocupacao}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {renderTurmaActions(turma)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     );
   };
   
