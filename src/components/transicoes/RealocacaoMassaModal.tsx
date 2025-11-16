@@ -71,7 +71,7 @@ const RealocacaoMassaModal = ({ selectedIds, onClose, onConfirmMassRealocate }: 
                         <SelectTrigger id="turma-destino">
                             <SelectValue placeholder={isLoadingTurmas ? "Carregando turmas..." : "Selecione a Turma"} />
                         </SelectTrigger>
-                        <SelectContent className="max-h-72">
+                        <SelectContent className="max-h-[400px]">
                             {isLoadingTurmas ? (
                                 <SelectItem value="loading" disabled>Carregando...</SelectItem>
                             ) : allAvailableTurmas.length > 0 ? (
