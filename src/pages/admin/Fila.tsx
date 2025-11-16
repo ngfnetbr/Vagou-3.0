@@ -103,8 +103,8 @@ const Fila = () => {
   const { filteredFila, historicoCriancas, stats } = useMemo(() => {
     if (!criancas) return { filteredFila: [], historicoCriancas: [], stats: { totalFila: 0, comPrioridade: 0, convocados: 0 } };
 
-    // 1. Define a fila ativa (incluindo Remanejamento Solicitado)
-    let activeQueue = criancas.filter(c => c.status === "Fila de Espera" || c.status === "Convocado" || c.status === "Remanejamento Solicitado");
+    // 1. Define a fila ativa (apenas Fila de Espera e Convocado)
+    let activeQueue = criancas.filter(c => c.status === "Fila de Espera" || c.status === "Convocado");
 
     if (cmeiFilter !== "todos") {
       activeQueue = activeQueue.filter(c => c.cmei1_preferencia === cmeiFilter);
@@ -124,8 +124,8 @@ const Fila = () => {
       );
     }
 
-    // 2. Separa Fila de Espera (incluindo Remanejamento Solicitado) e Convocados
-    const filaDeEspera = activeQueue.filter(c => c.status === "Fila de Espera" || c.status === "Remanejamento Solicitado");
+    // 2. Separa Fila de Espera e Convocados
+    const filaDeEspera = activeQueue.filter(c => c.status === "Fila de Espera");
     const convocados = activeQueue.filter(c => c.status === "Convocado");
 
     // Ordenação da Fila de Espera: Usa a posição calculada pelo DB (posicao_fila)
@@ -141,11 +141,11 @@ const Fila = () => {
     const sortedFila = filaDeEspera;
     
     // 3. Cálculo das Estatísticas (usando a lista completa de criancas, não a filtrada)
-    const totalFila = criancas.filter(c => c.status === "Fila de Espera" || c.status === "Remanejamento Solicitado").length;
-    const comPrioridade = criancas.filter(c => (c.status === "Fila de Espera" || c.status === "Remanejamento Solicitado") && c.programas_sociais).length;
+    const totalFila = criancas.filter(c => c.status === "Fila de Espera").length;
+    const comPrioridade = criancas.filter(c => c.status === "Fila de Espera" && c.programas_sociais).length;
     const totalConvocados = criancas.filter(c => c.status === "Convocado").length;
     
-    // 4. Histórico: Apenas crianças que saíram da fila (Desistente/Recusada) e podem ser reativadas.
+    // 4. Histórico: Apenas crianças que saíram da fila (Desistente/Recusada)
     const historico = criancas.filter(c => c.status === "Desistente" || c.status === "Recusada");
 
     return { 
