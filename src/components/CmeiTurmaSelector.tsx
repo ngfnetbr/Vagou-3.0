@@ -97,7 +97,7 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
             Nenhuma vaga disponível.
           </div>
         ) : (
-          <ScrollArea className="h-auto max-h-[70vh]">
+          <ScrollArea className="h-auto max-h-[50vh]">
             <div className="p-1">
               {selectedCmeiName ? (
                 // --- Etapa 2: Seleção da Turma ---
