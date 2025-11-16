@@ -35,7 +35,6 @@ export const CmeiTransitionGroup = ({
     const navigate = useNavigate();
     
     // Calcula o total de crianças no CMEI
-    const totalCriancas = Object.values(turmaGroups).flat().length;
     const totalMatriculados = Object.entries(turmaGroups)
         .filter(([turmaName]) => turmaName !== 'Fila de Espera')
         .map(([, criancas]) => criancas.length)
@@ -72,7 +71,6 @@ export const CmeiTransitionGroup = ({
                             </TableHeader>
                             <TableBody>
                                 {criancasList.map(c => {
-                                    // Não precisamos mais de isMatriculado para desabilitar a realocação
                                     
                                     return (
                                     <TableRow key={c.id}>
@@ -85,7 +83,7 @@ export const CmeiTransitionGroup = ({
                                         </TableCell>
                                         <TableCell>
                                             <div className="font-medium">{c.nome}</div>
-                                            <div className="text-xs text-muted-foreground">Próxima Turma Base: <Badge variant="secondary" className="text-xs">{c.turmaBaseProximoAno}</Badge></div>
+                                            {/* Removido: Próxima Turma Base */}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
@@ -100,7 +98,7 @@ export const CmeiTransitionGroup = ({
                                                         Ver Detalhes
                                                     </DropdownMenuItem>
                                                     
-                                                    {/* Ação de Realocação (AGORA DISPONÍVEL PARA TODOS) */}
+                                                    {/* Ação de Realocação */}
                                                     <DropdownMenuItem 
                                                         onClick={() => handleRealocacaoIndividualClick(c)}
                                                     >

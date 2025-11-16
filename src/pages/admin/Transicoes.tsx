@@ -58,7 +58,6 @@ const Transicoes = () => {
   } = useCriancas();
 
   const targetYear = currentYear;
-  const cutoffDate = format(new Date(targetYear, 2, 31), 'dd/MM/yyyy');
   
   // --- Estados de Ação em Massa ---
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -215,19 +214,10 @@ const Transicoes = () => {
               Ações de Transição
             </CardTitle>
             <CardDescription>
-              A classificação etária é baseada na idade da criança em 31 de Março de {currentYear}.
+              Revise as crianças ativas e utilize as ações em massa para realocar ou mudar status.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            
-            <Alert className="py-3">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Data de Corte</AlertTitle>
-                <AlertDescription>
-                    A classificação etária para remanejamento é calculada com base na idade da criança em 
-                    <span className="font-semibold"> {cutoffDate} </span>.
-                </AlertDescription>
-            </Alert>
             
             <div className="flex gap-4 pt-4 border-t border-border">
                 <Button 
@@ -322,7 +312,7 @@ const Transicoes = () => {
                 <div key={cmeiName} className="w-full">
                     <CmeiTransitionGroup
                         cmeiName={cmeiName}
-                        turmaGroups={turmaGroups} // Passando o novo agrupamento
+                        turmaGroups={turmaGroups}
                         isSaving={isSaving}
                         isExecuting={isExecuting}
                         selectedIds={selectedIds}

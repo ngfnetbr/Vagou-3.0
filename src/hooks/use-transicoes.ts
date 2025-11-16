@@ -1,26 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Crianca } from "@/integrations/supabase/types";
 import { fetchCriancas } from "@/integrations/supabase/criancas-api";
-import { calculateAgeAtCutoff, determineTurmaBaseName } from "@/integrations/supabase/utils";
 import { toast } from "sonner";
 import { useMemo, useState, useEffect } from "react";
 
 const TRANSICOES_QUERY_KEY = ["transicoes"];
 
-export type StatusTransicao = 'Concluinte' | 'Remanejamento Interno' | 'Fila Reclassificada' | 'Manter Status';
+// Simplificamos os status de transição para refletir o grupo de ação
+export type StatusTransicao = 'Remanejamento Interno' | 'Fila Reclassificada' | 'Manter Status';
 
 // Tipagem para o resultado da classificação
 export interface CriancaClassificada extends Crianca {
-    idadeCorte: number | null;
-    turmaBaseAtual: string;
-    turmaBaseProximoAno: string;
+    // Mantemos apenas o status de transição para agrupamento
     statusTransicao: StatusTransicao;
 }
 
 // Função de classificação no frontend
 const classifyCriancasForTransition = (criancas: Crianca[]): CriancaClassificada[] => {
-    // Usa o ano atual como ano alvo para a classificação de corte (31 de março)
-    const targetYear = new Date().getFullYear();
     
     const activeCriancas = criancas.filter(c => 
         c.status === 'Matriculado' || 
@@ -30,19 +26,10 @@ const classifyCriancasForTransition = (criancas: Crianca[]): CriancaClassificada
     );
 
     return activeCriancas.map(crianca => {
-        // Calcula a idade na data de corte do ano atual
-        const idadeCorte = calculateAgeAtCutoff(crianca.data_nascimento, targetYear);
-        const turmaBaseProximoAno = determineTurmaBaseName(idadeCorte);
-        
-        // Determina a turma base atual (usando o ano atual para comparação)
-        const idadeCorteAtual = calculateAgeAtCutoff(crianca.data_nascimento, new Date().getFullYear());
-        const turmaBaseAtual = determineTurmaBaseName(idadeCorteAtual);
-
         let statusTransicao: StatusTransicao = 'Manter Status';
 
-        if (turmaBaseProximoAno === 'Fora da faixa etária') {
-            statusTransicao = 'Concluinte';
-        } else if (crianca.status === 'Matriculado' || crianca.status === 'Matriculada') {
+        // Classifica pelo status atual para determinar o grupo de ação
+        if (crianca.status === 'Matriculado' || crianca.status === 'Matriculada') {
             statusTransicao = 'Remanejamento Interno';
         } else if (crianca.status === 'Fila de Espera' || crianca.status === 'Convocado') {
             statusTransicao = 'Fila Reclassificada';
@@ -50,11 +37,8 @@ const classifyCriancasForTransition = (criancas: Crianca[]): CriancaClassificada
 
         return {
             ...crianca,
-            idadeCorte,
-            turmaBaseAtual,
-            turmaBaseProximoAno,
             statusTransicao,
-        };
+        } as CriancaClassificada;
     });
 };
 
@@ -76,7 +60,6 @@ export function useTransicoes() {
     // Classificação inicial baseada no ano alvo
     const initialClassification = useMemo(() => {
         if (!criancas) return [];
-        // Classifica usando o ano atual
         return classifyCriancasForTransition(criancas);
     }, [criancas]);
     
@@ -87,14 +70,6 @@ export function useTransicoes() {
             setPlanningData(initialClassification);
         }
     }, [initialClassification, planningData]);
-    
-    // Função para atualizar manualmente o status de transição de uma criança
-    // Mantemos a função internamente, mas não a exportamos mais
-    const updatePlanning = (criancaId: string, newStatus: StatusTransicao) => {
-        setPlanningData(prev => prev.map(c => 
-            c.id === criancaId ? { ...c, statusTransicao: newStatus } : c
-        ));
-    };
     
     // Simulação de salvamento do planejamento (em um ambiente real, isso iria para o DB)
     const savePlanning = async () => {
@@ -148,7 +123,6 @@ export function useTransicoes() {
         classificacao: planningData, // Retorna os dados de planejamento
         isLoading: isLoading,
         error,
-        // updatePlanning, // Removido do export
         savePlanning,
         isSaving,
         executeTransition: transitionMutation.mutateAsync,

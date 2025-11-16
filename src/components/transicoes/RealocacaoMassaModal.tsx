@@ -6,8 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useMassActions } from "@/hooks/use-mass-actions";
-import { useTurmas } from "@/hooks/use-turmas";
-import { useCMEIs } from "@/hooks/use-cmeis";
+import { useAllAvailableTurmas } from "@/hooks/use-all-available-turmas";
 
 interface RealocacaoMassaModalProps {
     selectedIds: string[]; // Recebe os IDs selecionados
@@ -16,26 +15,23 @@ interface RealocacaoMassaModalProps {
 
 const RealocacaoMassaModal = ({ selectedIds, onClose }: RealocacaoMassaModalProps) => {
     const { massRealocate, isMassRealocating } = useMassActions();
-    const { turmas, isLoading: isLoadingTurmas } = useTurmas();
-    const { cmeis, isLoading: isLoadingCmeis } = useCMEIs();
+    const { data: allAvailableTurmas, isLoading: isLoadingTurmas } = useAllAvailableTurmas();
     
     const [selectedVaga, setSelectedVaga] = useState("");
     
-    const isProcessing = isMassRealocating || isLoadingTurmas || isLoadingCmeis;
+    const isProcessing = isMassRealocating || isLoadingTurmas;
 
     const availableTurmas = useMemo(() => {
-        if (!turmas || !cmeis) return [];
+        if (!allAvailableTurmas) return [];
         
-        const cmeiMap = new Map(cmeis.map(c => [c.id, c.nome]));
-        
-        return turmas.map(t => ({
-            id: t.id,
+        return allAvailableTurmas.map(t => ({
+            id: t.turma_id,
             cmei_id: t.cmei_id,
-            nome: `${t.nome} (${cmeiMap.get(t.cmei_id) || 'CMEI Desconhecido'})`,
+            nome: `${t.turma} (${t.cmei}) - ${t.vagas} vagas`,
             // Valor combinado: turma_id|cmei_id|turma_nome|cmei_nome
-            value: `${t.id}|${t.cmei_id}|${t.nome}|${cmeiMap.get(t.cmei_id) || 'CMEI Desconhecido'}`,
+            value: `${t.turma_id}|${t.cmei_id}|${t.turma}|${t.cmei}`,
         }));
-    }, [turmas, cmeis]);
+    }, [allAvailableTurmas]);
 
     const handleConfirm = async () => {
         if (!selectedVaga) {

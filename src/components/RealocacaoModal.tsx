@@ -8,8 +8,8 @@ import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFoot
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save, X, Loader2, RotateCcw } from "lucide-react";
-import { Crianca, ConvocationData } from "@/integrations/supabase/types"; // Importação atualizada
-import { useAvailableTurmas } from "@/hooks/use-criancas";
+import { Crianca, ConvocationData } from "@/integrations/supabase/types";
+import { useAllAvailableTurmas } from "@/hooks/use-all-available-turmas";
 import { toast } from "sonner";
 import { useMemo } from "react";
 
@@ -29,8 +29,8 @@ interface RealocacaoModalProps {
 }
 
 const RealocacaoModal = ({ crianca, onClose, onConfirm, isPending }: RealocacaoModalProps) => {
-  // Hook que busca vagas disponíveis filtradas por idade
-  const { data: availableTurmas, isLoading: isLoadingTurmas } = useAvailableTurmas(crianca.id);
+  // Hook que busca todas as turmas disponíveis (sem filtro de idade)
+  const { data: availableTurmas, isLoading: isLoadingTurmas } = useAllAvailableTurmas();
 
   const form = useForm<VagaFormData>({
     resolver: zodResolver(vagaSchema),
@@ -60,7 +60,7 @@ const RealocacaoModal = ({ crianca, onClose, onConfirm, isPending }: RealocacaoM
     }
   };
   
-  // Usamos todas as turmas disponíveis retornadas pelo hook (filtradas apenas por idade)
+  // Usamos todas as turmas disponíveis retornadas pelo hook (filtradas apenas por vagas)
   const allAvailableTurmas = availableTurmas || [];
 
   return (
