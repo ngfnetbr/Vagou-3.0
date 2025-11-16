@@ -83,8 +83,8 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        // Definindo largura mínima e máxima para garantir que caiba e seja responsivo
-        className="w-[300px] sm:w-[400px] p-0" 
+        // Usando a variável do Radix para garantir que a largura seja exatamente a do trigger
+        className="w-[var(--radix-popover-trigger-width)] p-0" 
         align="start"
         side="bottom" 
       >
