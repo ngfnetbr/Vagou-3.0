@@ -2,7 +2,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, User, MapPin, Users, Edit, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, User, MapPin, Users, Edit, Trash2, Loader2, Eye } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -21,6 +21,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useCriancasByTurma } from "@/hooks/use-criancas"; // Importando o novo hook
+import { Crianca } from "@/integrations/supabase/types"; // Importando a tipagem de Crianca
 
 // Interface de dados de exibição (TurmaDisplay)
 interface TurmaDisplay {
@@ -35,20 +37,15 @@ interface TurmaDisplay {
   cmei_id: string;
 }
 
-// Mock de alunos (temporário, até integrarmos a tabela 'criancas')
-const mockAlunos = [
-    "Ana Silva", "João Pedro", "Maria Clara", "Lucas Silva", "Beatriz Costa", 
-    "Felipe Souza", "Giovana Lima", "Henrique Rocha", "Isadora Mendes", "Júlia Nunes", 
-    "Kevin Pires", "Lívia Martins", "Matheus Gomes", "Nicole Ferreira", "Otávio Barbosa"
-];
-
-
 const DetalhesTurma = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const turma = location.state?.turma as TurmaDisplay | undefined;
   const { deleteTurma, isDeleting } = useTurmas();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Busca as crianças reais da turma
+  const { data: alunosNaTurma, isLoading: isLoadingAlunos, error: errorAlunos } = useCriancasByTurma(turma?.id);
 
   if (!turma) {
     return (
@@ -70,17 +67,15 @@ const DetalhesTurma = () => {
     );
   }
   
-  // Mock: Usamos a ocupação real, mas a lista de alunos é mockada
-  const alunosNaTurma = mockAlunos.slice(0, turma.ocupacao);
-
-  const ocupacaoPercent = turma.capacidade > 0 ? Math.round((turma.ocupacao / turma.capacidade) * 100) : 0;
-  const vagasDisponiveis = turma.capacidade - turma.ocupacao;
+  const ocupacaoReal = alunosNaTurma?.length || 0;
+  const ocupacaoPercent = turma.capacidade > 0 ? Math.round((ocupacaoReal / turma.capacidade) * 100) : 0;
+  const vagasDisponiveis = turma.capacidade - ocupacaoReal;
   
   const handleModalClose = () => {
     setIsModalOpen(false);
-    // Não precisamos de refetch aqui, pois a edição é feita na página Turmas.tsx
-    // Se a edição for bem-sucedida, o usuário deve ser redirecionado ou a página deve ser atualizada manualmente.
-    // Por simplicidade, vamos apenas fechar o modal.
+    // Nota: A atualização da ocupação do CMEI/Turma é feita via trigger no DB.
+    // Se a edição da turma mudar a capacidade, a página Turmas.tsx deve ser recarregada.
+    // Para garantir que a ocupação real seja refletida aqui, o hook useCriancasByTurma fará o trabalho.
   };
   
   const handleEditClick = () => {
@@ -105,6 +100,23 @@ const DetalhesTurma = () => {
     capacidade: turma.capacidade,
     sala: turma.sala as NovaTurmaFormInput['sala'],
   });
+  
+  const getStatusBadge = (status: Crianca['status']) => {
+    const variants: Record<Crianca['status'], { className: string, text: string }> = {
+      "Matriculada": { className: "bg-secondary/20 text-secondary", text: "Matriculada" },
+      "Matriculado": { className: "bg-secondary/20 text-secondary", text: "Matriculado" },
+      "Convocado": { className: "bg-primary/20 text-primary", text: "Convocado" },
+      "Remanejamento Solicitado": { className: "bg-accent/20 text-foreground", text: "Remanejamento Solicitado" },
+      // Fallbacks (não devem ocorrer aqui, mas por segurança)
+      "Fila de Espera": { className: "bg-muted/50 text-muted-foreground", text: "Fila de Espera" },
+      "Desistente": { className: "bg-destructive/20 text-destructive", text: "Desistente" },
+      "Recusada": { className: "bg-destructive/20 text-destructive", text: "Recusada" },
+    };
+    
+    const config = variants[status] || { className: "bg-muted/50 text-muted-foreground", text: status };
+    return <Badge className={config.className}>{config.text}</Badge>;
+  };
+
 
   return (
     <AdminLayout>
@@ -150,8 +162,8 @@ const DetalhesTurma = () => {
                             Esta ação não pode ser desfeita. Isso excluirá permanentemente a turma 
                             <span className="font-semibold"> {turma.nomeCompleto} </span>
                             e removerá todos os dados associados.
-                            {turma.ocupacao > 0 && (
-                                <p className="mt-2 text-destructive font-semibold">Atenção: Esta turma possui {turma.ocupacao} crianças matriculadas/convocadas. A exclusão falhará se houver vínculos ativos.</p>
+                            {ocupacaoReal > 0 && (
+                                <p className="mt-2 text-destructive font-semibold">Atenção: Esta turma possui {ocupacaoReal} crianças matriculadas/convocadas. A exclusão falhará se houver vínculos ativos.</p>
                             )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -183,7 +195,7 @@ const DetalhesTurma = () => {
               <Badge variant="secondary">{ocupacaoPercent}%</Badge>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{turma.ocupacao} alunos</div>
+              <div className="text-2xl font-bold text-primary">{ocupacaoReal} alunos</div>
               <p className="text-xs text-muted-foreground">Vagas disponíveis: {vagasDisponiveis}</p>
             </CardContent>
           </Card>
@@ -201,46 +213,62 @@ const DetalhesTurma = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Lista de Alunos ({alunosNaTurma.length})</CardTitle>
-            <CardDescription>Alunos atualmente matriculados nesta turma.</CardDescription>
+            <CardTitle>Lista de Alunos ({ocupacaoReal})</CardTitle>
+            <CardDescription>Alunos atualmente matriculados ou convocados para esta turma.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">#</TableHead>
-                  <TableHead>Nome do Aluno</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {alunosNaTurma.map((aluno, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{index + 1}</TableCell>
-                    <TableCell className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      {aluno}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className="bg-secondary/20 text-secondary">Matriculado</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">
-                        Ver Detalhes
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {alunosNaTurma.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">
-                      Nenhum aluno matriculado nesta turma.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+            {isLoadingAlunos ? (
+                <div className="flex justify-center items-center h-24">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <p className="ml-3 text-lg text-muted-foreground">Carregando alunos...</p>
+                </div>
+            ) : errorAlunos ? (
+                <div className="text-center text-destructive py-4">
+                    Erro ao carregar alunos: {errorAlunos.message}
+                </div>
+            ) : (
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[50px]">#</TableHead>
+                            <TableHead>Nome do Aluno</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Idade</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {alunosNaTurma && alunosNaTurma.length > 0 ? (
+                            alunosNaTurma.map((aluno, index) => (
+                                <TableRow key={aluno.id}>
+                                    <TableCell className="font-medium">{index + 1}</TableCell>
+                                    <TableCell className="flex items-center gap-2">
+                                        <User className="h-4 w-4 text-muted-foreground" />
+                                        {aluno.nome}
+                                    </TableCell>
+                                    <TableCell>
+                                        {getStatusBadge(aluno.status)}
+                                    </TableCell>
+                                    <TableCell>
+                                        {aluno.idade}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/criancas/${aluno.id}`)}>
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                                    Nenhum aluno matriculado ou convocado para esta turma.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            )}
           </CardContent>
         </Card>
       </div>

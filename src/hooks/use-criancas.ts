@@ -15,6 +15,7 @@ import {
     apiTransferirCrianca,
     apiSolicitarRemanejamento,
     getCriancaById,
+    fetchCriancasByTurmaId, // Importando a nova função
 } from "@/integrations/supabase/criancas-api";
 import { fetchHistoricoCrianca } from "@/integrations/supabase/historico-api";
 import { fetchAvailableTurmas } from "@/integrations/supabase/vagas-api";
@@ -26,6 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 const CRIANCAS_QUERY_KEY = 'criancas';
 const HISTORICO_QUERY_KEY = 'historicoCrianca';
 const AVAILABLE_TURMAS_QUERY_KEY = 'availableTurmas';
+const TURMA_ALUNOS_QUERY_KEY = 'turmaAlunos'; // Nova chave
 
 // Hook para buscar a lista de crianças
 export const useCriancas = () => {
@@ -80,6 +82,7 @@ export const useCriancas = () => {
     },
     onSuccess: (criancaId) => {
         invalidateCriancaQueries(criancaId);
+        queryClient.invalidateQueries({ queryKey: [TURMA_ALUNOS_QUERY_KEY] }); // Invalida alunos da turma
         toast.success("Matrícula confirmada com sucesso!");
     },
     onError: (e: Error) => {
@@ -93,6 +96,7 @@ export const useCriancas = () => {
         apiMarcarRecusada(id, justificativa).then(() => id),
     onSuccess: (criancaId) => {
         invalidateCriancaQueries(criancaId);
+        queryClient.invalidateQueries({ queryKey: [TURMA_ALUNOS_QUERY_KEY] });
         toast.success("Convocação marcada como recusada.");
     },
     onError: (e: Error) => {
@@ -106,6 +110,7 @@ export const useCriancas = () => {
         apiMarcarDesistente(id, justificativa).then(() => id),
     onSuccess: (criancaId) => {
         invalidateCriancaQueries(criancaId);
+        queryClient.invalidateQueries({ queryKey: [TURMA_ALUNOS_QUERY_KEY] });
         toast.success("Criança marcada como desistente.");
     },
     onError: (e: Error) => {
@@ -146,6 +151,7 @@ export const useCriancas = () => {
     },
     onSuccess: (criancaId) => {
         invalidateCriancaQueries(criancaId);
+        queryClient.invalidateQueries({ queryKey: [TURMA_ALUNOS_QUERY_KEY] });
         toast.success("Criança convocada com sucesso!");
     },
     onError: (e: Error) => {
@@ -173,6 +179,7 @@ export const useCriancas = () => {
     },
     onSuccess: (criancaId) => {
         invalidateCriancaQueries(criancaId);
+        queryClient.invalidateQueries({ queryKey: [TURMA_ALUNOS_QUERY_KEY] });
         toast.success("Criança realocada com sucesso!");
     },
     onError: (e: Error) => {
@@ -186,6 +193,7 @@ export const useCriancas = () => {
         apiTransferirCrianca(id, justificativa).then(() => id),
     onSuccess: (criancaId) => {
         invalidateCriancaQueries(criancaId);
+        queryClient.invalidateQueries({ queryKey: [TURMA_ALUNOS_QUERY_KEY] });
         toast.success("Matrícula encerrada por transferência.");
     },
     onError: (e: Error) => {
@@ -217,6 +225,7 @@ export const useCriancas = () => {
       queryClient.invalidateQueries({ queryKey: [CRIANCAS_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: ['historicoGeral'] });
       queryClient.invalidateQueries({ queryKey: [HISTORICO_QUERY_KEY, criancaId] });
+      queryClient.invalidateQueries({ queryKey: [TURMA_ALUNOS_QUERY_KEY] });
       toast.success("Criança excluída com sucesso.");
     },
     onError: (e: Error) => {
@@ -284,5 +293,14 @@ export const useAvailableTurmas = (criancaId: string) => {
         queryKey: [AVAILABLE_TURMAS_QUERY_KEY, criancaId],
         queryFn: () => fetchAvailableTurmas(criancaId),
         enabled: !!criancaId,
+    });
+};
+
+// NOVO HOOK: Busca crianças ativas por ID da Turma
+export const useCriancasByTurma = (turmaId: string | undefined) => {
+    return useQuery<Crianca[], Error>({
+        queryKey: [TURMA_ALUNOS_QUERY_KEY, turmaId],
+        queryFn: () => fetchCriancasByTurmaId(turmaId!),
+        enabled: !!turmaId,
     });
 };

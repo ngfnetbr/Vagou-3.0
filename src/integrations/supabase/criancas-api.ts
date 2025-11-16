@@ -62,6 +62,25 @@ export const getCriancaById = async (id: string): Promise<Crianca | undefined> =
     return mapDbToCrianca(data);
 };
 
+/**
+ * Busca crianças ativas (Matriculado/Convocado) em uma turma específica.
+ */
+export const fetchCriancasByTurmaId = async (turmaId: string): Promise<Crianca[]> => {
+    const { data, error } = await supabase
+        .from('criancas')
+        .select(SELECT_FIELDS)
+        .eq('turma_atual_id', turmaId)
+        .in('status', ['Matriculado', 'Matriculada', 'Convocado'])
+        .order('nome', { ascending: true });
+
+    if (error) {
+        throw new Error(error.message);
+    }
+    
+    return data.map(mapDbToCrianca);
+};
+
+
 // --- Funções de CRUD (Inscrição) ---
 
 export const apiAddCrianca = async (data: InscricaoFormData): Promise<Crianca> => {
