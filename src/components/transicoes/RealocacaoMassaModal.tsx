@@ -7,6 +7,7 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useMassActions } from "@/hooks/use-mass-actions";
 import { useGroupedAvailableTurmas } from "@/hooks/use-grouped-available-turmas";
+import CmeiTurmaSelector from "../CmeiTurmaSelector"; // Importando o novo componente
 
 interface RealocacaoMassaModalProps {
     selectedIds: string[]; // Recebe os IDs selecionados
@@ -17,7 +18,7 @@ interface RealocacaoMassaModalProps {
 const RealocacaoMassaModal = ({ selectedIds, onClose, onConfirmMassRealocate }: RealocacaoMassaModalProps) => {
     // Mantemos o hook useMassActions apenas para o isPending (embora não seja usado para a ação real aqui)
     const { isMassRealocating } = useMassActions(); 
-    const { groupedTurmas, allAvailableTurmas, isLoading: isLoadingTurmas } = useGroupedAvailableTurmas();
+    const { isLoading: isLoadingTurmas } = useGroupedAvailableTurmas();
     
     const [selectedVaga, setSelectedVaga] = useState("");
     
@@ -67,37 +68,12 @@ const RealocacaoMassaModal = ({ selectedIds, onClose, onConfirmMassRealocate }: 
             <div className="space-y-4 py-4">
                 <div className="space-y-2">
                     <Label htmlFor="turma-destino">Turma de Destino *</Label>
-                    <Select onValueChange={setSelectedVaga} value={selectedVaga} disabled={isProcessing}>
-                        <SelectTrigger id="turma-destino">
-                            <SelectValue placeholder={isLoadingTurmas ? "Carregando turmas..." : "Selecione a Turma"} />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[400px]">
-                            {isLoadingTurmas ? (
-                                <SelectItem value="loading" disabled>Carregando...</SelectItem>
-                            ) : allAvailableTurmas.length > 0 ? (
-                                Object.entries(groupedTurmas).map(([cmeiName, turmas]) => (
-                                    <SelectGroup key={cmeiName}>
-                                        <SelectLabel>{cmeiName}</SelectLabel>
-                                        {turmas.map((turma) => {
-                                            const label = `${turma.turma} (${turma.vagas} vagas)`;
-                                            
-                                            // O valor deve incluir o CMEI e a Turma ID e NOME
-                                            return (
-                                                <SelectItem 
-                                                    key={turma.turma_id} 
-                                                    value={`${turma.cmei_id}|${turma.turma_id}|${turma.cmei}|${turma.turma}`}
-                                                >
-                                                    {label}
-                                                </SelectItem>
-                                            );
-                                        })}
-                                    </SelectGroup>
-                                ))
-                            ) : (
-                                <SelectItem value="none" disabled>Nenhuma turma disponível.</SelectItem>
-                            )}
-                        </SelectContent>
-                    </Select>
+                    {/* Usamos o CmeiTurmaSelector, mas precisamos gerenciar o estado 'selectedVaga' manualmente */}
+                    <CmeiTurmaSelector
+                        value={selectedVaga}
+                        onChange={setSelectedVaga}
+                        disabled={isProcessing}
+                    />
                 </div>
             </div>
 

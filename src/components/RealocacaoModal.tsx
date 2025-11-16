@@ -6,11 +6,11 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Save, X, Loader2, RotateCcw } from "lucide-react";
 import { Crianca, ConvocationData } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { useGroupedAvailableTurmas } from "@/hooks/use-grouped-available-turmas";
+import CmeiTurmaSelector from "./CmeiTurmaSelector"; // Importando o novo componente
 
 // Schema for Realocation Form
 const vagaSchema = z.object({
@@ -29,7 +29,7 @@ interface RealocacaoModalProps {
 
 const RealocacaoModal = ({ crianca, onClose, onConfirm, isPending }: RealocacaoModalProps) => {
   // Hook que busca e agrupa todas as turmas disponíveis
-  const { groupedTurmas, allAvailableTurmas, isLoading: isLoadingTurmas } = useGroupedAvailableTurmas();
+  const { allAvailableTurmas, isLoading: isLoadingTurmas } = useGroupedAvailableTurmas();
 
   const form = useForm<VagaFormData>({
     resolver: zodResolver(vagaSchema),
@@ -88,39 +88,13 @@ const RealocacaoModal = ({ crianca, onClose, onConfirm, isPending }: RealocacaoM
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Nova Turma *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={isLoadingTurmas ? "Buscando turmas..." : "Selecione a Turma"} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="max-h-[400px]">
-                    {isLoadingTurmas ? (
-                        <SelectItem value="loading" disabled>Carregando...</SelectItem>
-                    ) : allAvailableTurmas.length > 0 ? (
-                        Object.entries(groupedTurmas).map(([cmeiName, turmas]) => (
-                            <SelectGroup key={cmeiName}>
-                                <SelectLabel>{cmeiName}</SelectLabel>
-                                {turmas.map((turma) => {
-                                    const label = `${turma.turma} (${turma.vagas} vagas)`;
-                                    
-                                    // O valor deve incluir o CMEI e a Turma ID e NOME
-                                    return (
-                                        <SelectItem 
-                                            key={turma.turma_id} 
-                                            value={`${turma.cmei_id}|${turma.turma_id}|${turma.cmei}|${turma.turma}`}
-                                        >
-                                            {label}
-                                        </SelectItem>
-                                    );
-                                })}
-                            </SelectGroup>
-                        ))
-                    ) : (
-                        <SelectItem value="none" disabled>Nenhuma turma compatível encontrada.</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                    <CmeiTurmaSelector
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={isSubmitting}
+                    />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
