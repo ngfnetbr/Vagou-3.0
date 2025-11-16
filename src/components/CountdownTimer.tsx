@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { differenceInSeconds, parseISO, isValid, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Clock, XCircle } from 'lucide-react';
@@ -17,12 +17,20 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ deadline }) => {
     return isValid(date) ? date : null;
   }, [deadline]);
 
-  // Calcula segundos restantes uma única vez na renderização
-  const secondsRemaining = useMemo(() => {
+  const [secondsRemaining, setSecondsRemaining] = useState(() => {
     if (!deadlineDate) return -1;
-    // Usamos differenceInSeconds para precisão, mas só exibiremos dias
     return differenceInSeconds(deadlineDate, new Date());
-  }, [deadlineDate]);
+  });
+
+  useEffect(() => {
+    if (secondsRemaining < 0) return;
+
+    const timer = setInterval(() => {
+      setSecondsRemaining(prev => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [secondsRemaining]);
 
   const expirationDateFormatted = deadlineDate ? format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A';
 
@@ -35,14 +43,21 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ deadline }) => {
     );
   }
 
-  // Calcula apenas os dias
   const days = Math.floor(secondsRemaining / (60 * 60 * 24));
+  const hours = Math.floor((secondsRemaining % (60 * 60 * 24)) / (60 * 60));
+  const minutes = Math.floor((secondsRemaining % (60 * 60)) / 60);
+  const seconds = secondsRemaining % 60;
   
-  // Formata a string para mostrar apenas os dias
-  const timeString = `${days} dia${days !== 1 ? 's' : ''} restante${days !== 1 ? 's' : ''}`;
+  const timeParts = [];
+  if (days > 0) timeParts.push(`${days}d`);
+  if (hours > 0 || days > 0) timeParts.push(`${hours}h`);
+  timeParts.push(`${minutes}m`);
+  timeParts.push(`${seconds}s`);
+  
+  const timeString = timeParts.join(' ');
   
   // Define urgência se faltar 1 dia ou menos
-  const isUrgent = days <= 1;
+  const isUrgent = days === 0;
   
   const className = isUrgent 
     ? "bg-destructive/20 text-destructive" 
