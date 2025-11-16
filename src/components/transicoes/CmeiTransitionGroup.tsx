@@ -61,11 +61,6 @@ export const CmeiTransitionGroup = ({
             );
         }
         
-        // Se o status planejado for de saída, não mostra vaga
-        if (crianca.planned_status === 'Desistente' || crianca.planned_status === 'Recusada') {
-            return null;
-        }
-        
         return null;
     };
     
@@ -73,10 +68,16 @@ export const CmeiTransitionGroup = ({
     const getPlannedStatus = (crianca: CriancaClassificada) => {
         // Se houver um status planejado, exibe-o
         if (crianca.planned_status) {
-            // Mapeia o status de saída para o termo de negócio "Conclusão de Ciclo"
-            if (crianca.planned_status === 'Desistente' && crianca.statusTransicao === 'Remanejamento Interno') {
-                return getStatusBadge('Desistente'); // Exibe o badge de Desistente
+            // Se estiver no grupo de Saídas Planejadas, exibe o status de saída
+            if (cmeiName === 'Saídas Planejadas') {
+                return getStatusBadge(crianca.planned_status);
             }
+            
+            // Se for Remanejamento Interno e o status planejado for Desistente, exibe o badge de Desistente
+            if (crianca.statusTransicao === 'Remanejamento Interno' && crianca.planned_status === 'Desistente') {
+                return getStatusBadge('Desistente');
+            }
+            
             return getStatusBadge(crianca.planned_status);
         }
         
@@ -116,6 +117,10 @@ export const CmeiTransitionGroup = ({
                                     // A criança tem uma mudança planejada se planned_status for definido OU se a vaga planejada for diferente da atual
                                     const hasPlannedChange = !!c.planned_status || !!c.planned_cmei_id || !!c.planned_turma_id;
                                     
+                                    // Determina se as ações de Realocação e Conclusão devem ser exibidas
+                                    const showRealocacao = cmeiName !== 'Saídas Planejadas' && cmeiName !== 'Fila Geral';
+                                    const showConclusao = cmeiName !== 'Saídas Planejadas';
+                                    
                                     return (
                                     <TableRow key={c.id} className={cn(hasPlannedChange && "bg-yellow-50/50 hover:bg-yellow-50/70", isSelected && "bg-primary/10 hover:bg-primary/15")}>
                                         <TableCell>
@@ -134,7 +139,7 @@ export const CmeiTransitionGroup = ({
                                                 {getStatusBadge(c.status)}
                                                 {(c.cmeiNome || c.turmaNome) && (
                                                     <span className="text-xs text-muted-foreground">
-                                                        {cmeiName} - {turmaName}
+                                                        {c.cmeiNome} - {c.turmaNome}
                                                     </span>
                                                 )}
                                             </div>
@@ -159,30 +164,36 @@ export const CmeiTransitionGroup = ({
                                                     </DropdownMenuItem>
                                                     
                                                     {/* Ação de Realocação */}
-                                                    <DropdownMenuItem 
-                                                        onClick={() => handleRealocacaoIndividualClick(c)}
-                                                    >
-                                                        <RotateCcw className="mr-2 h-4 w-4" />
-                                                        Realocar Vaga
-                                                    </DropdownMenuItem>
+                                                    {showRealocacao && (
+                                                        <DropdownMenuItem 
+                                                            onClick={() => handleRealocacaoIndividualClick(c)}
+                                                        >
+                                                            <RotateCcw className="mr-2 h-4 w-4" />
+                                                            Realocar Vaga
+                                                        </DropdownMenuItem>
+                                                    )}
                                                     
                                                     {/* Marcar Conclusão de Ciclo */}
-                                                    <DropdownMenuItem 
-                                                        onClick={() => handleStatusIndividualClick(c, 'concluinte')}
-                                                        className="text-secondary focus:bg-secondary/10 focus:text-secondary"
-                                                    >
-                                                        <CheckCircle className="mr-2 h-4 w-4" />
-                                                        Marcar Conclusão de Ciclo
-                                                    </DropdownMenuItem>
+                                                    {showConclusao && (
+                                                        <DropdownMenuItem 
+                                                            onClick={() => handleStatusIndividualClick(c, 'concluinte')}
+                                                            className="text-secondary focus:bg-secondary/10 focus:text-secondary"
+                                                        >
+                                                            <CheckCircle className="mr-2 h-4 w-4" />
+                                                            Marcar Conclusão de Ciclo
+                                                        </DropdownMenuItem>
+                                                    )}
                                                     
                                                     {/* Marcar Desistente */}
-                                                    <DropdownMenuItem 
-                                                        onClick={() => handleStatusIndividualClick(c, 'desistente')}
-                                                        className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Marcar Desistente
-                                                    </DropdownMenuItem>
+                                                    {showConclusao && (
+                                                        <DropdownMenuItem 
+                                                            onClick={() => handleStatusIndividualClick(c, 'desistente')}
+                                                            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Marcar Desistente
+                                                        </DropdownMenuItem>
+                                                    )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>

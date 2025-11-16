@@ -2,7 +2,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Loader2, ArrowRight, CheckCircle, Save, RotateCcw, Trash2, Users } from "lucide-react";
+import { AlertCircle, Loader2, ArrowRight, CheckCircle, Save, RotateCcw, Trash2, Users, ListOrdered } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useTransicoes, CriancaClassificada } from "@/hooks/use-transicoes";
 import { format } from "date-fns";
@@ -85,16 +85,27 @@ const Transicoes = () => {
   // 1. Grouping by CMEI and then by Turma (AGORA USA OS CAMPOS PLANEJADOS)
   const groupedData: GroupedData = useMemo(() => {
     return classificacao.reduce((acc, crianca) => {
-        // Prioriza o nome planejado, senão usa o nome atual.
-        const cmeiName = crianca.planned_cmei_nome || crianca.cmeiNome || 'Fila Geral / Sem CMEI Atual'; 
-        const turmaName = crianca.planned_turma_nome || crianca.turmaNome || 'Fila de Espera'; 
         
-        // Se o status planejado for Desistente/Recusada, remove da visualização de turmas ativas
-        if (crianca.planned_status === 'Desistente' || crianca.planned_status === 'Recusada') {
-            // Podemos criar um grupo separado para 'Saídas Planejadas' se necessário,
-            // mas para o fluxo de realocação, o mais importante é que ela saia da turma atual.
-            // Por enquanto, filtramos para fora do agrupamento principal de CMEIs/Turmas.
-            return acc;
+        const plannedStatus = crianca.planned_status || crianca.status;
+        
+        let cmeiName: string;
+        let turmaName: string;
+
+        // 1. Se o status planejado for de saída, agrupa em 'Saídas Planejadas'
+        if (plannedStatus === 'Desistente' || plannedStatus === 'Recusada') {
+            cmeiName = 'Saídas Planejadas';
+            turmaName = 'Conclusão de Ciclo / Desistência';
+        } 
+        // 2. Se a criança está na fila, agrupa em 'Fila Geral'
+        else if (plannedStatus === 'Fila de Espera' || crianca.status === 'Fila de Espera') {
+            cmeiName = 'Fila Geral';
+            turmaName = 'Fila de Espera';
+        }
+        // 3. Agrupamento normal (Matriculado/Convocado/Remanejamento)
+        else {
+            // Prioriza o nome planejado, senão usa o nome atual.
+            cmeiName = crianca.planned_cmei_nome || crianca.cmeiNome || 'Fila Geral / Sem CMEI Atual'; 
+            turmaName = crianca.planned_turma_nome || crianca.turmaNome || 'Sem Turma Definida'; 
         }
         
         if (!acc[cmeiName]) {
@@ -176,13 +187,21 @@ const Transicoes = () => {
           newStatus = 'Desistente';
           actionLabel = 'Desistência planejada';
       } else if (currentJustificativaAction === 'concluinte') {
-          // Usamos 'Recusada' ou 'Desistente' para indicar saída do sistema. Usaremos 'Desistente' para simplificar o fluxo de saída.
+          // Usamos 'Desistente' como status de saída/concluinte no planejamento
           newStatus = 'Desistente'; 
           actionLabel = 'Conclusão/Evasão planejada';
       }
       
       updateCriancaStatusInPlanning(id, newStatus, justificativa);
       toast.success(actionLabel, { description: "A mudança será aplicada ao executar a transição." });
+      
+      // Abre o grupo de Saídas Planejadas no accordion
+      setOpenCmeis(prev => {
+          if (!prev.includes('Saídas Planejadas')) {
+              return [...prev, 'Saídas Planejadas'];
+          }
+          return prev;
+      });
       
       setIsJustificativaIndividualModalOpen(false);
       setCriancaToAction(undefined);
@@ -356,7 +375,13 @@ const Transicoes = () => {
                   <AccordionItem key={cmeiName} value={cmeiName} className="border rounded-lg overflow-hidden bg-card">
                       <AccordionTrigger className="px-6 py-4 hover:no-underline">
                           <div className="flex items-center gap-3">
-                              <Users className="h-6 w-6 text-primary" />
+                              {cmeiName === 'Fila Geral' ? (
+                                  <ListOrdered className="h-6 w-6 text-accent" />
+                              ) : cmeiName === 'Saídas Planejadas' ? (
+                                  <Trash2 className="h-6 w-6 text-destructive" />
+                              ) : (
+                                  <Users className="h-6 w-6 text-primary" />
+                              )}
                               <span className="text-xl font-bold">{cmeiName}</span>
                           </div>
                       </AccordionTrigger>
