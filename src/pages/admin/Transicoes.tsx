@@ -202,6 +202,7 @@ const Transicoes = () => {
           actionVariant: 'destructive' as const,
         };
       case 'concluinte':
+        // Concluinte individual AINDA requer justificativa, pois é uma ação manual fora do fluxo de massa
         return {
           title: `Marcar ${criancaNome} como Concluinte (Evasão)`,
           description: "Confirme a conclusão do ciclo no CMEI. A matrícula será encerrada e a criança marcada como desistente/transferida.",
@@ -395,7 +396,7 @@ const Transicoes = () => {
               // Adicionando prop para restringir a ação apenas a 'Concluinte'
               allowedStatus={['Desistente']} // Usamos 'Desistente' como status de saída/concluinte no planejamento
               actionTitle="Marcar Concluinte em Massa"
-              actionDescription="Confirme a conclusão do ciclo para as crianças selecionadas. Elas serão marcadas como 'Desistente' e removidas das turmas ativas."
+              actionDescription="Confirme a conclusão do ciclo para as crianças selecionadas."
           />
         </Dialog>
         
