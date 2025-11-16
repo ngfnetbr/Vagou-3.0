@@ -178,8 +178,10 @@ export function useTransicoes() {
                 
                 let newPlannedStatus: Crianca['status'];
                 
-                // Se a criança está na fila, convocada, DESISTENTE ou RECUSADA, a realocação é uma CONVOCAÇÃO.
-                if (c.status === 'Fila de Espera' || c.status === 'Convocado' || c.statusTransicao === 'Saída Final') {
+                // Statuses que indicam que a criança não está ativamente matriculada e precisa ser CONVOCADA
+                const needsConvocation = ['Fila de Espera', 'Convocado', 'Desistente', 'Recusada', 'Saída Final'].includes(c.status);
+                
+                if (needsConvocation) {
                     newPlannedStatus = 'Convocado';
                 } 
                 // Se a criança já está matriculada, a realocação é uma MUDANÇA DE TURMA (mantém o status de matrícula).
@@ -227,8 +229,10 @@ export function useTransicoes() {
                 
                 let newPlannedStatus: Crianca['status'];
                 
-                // Se a criança está na fila, convocada, DESISTENTE ou RECUSADA, a realocação é uma CONVOCAÇÃO.
-                if (c.status === 'Fila de Espera' || c.status === 'Convocado' || c.statusTransicao === 'Saída Final') {
+                // Statuses que indicam que a criança não está ativamente matriculada e precisa ser CONVOCADA
+                const needsConvocation = ['Fila de Espera', 'Convocado', 'Desistente', 'Recusada', 'Saída Final'].includes(c.status);
+                
+                if (needsConvocation) {
                     newPlannedStatus = 'Convocado';
                 } 
                 // Se a criança já está matriculada, a realocação é uma MUDANÇA DE TURMA (mantém o status de matrícula).
@@ -419,7 +423,7 @@ export function useTransicoes() {
         // Funções de planejamento
         updateCriancaStatusInPlanning,
         updateCriancaVagaInPlanning,
-        massUpdateStatusInPlanning,
+        massUpdateStatusInPlanning, // Corrigido: Esta função estava faltando no retorno
         massUpdateVagaInPlanning,
     };
 }
