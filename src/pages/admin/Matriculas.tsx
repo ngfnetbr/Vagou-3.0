@@ -75,10 +75,27 @@ const Matriculas = () => {
         return true;
     });
     
-    // Histórico: Crianças que foram matriculadas e agora são Desistentes ou Recusadas
+    // Histórico: Crianças que estão em status final (Desistente ou Recusada) E que já tiveram um CMEI/Turma atribuído.
+    // Para ser mais robusto, vamos considerar que se a criança tem status final, ela deve aparecer no histórico de matrículas
+    // SE ela já teve um CMEI/Turma atribuído (mesmo que os campos cmei_atual_id/turma_atual_id tenham sido limpos na mutação).
+    // Como não temos um campo 'cmei_anterior' no DB, vamos confiar que se ela está em status final, mas não está na fila/convocação, ela é histórico.
+    
+    // Para simplificar e garantir que o histórico de matrículas só mostre encerramentos de matrículas ativas:
+    // Vamos filtrar todas as crianças em status final (Desistente/Recusada) e confiar que a lógica de negócio garante que
+    // se elas foram marcadas como desistentes/recusadas, elas vieram de um contexto de matrícula/convocação.
+    // No entanto, para evitar duplicidade com o histórico da Fila, vamos usar a lógica de que se a criança tem um CMEI/Turma atual (mesmo que nulo após a desistência), ela é histórico de matrícula.
+    
+    // Vamos usar a lógica original, mas com a ressalva de que os IDs podem ser nulos após a desistência.
+    // Como não temos um campo 'cmei_anterior' no DB, vamos manter a lógica de que se ela está em status final, ela é histórico de matrícula.
+    
+    // REVISÃO: A lógica mais segura é: se o status é Desistente ou Recusada, ela é histórico.
+    // A distinção entre histórico da Fila e Histórico de Matrículas é feita pelo contexto da ação.
+    // Na página de Matrículas, queremos ver os encerramentos de matrículas.
+    
+    // Vamos manter a lógica original, mas com a ressalva de que os IDs podem ser nulos após a desistência.
+    // Se a criança foi marcada como desistente/recusada, ela deve aparecer aqui.
     const historicoEncerradas = criancas.filter(c => 
-        (c.status === "Desistente" || c.status === "Recusada") && 
-        (c.cmei_atual_id || c.turma_atual_id) // Filtra apenas se houve alguma alocação anterior
+        c.status === "Desistente" || c.status === "Recusada"
     );
 
     return { matriculasAtivas, historicoEncerradas };
