@@ -121,7 +121,7 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
           </div>
         ) : (
           <ScrollArea className="h-auto max-h-[50vh]">
-            <div className="p-0"> {/* Removendo padding aqui para evitar conflito com ScrollArea */}
+            <div className="p-0">
               {selectedCmeiName ? (
                 // --- Etapa 2: Seleção da Turma (3 COLUNAS) ---
                 <div className="space-y-2">
@@ -133,7 +133,7 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
                     </div>
                     
                     {/* GRID DE 3 COLUNAS */}
-                    <div className="grid grid-cols-3 gap-1 p-2"> {/* Adicionando padding aqui */}
+                    <div className="grid grid-cols-3 gap-1 p-2">
                         {currentTurmas.map((vaga) => {
                             const vagaValue = `${vaga.cmei_id}|${vaga.turma_id}|${vaga.cmei}|${vaga.turma}`;
                             const isSelected = value === vagaValue;
@@ -144,7 +144,7 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
                                     key={vaga.turma_id}
                                     onClick={() => handleSelectTurma(vaga)}
                                     className={cn(
-                                        "flex flex-col items-center justify-center p-2 rounded-md text-xs cursor-pointer transition-colors border h-16", // Ajustado para badge
+                                        "flex flex-col items-center justify-center p-1.5 rounded-md text-xs cursor-pointer transition-colors border h-14", // Altura reduzida para h-14, padding para p-1.5
                                         isSelected 
                                             ? "bg-primary text-primary-foreground border-primary shadow-md" 
                                             : isLotada
@@ -153,10 +153,10 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
                                     )}
                                     aria-disabled={isLotada}
                                 >
-                                    <span className="font-semibold text-center leading-tight">{vaga.turma}</span>
+                                    <span className="font-semibold text-center leading-tight text-xs">{vaga.turma}</span> {/* Fonte reduzida para text-xs */}
                                     <Badge 
                                         variant="secondary" 
-                                        className={cn("mt-1 text-[10px] h-4", isSelected && "bg-primary-foreground text-primary hover:bg-primary-foreground", isLotada && "bg-destructive text-destructive-foreground hover:bg-destructive")}
+                                        className={cn("mt-1 text-[9px] h-3.5 px-1.5", isSelected && "bg-primary-foreground text-primary hover:bg-primary-foreground", isLotada && "bg-destructive text-destructive-foreground hover:bg-destructive")} // Badge menor
                                     >
                                         {isLotada ? 'LOTADA' : `${vaga.vagas} vagas`}
                                     </Badge>
