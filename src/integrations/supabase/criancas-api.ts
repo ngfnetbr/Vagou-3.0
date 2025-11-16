@@ -15,7 +15,7 @@ const SELECT_FIELDS = `
     *,
     cmeis (nome),
     turmas (nome),
-    cmeis_remanejamento:cmei_remanejamento_id (nome)
+    cmeis_remanejamento:cmei_remanejamento_id(nome)
 `;
 
 // --- Funções de Busca ---
