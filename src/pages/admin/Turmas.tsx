@@ -104,19 +104,9 @@ const Turmas = () => {
   const filteredTurmas = turmasDisplay.filter(turma => {
     if (selectedCmei === "todos") return true;
     
-    // Filtra pelo nome do CMEI, se o filtro for um nome (vindo da URL)
-    if (cmeiFilterParam && selectedCmei === cmeiFilterParam) {
-        return turma.cmeiNome === selectedCmei;
-    }
-    
-    // Filtra pelo ID do CMEI, se o filtro for um ID (vindo do Select)
-    const selectedCmeiObject = (cmeis || []).find(c => c.id === selectedCmei);
-    if (selectedCmeiObject) {
-        return turma.cmei_id === selectedCmei;
-    }
-    
-    // Fallback para o caso de o filtro ser um nome (vindo da URL)
-    return turma.cmeiNome === selectedCmei;
+    // O valor de selectedCmei é sempre o ID do CMEI (UUID) ou 'todos'.
+    // Filtramos diretamente pelo ID.
+    return turma.cmei_id === selectedCmei;
   });
 
   const groupedTurmas = filteredTurmas.reduce((acc, turma) => {
@@ -171,7 +161,7 @@ const Turmas = () => {
     }
     // Preenche o CMEI se houver um filtro ativo (buscamos o ID do CMEI pelo nome)
     if (cmeiFilterParam && cmeiFilterParam !== "todos") {
-        const cmeiObj = (cmeis || []).find(c => c.nome === cmeiFilterParam);
+        const cmeiObj = (cmeis || []).find(c => c.id === cmeiFilterParam); // Busca pelo ID, que é o valor do parâmetro
         if (cmeiObj) {
             return { cmei_id: cmeiObj.id, turma_base_id: 0, capacidade: 0, sala: "A" };
         }
