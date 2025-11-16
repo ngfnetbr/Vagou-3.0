@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, RotateCcw, Loader2 } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -76,14 +76,18 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-[var(--radix-popover-trigger-width)] p-0" // Removendo max-h-[90vh]
+        className="w-[var(--radix-popover-trigger-width)] p-0"
         align="start"
         side="bottom" 
       >
         {/* A ScrollArea agora define a altura máxima e a rolagem */}
         <ScrollArea className="h-auto max-h-[70vh]">
           <div className="p-1">
-            {allAvailableTurmas.length === 0 && !isLoading ? (
+            {isLoading ? (
+                <div className="flex items-center justify-center p-4 text-muted-foreground text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando vagas...
+                </div>
+            ) : allAvailableTurmas.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground text-sm">
                 Nenhuma vaga disponível.
               </div>
