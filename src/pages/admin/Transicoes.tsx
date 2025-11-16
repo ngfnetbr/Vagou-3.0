@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2, ArrowRight, CheckCircle, ListOrdered, GraduationCap, Users, Save, RotateCcw, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { useTransicoes, CriancaClassificada, StatusTransicao } from "@/hooks/use-transicoes";
+import { useTransicoes, CriancaClassificada } from "@/hooks/use-transicoes";
 import { format } from "date-fns";
 import {
   AlertDialog,
@@ -17,16 +17,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { RemanejamentoTable } from "@/components/transicoes/RemanejamentoTable";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import RealocacaoMassaModal from "@/components/transicoes/RealocacaoMassaModal";
 import StatusMassaModal from "@/components/transicoes/StatusMassaModal";
-import RealocacaoModal from "@/components/RealocacaoModal"; // Modal de Realocação Individual
-import JustificativaModal from "@/components/JustificativaModal"; // Modal de Status Individual
+import RealocacaoModal from "@/components/RealocacaoModal";
+import JustificativaModal from "@/components/JustificativaModal";
 import { useCriancas } from "@/hooks/use-criancas";
 import { ConvocationData } from "@/integrations/supabase/types";
+import { CmeiTransitionGroup } from "@/components/transicoes/CmeiTransitionGroup";
 
 type JustificativaAction = 'desistente' | 'transferir'; // Ações de status que exigem justificativa
 
@@ -74,13 +73,38 @@ const Transicoes = () => {
   };
   
   const toggleAllSelection = (ids: string[]) => {
-    const allSelected = ids.every(id => selectedIds.includes(id));
+    const allSelected = ids.length > 0 && ids.every(id => selectedIds.includes(id));
     if (allSelected) {
         setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
     } else {
         setSelectedIds(prev => Array.from(new Set([...prev, ...ids])));
     }
   };
+  
+  // --- Data Processing ---
+  
+  // 1. Grouping by CMEI
+  const groupedByCmei = useMemo(() => {
+    return classificacao.reduce((acc, crianca) => {
+        // Se a criança não tem CMEI atual, ela está na fila geral.
+        const cmeiName = crianca.cmeiNome || 'Fila Geral / Sem CMEI Atual'; 
+        if (!acc[cmeiName]) {
+            acc[cmeiName] = [];
+        }
+        acc[cmeiName].push(crianca);
+        return acc;
+    }, {} as Record<string, CriancaClassificada[]>);
+  }, [classificacao]);
+  
+  // 2. Recalculate stats based on the full classification list
+  const { totalAtivos, matriculados, fila, concluintes } = useMemo(() => {
+    const totalAtivos = classificacao.length;
+    const matriculados = classificacao.filter(c => c.status === 'Matriculado' || c.status === 'Matriculada' || c.status === 'Remanejamento Solicitado');
+    const fila = classificacao.filter(c => c.status === 'Fila de Espera' || c.status === 'Convocado');
+    const concluintes = classificacao.filter(c => c.statusTransicao === 'Concluinte');
+    
+    return { totalAtivos, matriculados, fila, concluintes };
+  }, [classificacao]);
   
   // --- Handlers de Ação em Massa (Mock) ---
   const handleMassAction = (action: 'realocar' | 'status') => {
@@ -112,8 +136,6 @@ const Transicoes = () => {
   
   const handleRealocacaoIndividualConfirm = async (criancaId: string, data: ConvocationData) => {
       await realocarCrianca({ id: criancaId, data });
-      // Após a realocação, o planejamento deve ser atualizado (re-fetch)
-      // O hook useCriancas já invalida a query principal, o useTransicoes irá recarregar.
       setIsRealocacaoIndividualModalOpen(false);
       setCriancaToAction(undefined);
   };
@@ -137,7 +159,6 @@ const Transicoes = () => {
               await transferirCrianca({ id, justificativa });
           }
           
-          // Após a mudança de status, o planejamento deve ser atualizado (re-fetch)
           setIsJustificativaIndividualModalOpen(false);
           setCriancaToAction(undefined);
           setCurrentJustificativaAction(undefined);
@@ -170,15 +191,6 @@ const Transicoes = () => {
         return { title: "", description: "", actionLabel: "", isPending: false, actionVariant: 'destructive' as const };
     }
   };
-  
-  // --- Data Processing ---
-  const { matriculados, fila, concluintes } = useMemo(() => {
-    const matriculados = classificacao.filter(c => c.status === 'Matriculado' || c.status === 'Matriculada' || c.status === 'Remanejamento Solicitado');
-    const fila = classificacao.filter(c => c.status === 'Fila de Espera' || c.status === 'Convocado');
-    const concluintes = classificacao.filter(c => c.statusTransicao === 'Concluinte');
-    
-    return { matriculados, fila, concluintes };
-  }, [classificacao]);
   
   const handleExecuteTransition = async () => {
     await executeTransition();
@@ -225,7 +237,7 @@ const Transicoes = () => {
             </Alert>
             
             <div className="pt-4 border-t border-border">
-                <h3 className="text-lg font-semibold mb-2">Resumo do Planejamento ({classificacao.length} crianças ativas)</h3>
+                <h3 className="text-lg font-semibold mb-2">Resumo do Planejamento ({totalAtivos} crianças ativas)</h3>
                 <div className="grid grid-cols-3 gap-4">
                     <Card className="bg-secondary/10 border-secondary">
                         <CardContent className="pt-4">
@@ -339,65 +351,30 @@ const Transicoes = () => {
             </Card>
         )}
         
-        {/* Layout de Planejamento (Duas Colunas) */}
-        <h2 className="text-2xl font-bold text-foreground pt-4">Planejamento Detalhado</h2>
+        {/* NOVO LAYOUT: Agrupado por CMEI e Horizontal */}
+        <h2 className="text-2xl font-bold text-foreground pt-4">Planejamento Detalhado por CMEI</h2>
         <CardDescription className="mb-4">
             Revise e ajuste a ação sugerida para cada criança.
         </CardDescription>
 
-        <ResizablePanelGroup
-            direction="horizontal"
-            className="min-h-[75vh] rounded-lg border"
-        >
-            <ResizablePanel defaultSize={50} minSize={30}>
-                <RemanejamentoTable
-                    title="Matriculados Atuais"
-                    icon={GraduationCap}
-                    data={matriculados}
-                    updatePlanning={updatePlanning}
-                    isSaving={isSaving}
-                    isExecuting={isExecuting}
-                    selectedIds={selectedIds}
-                    toggleSelection={toggleSelection}
-                    toggleAllSelection={(ids) => toggleAllSelection(ids.filter(id => matriculados.map(m => m.id).includes(id)))}
-                    handleRealocacaoIndividualClick={handleRealocacaoIndividualClick}
-                    handleStatusIndividualClick={handleStatusIndividualClick}
-                />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={50} minSize={30}>
-                <RemanejamentoTable
-                    title="Fila de Espera / Convocados"
-                    icon={ListOrdered}
-                    data={fila}
-                    updatePlanning={updatePlanning}
-                    isSaving={isSaving}
-                    isExecuting={isExecuting}
-                    selectedIds={selectedIds}
-                    toggleSelection={toggleSelection}
-                    toggleAllSelection={(ids) => toggleAllSelection(ids.filter(id => fila.map(f => f.id).includes(id)))}
-                    handleRealocacaoIndividualClick={handleRealocacaoIndividualClick}
-                    handleStatusIndividualClick={handleStatusIndividualClick}
-                />
-            </ResizablePanel>
-        </ResizablePanelGroup>
-        
-        {/* Concluintes (Evasão) - Lista separada */}
-        <div className="pt-6">
-            <RemanejamentoTable
-                title="Concluintes (Evasão Sugerida)"
-                icon={Users}
-                data={concluintes}
-                updatePlanning={updatePlanning}
-                isSaving={isSaving}
-                isExecuting={isExecuting}
-                selectedIds={selectedIds}
-                toggleSelection={toggleSelection}
-                toggleAllSelection={(ids) => toggleAllSelection(ids.filter(id => concluintes.map(c => c.id).includes(id)))}
-                handleRealocacaoIndividualClick={handleRealocacaoIndividualClick}
-                handleStatusIndividualClick={handleStatusIndividualClick}
-            />
+        <div className="flex space-x-6 overflow-x-auto pb-4">
+            {Object.entries(groupedByCmei).map(([cmeiName, criancasList]) => (
+                <div key={cmeiName} className="flex-shrink-0 w-[450px]">
+                    <CmeiTransitionGroup
+                        cmeiName={cmeiName}
+                        criancas={criancasList}
+                        updatePlanning={updatePlanning}
+                        isSaving={isSaving}
+                        isExecuting={isExecuting}
+                        selectedIds={selectedIds}
+                        toggleSelection={toggleSelection}
+                        handleRealocacaoIndividualClick={handleRealocacaoIndividualClick}
+                        handleStatusIndividualClick={handleStatusIndividualClick}
+                    />
+                </div>
+            ))}
         </div>
+        
       </div>
       
       {/* Modais de Ação em Massa */}
