@@ -15,7 +15,8 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+}
+from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useGroupedAvailableTurmas } from "@/hooks/use-grouped-available-turmas";
 import { AvailableTurma } from "@/hooks/use-all-available-turmas";
@@ -103,7 +104,7 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
                         </Badge>
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="p-0">
+                    <AccordionContent className="p-1 grid grid-cols-1 sm:grid-cols-2 gap-1">
                       {turmas.map((vaga) => {
                         const vagaValue = `${vaga.cmei_id}|${vaga.turma_id}|${vaga.cmei}|${vaga.turma}`;
                         const isSelected = value === vagaValue;
@@ -113,13 +114,15 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
                             key={vaga.turma_id}
                             onClick={() => handleSelect(vaga)}
                             className={cn(
-                              "flex items-center justify-between p-2 pl-6 text-sm cursor-pointer hover:bg-accent/10",
-                              isSelected && "bg-primary/10 text-primary font-medium"
+                              "flex items-center justify-between p-3 rounded-md text-sm cursor-pointer transition-colors border",
+                              isSelected 
+                                ? "bg-primary text-primary-foreground border-primary shadow-md" 
+                                : "hover:bg-accent border-transparent bg-background"
                             )}
                           >
                             <div className="flex flex-col items-start">
                                 <span>{vaga.turma}</span>
-                                <span className="text-xs text-muted-foreground">Vagas: {vaga.vagas}</span>
+                                <span className={cn("text-xs", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Vagas: {vaga.vagas}</span>
                             </div>
                             <Check
                               className={cn(
