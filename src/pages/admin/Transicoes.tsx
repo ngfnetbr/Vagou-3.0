@@ -1,9 +1,8 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Loader2, ArrowRight, CheckCircle, ListOrdered, GraduationCap, Users, Save, School } from "lucide-react";
+import { AlertCircle, Loader2, ArrowRight, CheckCircle, ListOrdered, GraduationCap, Users, Save } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useTransicoes } from "@/hooks/use-transicoes";
 import { format } from "date-fns";
@@ -23,10 +22,8 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 
 const Transicoes = () => {
   const currentYear = new Date().getFullYear();
-  const nextYear = currentYear + 1;
   
-  const [targetYear, setTargetYear] = useState<number>(nextYear);
-  
+  // O hook agora usa o ano atual internamente
   const { 
     classificacao, 
     isLoading, 
@@ -35,12 +32,9 @@ const Transicoes = () => {
     updatePlanning, 
     savePlanning, 
     isSaving 
-  } = useTransicoes(targetYear);
+  } = useTransicoes();
 
-  const anosDisponiveis = useMemo(() => {
-    return [currentYear, nextYear, nextYear + 1, nextYear + 2];
-  }, [currentYear, nextYear]);
-  
+  const targetYear = currentYear; // Usamos o ano atual como referência
   const cutoffDate = format(new Date(targetYear, 2, 31), 'dd/MM/yyyy'); // Mês 2 é Março
 
   const { matriculados, fila, concluintes } = useMemo(() => {
@@ -60,7 +54,7 @@ const Transicoes = () => {
       <AdminLayout>
         <div className="flex justify-center items-center h-96">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-3 text-lg text-muted-foreground">Carregando dados para transição...</p>
+          <p className="ml-3 text-lg text-muted-foreground">Carregando dados para planejamento...</p>
         </div>
       </AdminLayout>
     );
@@ -70,52 +64,33 @@ const Transicoes = () => {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Planejamento de Transição Anual</h1>
-          <p className="text-muted-foreground">Prepare o sistema para o próximo ano letivo reclassificando crianças e liberando vagas.</p>
+          <h1 className="text-3xl font-bold text-foreground">Planejamento de Remanejamento</h1>
+          <p className="text-muted-foreground">Revise a classificação etária e planeje a movimentação de crianças para o próximo ciclo.</p>
         </div>
 
         <Card className="bg-muted/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ArrowRight className="h-5 w-5 text-primary" />
-              Configuração da Transição
+              Status do Planejamento
             </CardTitle>
             <CardDescription>
-              Selecione o ano letivo alvo para calcular a nova classificação etária.
+              A classificação etária é baseada na idade da criança em 31 de Março de {currentYear}.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-3 gap-4 items-end">
-              <div className="space-y-2">
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Ano Letivo Alvo
-                </label>
-                <Select onValueChange={(value) => setTargetYear(Number(value))} value={String(targetYear)} disabled={isLoading || isExecuting || isSaving}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o ano" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {anosDisponiveis.map(year => (
-                      <SelectItem key={year} value={String(year)}>{year}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="col-span-2">
-                <Alert className="py-3">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Data de Corte</AlertTitle>
-                    <AlertDescription>
-                        A classificação etária será calculada com base na idade da criança em 
-                        <span className="font-semibold"> {cutoffDate} </span>.
-                    </AlertDescription>
-                </Alert>
-              </div>
-            </div>
+            
+            <Alert className="py-3">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Data de Corte</AlertTitle>
+                <AlertDescription>
+                    A classificação etária para remanejamento é calculada com base na idade da criança em 
+                    <span className="font-semibold"> {cutoffDate} </span>.
+                </AlertDescription>
+            </Alert>
             
             <div className="pt-4 border-t border-border">
-                <h3 className="text-lg font-semibold mb-2">Resumo do Planejamento</h3>
+                <h3 className="text-lg font-semibold mb-2">Resumo do Planejamento ({classificacao.length} crianças ativas)</h3>
                 <div className="grid grid-cols-3 gap-4">
                     <Card className="bg-secondary/10 border-secondary">
                         <CardContent className="pt-4">
@@ -123,7 +98,7 @@ const Transicoes = () => {
                                 <GraduationCap className="h-5 w-5 text-secondary" />
                                 <p className="text-xl font-bold text-secondary">{matriculados.length}</p>
                             </div>
-                            <p className="text-sm text-muted-foreground">Matriculados Ativos</p>
+                            <p className="text-sm text-muted-foreground">Remanejamento Interno</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-accent/10 border-accent">
@@ -132,7 +107,7 @@ const Transicoes = () => {
                                 <ListOrdered className="h-5 w-5 text-foreground" />
                                 <p className="text-xl font-bold text-foreground">{fila.length}</p>
                             </div>
-                            <p className="text-sm text-muted-foreground">Fila de Espera/Convocados</p>
+                            <p className="text-sm text-muted-foreground">Fila Reclassificada</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-destructive/10 border-destructive">
@@ -173,15 +148,15 @@ const Transicoes = () => {
                             ) : (
                                 <CheckCircle className="mr-2 h-4 w-4" />
                             )}
-                            {isExecuting ? "Aplicando..." : `Aplicar Transição para ${targetYear}`}
+                            {isExecuting ? "Aplicando..." : `Aplicar Remanejamento`}
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Confirmar Aplicação da Transição?</AlertDialogTitle>
+                            <AlertDialogTitle>Confirmar Aplicação do Remanejamento?</AlertDialogTitle>
                             <AlertDialogDescription>
                                 Esta ação irá aplicar o planejamento atual, alterando o status de {classificacao.length} crianças. 
-                                <span className="font-semibold text-destructive block mt-2">Esta ação é irreversível e deve ser feita apenas uma vez por ano letivo.</span>
+                                <span className="font-semibold text-destructive block mt-2">Esta ação é irreversível e irá atualizar as turmas e a fila de espera.</span>
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

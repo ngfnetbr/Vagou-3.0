@@ -18,7 +18,10 @@ export interface CriancaClassificada extends Crianca {
 }
 
 // Função de classificação no frontend
-const classifyCriancasForTransition = (criancas: Crianca[], targetYear: number): CriancaClassificada[] => {
+const classifyCriancasForTransition = (criancas: Crianca[]): CriancaClassificada[] => {
+    // Usa o ano atual como ano alvo para a classificação de corte (31 de março)
+    const targetYear = new Date().getFullYear();
+    
     const activeCriancas = criancas.filter(c => 
         c.status === 'Matriculado' || 
         c.status === 'Matriculada' || 
@@ -27,7 +30,7 @@ const classifyCriancasForTransition = (criancas: Crianca[], targetYear: number):
     );
 
     return activeCriancas.map(crianca => {
-        // Calcula a idade na data de corte do próximo ano
+        // Calcula a idade na data de corte do ano atual
         const idadeCorte = calculateAgeAtCutoff(crianca.data_nascimento, targetYear);
         const turmaBaseProximoAno = determineTurmaBaseName(idadeCorte);
         
@@ -57,7 +60,7 @@ const classifyCriancasForTransition = (criancas: Crianca[], targetYear: number):
 
 // --- Hook Principal ---
 
-export function useTransicoes(targetYear: number) {
+export function useTransicoes() {
     const queryClient = useQueryClient();
     
     // Estado para armazenar o planejamento (ajustes manuais)
@@ -73,15 +76,14 @@ export function useTransicoes(targetYear: number) {
     // Classificação inicial baseada no ano alvo
     const initialClassification = useMemo(() => {
         if (!criancas) return [];
-        return classifyCriancasForTransition(criancas, targetYear);
-    }, [criancas, targetYear]);
+        // Classifica usando o ano atual
+        return classifyCriancasForTransition(criancas);
+    }, [criancas]);
     
     // Sincroniza a classificação inicial com o estado de planejamento
     useEffect(() => {
-        // Se não houver dados de planejamento ou se o ano alvo mudar, reinicia o planejamento
-        if (initialClassification.length > 0 && planningData.length === 0 || 
-            (planningData.length > 0 && planningData[0].turmaBaseProximoAno !== initialClassification[0]?.turmaBaseProximoAno)
-        ) {
+        // Se não houver dados de planejamento, reinicia o planejamento
+        if (initialClassification.length > 0 && planningData.length === 0) {
             setPlanningData(initialClassification);
         }
     }, [initialClassification, planningData]);
@@ -100,7 +102,7 @@ export function useTransicoes(targetYear: number) {
             // Simula o salvamento no DB
             await new Promise(resolve => setTimeout(resolve, 500));
             toast.success("Planejamento salvo com sucesso!", {
-                description: `Ajustes para ${targetYear} foram armazenados.`,
+                description: `Ajustes foram armazenados.`,
             });
         } catch (e) {
             toast.error("Erro ao salvar planejamento.");
@@ -117,7 +119,7 @@ export function useTransicoes(targetYear: number) {
         }
         
         // Simulação de API call para executar a transição no backend
-        console.log(`Executando transição para o ano ${targetYear}. Total de ${planningData.length} crianças.`);
+        console.log(`Executando transição. Total de ${planningData.length} crianças.`);
         
         // Mock de sucesso
         return new Promise(resolve => setTimeout(resolve, 1500));
@@ -130,7 +132,7 @@ export function useTransicoes(targetYear: number) {
             setPlanningData([]);
             queryClient.invalidateQueries({ queryKey: ["criancas"] });
             queryClient.invalidateQueries({ queryKey: TRANSICOES_QUERY_KEY });
-            toast.success(`Transição para ${targetYear} executada com sucesso!`, {
+            toast.success(`Transição executada com sucesso!`, {
                 description: "Os status e classificações das crianças foram atualizados (Simulação).",
             });
         },
