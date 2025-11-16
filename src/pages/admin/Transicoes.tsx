@@ -82,13 +82,20 @@ const Transicoes = () => {
   
   // --- Data Processing ---
   
-  // 1. Grouping by CMEI and then by Turma
+  // 1. Grouping by CMEI and then by Turma (AGORA USA OS CAMPOS PLANEJADOS)
   const groupedData: GroupedData = useMemo(() => {
     return classificacao.reduce((acc, crianca) => {
-        // Se a criança não tem CMEI atual, ela está na fila geral.
-        const cmeiName = crianca.cmeiNome || 'Fila Geral / Sem CMEI Atual'; 
-        // Se a criança não tem Turma atual, ela está na fila de espera (dentro do CMEI ou Geral)
-        const turmaName = crianca.turmaNome || 'Fila de Espera'; 
+        // Prioriza o nome planejado, senão usa o nome atual.
+        const cmeiName = crianca.planned_cmei_nome || crianca.cmeiNome || 'Fila Geral / Sem CMEI Atual'; 
+        const turmaName = crianca.planned_turma_nome || crianca.turmaNome || 'Fila de Espera'; 
+        
+        // Se o status planejado for Desistente/Recusada, remove da visualização de turmas ativas
+        if (crianca.planned_status === 'Desistente' || crianca.planned_status === 'Recusada') {
+            // Podemos criar um grupo separado para 'Saídas Planejadas' se necessário,
+            // mas para o fluxo de realocação, o mais importante é que ela saia da turma atual.
+            // Por enquanto, filtramos para fora do agrupamento principal de CMEIs/Turmas.
+            return acc;
+        }
         
         if (!acc[cmeiName]) {
             acc[cmeiName] = {};
