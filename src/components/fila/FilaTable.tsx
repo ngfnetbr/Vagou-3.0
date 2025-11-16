@@ -83,6 +83,7 @@ export const FilaTable = ({
               filteredFila.map((item) => {
                 const isConvocado = item.status === "Convocado";
                 const isFilaEspera = item.status === "Fila de Espera";
+                const isRemanejamento = item.status === "Remanejamento Solicitado";
                 const deadlineExpired = isDeadlineExpired(item.convocacao_deadline);
                 
                 // --- START: Age Calculation Logic ---
@@ -95,9 +96,15 @@ export const FilaTable = ({
                 const isPenalized = isFilaEspera && !!item.data_penalidade;
                 
                 return (
-                  <TableRow key={item.id} className={isConvocado ? "bg-primary/5 hover:bg-primary/10" : ""}>
+                  <TableRow key={item.id} className={isConvocado ? "bg-primary/5 hover:bg-primary/10" : isRemanejamento ? "bg-accent/5 hover:bg-accent/10" : ""}>
                     <TableCell className="font-bold text-primary">
-                        {isConvocado ? <Badge className="bg-primary text-primary-foreground w-fit flex justify-center items-center">Conv.</Badge> : `#${item.posicao_fila}`}
+                        {isRemanejamento ? (
+                            <Badge className="bg-accent text-accent-foreground w-fit flex justify-center items-center">Remanej.</Badge>
+                        ) : isConvocado ? (
+                            <Badge className="bg-primary text-primary-foreground w-fit flex justify-center items-center">Conv.</Badge>
+                        ) : (
+                            `#${item.posicao_fila}`
+                        )}
                     </TableCell>
                     <TableCell className="font-medium">{item.nome}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
@@ -124,6 +131,18 @@ export const FilaTable = ({
                     <TableCell className="text-center">
                         {isConvocado && item.convocacao_deadline ? (
                             <CountdownTimer deadline={item.convocacao_deadline} />
+                        ) : isRemanejamento ? (
+                            <div className="flex flex-col items-center">
+                                <Badge 
+                                    variant="outline" 
+                                    className="w-fit flex justify-center items-center mx-auto bg-primary/20 text-primary border-primary/50"
+                                >
+                                    Remanejamento
+                                </Badge>
+                                <span className="text-xs text-muted-foreground mt-1">
+                                    {item.cmeiNome} ({item.turmaNome})
+                                </span>
+                            </div>
                         ) : (
                             // Se estiver na fila (mesmo que penalizado), exibe apenas Fila de Espera
                             <Badge 
@@ -199,8 +218,8 @@ export const FilaTable = ({
                             </>
                           )}
                           
-                          {/* Ações para Fila de Espera */}
-                          {isFilaEspera && (
+                          {/* Ações para Fila de Espera e Remanejamento */}
+                          {(isFilaEspera || isRemanejamento) && (
                             <>
                                 <DropdownMenuItem onSelect={() => handleJustificativaAction(item, 'desistente')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                                     <Trash2 className="mr-2 h-4 w-4" />
