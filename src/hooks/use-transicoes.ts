@@ -62,7 +62,7 @@ const classifyCriancasForTransition = (criancas: Crianca[]): CriancaClassificada
     });
 };
 
-// Função utilitária para comparação profunda (shallow comparison dos campos de planejamento)
+// Função utilitária para comparação profunda (compara planejamento atual com o estado inicial)
 const arePlanningStatesEqual = (state1: CriancaClassificada[], state2: CriancaClassificada[]): boolean => {
     if (state1.length !== state2.length) return false;
     
@@ -97,9 +97,8 @@ export function useTransicoes() {
     const queryClient = useQueryClient();
     
     const [planningData, setPlanningData] = useState<CriancaClassificada[]>([]);
-    const [lastSavedPlanning, setLastSavedPlanning] = useState<CriancaClassificada[]>([]); // Novo estado para o último estado salvo
-    const [isSaving, setIsSaving] = useState(false);
-
+    // Removendo lastSavedPlanning e isSaving
+    
     const { data: criancas, isLoading, error } = useQuery<Crianca[], Error>({
         queryKey: ["criancas"], 
         queryFn: fetchCriancas,
@@ -125,7 +124,6 @@ export function useTransicoes() {
                 // Se os IDs forem idênticos, carrega o planejamento salvo
                 if (savedIds.size > 0 && savedIds.size === currentIds.size && [...savedIds].every(id => currentIds.has(id))) {
                     setPlanningData(parsedPlanning);
-                    setLastSavedPlanning(parsedPlanning); // Define como o último estado salvo
                     toast.info("Planejamento anterior carregado.", { duration: 3000 });
                     return;
                 }
@@ -138,7 +136,6 @@ export function useTransicoes() {
         // Se não houver planejamento salvo ou se os dados estiverem desatualizados, usa a classificação inicial
         if (initialClassification.length > 0 && planningData.length === 0) {
             setPlanningData(initialClassification);
-            setLastSavedPlanning(initialClassification); // Define a classificação inicial como o último estado salvo
         }
         
     }, [initialClassification]); // Depende apenas da classificação inicial
@@ -147,9 +144,9 @@ export function useTransicoes() {
     const hasUnsavedChanges = useMemo(() => {
         if (isLoading || planningData.length === 0) return false;
         
-        // Compara o estado atual com o último estado salvo
-        return !arePlanningStatesEqual(planningData, lastSavedPlanning);
-    }, [planningData, lastSavedPlanning, isLoading]);
+        // Compara o estado atual (planningData) com o estado inicial (initialClassification)
+        return !arePlanningStatesEqual(planningData, initialClassification);
+    }, [planningData, initialClassification, isLoading]);
 
 
     // --- Funções de Manipulação do Planejamento ---
@@ -158,127 +155,144 @@ export function useTransicoes() {
         setPlanningData(prev => prev.map(c => 
             c.id === criancaId ? { ...c, ...updates } : c
         ));
+        // Salva no localStorage imediatamente após a alteração
+        // Isso garante que o estado seja persistido, mas o alerta de navegação continua ativo
+        // até que o usuário aplique a transição ou descarte.
+        const updatedPlanning = planningData.map(c => 
+            c.id === criancaId ? { ...c, ...updates } : c
+        );
+        localStorage.setItem(PLANNING_STORAGE_KEY, JSON.stringify(updatedPlanning));
     };
 
     const updateCriancaStatusInPlanning = (criancaId: string, newStatus: Crianca['status'], justificativa: string) => {
-        updateCriancaInPlanning(criancaId, {
-            planned_status: newStatus,
-            planned_justificativa: justificativa,
-            // Limpa vaga se o status for final
-            planned_cmei_id: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : undefined,
-            planned_turma_id: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : undefined,
-            planned_cmei_nome: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : undefined,
-            planned_turma_nome: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : undefined,
+        // Atualiza o estado local
+        setPlanningData(prev => {
+            const updatedPlanning = prev.map(c => {
+                if (c.id === criancaId) {
+                    return {
+                        ...c,
+                        planned_status: newStatus,
+                        planned_justificativa: justificativa,
+                        // Limpa vaga se o status for final
+                        planned_cmei_id: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : undefined,
+                        planned_turma_id: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : undefined,
+                        planned_cmei_nome: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : undefined,
+                        planned_turma_nome: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : undefined,
+                    };
+                }
+                return c;
+            });
+            // Salva no localStorage
+            localStorage.setItem(PLANNING_STORAGE_KEY, JSON.stringify(updatedPlanning));
+            return updatedPlanning;
         });
     };
 
     const updateCriancaVagaInPlanning = (criancaId: string, cmei_id: string, turma_id: string, cmei_nome: string, turma_nome: string) => {
-        setPlanningData(prev => prev.map(c => {
-            if (c.id === criancaId) {
-                
-                let newPlannedStatus: Crianca['status'];
-                
-                // Statuses que indicam que a criança não está ativamente matriculada e precisa ser CONVOCADA
-                const needsConvocation = ['Fila de Espera', 'Convocado', 'Desistente', 'Recusada', 'Saída Final'].includes(c.status);
-                
-                if (needsConvocation) {
-                    newPlannedStatus = 'Convocado';
-                } 
-                // Se a criança já está matriculada, a realocação é uma MUDANÇA DE TURMA (mantém o status de matrícula).
-                else if (c.status === 'Matriculado' || c.status === 'Matriculada') {
-                    newPlannedStatus = c.status;
-                } else {
-                    // Fallback seguro
-                    newPlannedStatus = 'Matriculado';
-                }
+        setPlanningData(prev => {
+            const updatedPlanning = prev.map(c => {
+                if (c.id === criancaId) {
                     
-                return {
-                    ...c,
-                    planned_cmei_id: cmei_id,
-                    planned_turma_id: turma_id,
-                    planned_cmei_nome: cmei_nome,
-                    planned_turma_nome: turma_nome,
-                    planned_status: newPlannedStatus,
-                    planned_justificativa: null,
-                };
-            }
-            return c;
-        }));
+                    let newPlannedStatus: Crianca['status'];
+                    
+                    // Statuses que indicam que a criança não está ativamente matriculada e precisa ser CONVOCADA
+                    const needsConvocation = ['Fila de Espera', 'Convocado', 'Desistente', 'Recusada', 'Saída Final'].includes(c.status);
+                    
+                    if (needsConvocation) {
+                        newPlannedStatus = 'Convocado';
+                    } 
+                    // Se a criança já está matriculada, a realocação é uma MUDANÇA DE TURMA (mantém o status de matrícula).
+                    else if (c.status === 'Matriculado' || c.status === 'Matriculada') {
+                        newPlannedStatus = c.status;
+                    } else {
+                        // Fallback seguro
+                        newPlannedStatus = 'Matriculado';
+                    }
+                        
+                    return {
+                        ...c,
+                        planned_cmei_id: cmei_id,
+                        planned_turma_id: turma_id,
+                        planned_cmei_nome: cmei_nome,
+                        planned_turma_nome: turma_nome,
+                        planned_status: newPlannedStatus,
+                        planned_justificativa: null,
+                    };
+                }
+                return c;
+            });
+            // Salva no localStorage
+            localStorage.setItem(PLANNING_STORAGE_KEY, JSON.stringify(updatedPlanning));
+            return updatedPlanning;
+        });
     };
     
     const massUpdateStatusInPlanning = (criancaIds: string[], newStatus: Crianca['status'], justificativa: string) => {
-        setPlanningData(prev => prev.map(c => {
-            if (criancaIds.includes(c.id)) {
-                return {
-                    ...c,
-                    planned_status: newStatus,
-                    planned_justificativa: justificativa,
-                    planned_cmei_id: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : c.planned_cmei_id,
-                    planned_turma_id: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : c.planned_turma_id,
-                    planned_cmei_nome: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : c.planned_cmei_nome,
-                    planned_turma_nome: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : c.planned_turma_nome,
-                };
-            }
-            return c;
-        }));
+        setPlanningData(prev => {
+            const updatedPlanning = prev.map(c => {
+                if (criancaIds.includes(c.id)) {
+                    return {
+                        ...c,
+                        planned_status: newStatus,
+                        planned_justificativa: justificativa,
+                        planned_cmei_id: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : c.planned_cmei_id,
+                        planned_turma_id: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : c.planned_turma_id,
+                        planned_cmei_nome: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : c.planned_cmei_nome,
+                        planned_turma_nome: ['Desistente', 'Recusada', 'Fila de Espera'].includes(newStatus) ? null : c.planned_turma_nome,
+                    };
+                }
+                return c;
+            });
+            // Salva no localStorage
+            localStorage.setItem(PLANNING_STORAGE_KEY, JSON.stringify(updatedPlanning));
+            return updatedPlanning;
+        });
     };
     
     const massUpdateVagaInPlanning = (criancaIds: string[], cmei_id: string, turma_id: string, cmei_nome: string, turma_nome: string) => {
-        setPlanningData(prev => prev.map(c => {
-            if (criancaIds.includes(c.id)) {
-                
-                let newPlannedStatus: Crianca['status'];
-                
-                // Statuses que indicam que a criança não está ativamente matriculada e precisa ser CONVOCADA
-                const needsConvocation = ['Fila de Espera', 'Convocado', 'Desistente', 'Recusada', 'Saída Final'].includes(c.status);
-                
-                if (needsConvocation) {
-                    newPlannedStatus = 'Convocado';
-                } 
-                // Se a criança já está matriculada, a realocação é uma MUDANÇA DE TURMA (mantém o status de matrícula).
-                else if (c.status === 'Matriculado' || c.status === 'Matriculada') {
-                    newPlannedStatus = c.status;
-                } else {
-                    // Fallback seguro
-                    newPlannedStatus = 'Matriculado';
-                }
+        setPlanningData(prev => {
+            const updatedPlanning = prev.map(c => {
+                if (criancaIds.includes(c.id)) {
                     
-                return {
-                    ...c,
-                    planned_cmei_id: cmei_id,
-                    planned_turma_id: turma_id,
-                    planned_cmei_nome: cmei_nome,
-                    planned_turma_nome: turma_nome,
-                    planned_status: newPlannedStatus,
-                    planned_justificativa: null,
-                };
-            }
-            return c;
-        }));
+                    let newPlannedStatus: Crianca['status'];
+                    
+                    // Statuses que indicam que a criança não está ativamente matriculada e precisa ser CONVOCADA
+                    const needsConvocation = ['Fila de Espera', 'Convocado', 'Desistente', 'Recusada', 'Saída Final'].includes(c.status);
+                    
+                    if (needsConvocation) {
+                        newPlannedStatus = 'Convocado';
+                    } 
+                    // Se a criança já está matriculada, a realocação é uma MUDANÇA DE TURMA (mantém o status de matrícula).
+                    else if (c.status === 'Matriculado' || c.status === 'Matriculada') {
+                        newPlannedStatus = c.status;
+                    } else {
+                        // Fallback seguro
+                        newPlannedStatus = 'Matriculado';
+                    }
+                        
+                    return {
+                        ...c,
+                        planned_cmei_id: cmei_id,
+                        planned_turma_id: turma_id,
+                        planned_cmei_nome: cmei_nome,
+                        planned_turma_nome: turma_nome,
+                        planned_status: newPlannedStatus,
+                        planned_justificativa: null,
+                    };
+                }
+                return c;
+            });
+            // Salva no localStorage
+            localStorage.setItem(PLANNING_STORAGE_KEY, JSON.stringify(updatedPlanning));
+            return updatedPlanning;
+        });
     };
 
-    // Função para salvar o planejamento no localStorage
+    // Função para salvar o planejamento no localStorage (mantida para persistência, mas não chamada pelo botão)
     const savePlanning = async () => {
-        setIsSaving(true);
-        try {
-            localStorage.setItem(PLANNING_STORAGE_KEY, JSON.stringify(planningData));
-            
-            // CRITICAL FIX: Use uma cópia profunda do planningData para setLastSavedPlanning
-            // Isso garante que a referência mude e force a reavaliação de hasUnsavedChanges para false.
-            // Usamos JSON.parse(JSON.stringify) para garantir a imutabilidade completa dos objetos internos.
-            setLastSavedPlanning(JSON.parse(JSON.stringify(planningData))); 
-            
-            await new Promise(resolve => setTimeout(resolve, 500)); // Simula delay de salvamento
-            toast.success("Planejamento salvo com sucesso!", {
-                description: `Ajustes foram armazenados localmente no navegador.`,
-            });
-        } catch (e) {
-            toast.error("Erro ao salvar planejamento.", {
-                description: "Não foi possível acessar o armazenamento local.",
-            });
-        } finally {
-            setIsSaving(false);
-        }
+        // Esta função não é mais chamada pelo botão, mas é mantida para compatibilidade futura
+        // e para garantir que o estado seja persistido no localStorage.
+        localStorage.setItem(PLANNING_STORAGE_KEY, JSON.stringify(planningData));
     };
 
     // --- Execução da Transição (Aplica as mudanças planejadas ao DB) ---
@@ -390,7 +404,7 @@ export function useTransicoes() {
         
         // Limpa o planejamento local após a execução bem-sucedida
         localStorage.removeItem(PLANNING_STORAGE_KEY);
-        setLastSavedPlanning([]); // Limpa o estado salvo, forçando o recálculo baseado no DB
+        // Não precisamos mais de setLastSavedPlanning
     };
 
     const transitionMutation = useMutation({
@@ -418,8 +432,7 @@ export function useTransicoes() {
         classificacao: planningData,
         isLoading,
         error,
-        savePlanning,
-        isSaving,
+        // savePlanning removido do retorno
         executeTransition: transitionMutation.mutateAsync,
         isExecuting: transitionMutation.isPending,
         initialClassification, 

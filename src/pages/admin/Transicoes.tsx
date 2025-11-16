@@ -44,13 +44,14 @@ const Transicoes = () => {
     isLoading, 
     isExecuting, 
     executeTransition, 
-    savePlanning, 
-    isSaving,
+    // savePlanning, // Removido
+    // isSaving, // Removido
     updateCriancaStatusInPlanning,
     updateCriancaVagaInPlanning,
     massUpdateStatusInPlanning,
     massUpdateVagaInPlanning,
-    initialClassification, // Corrigido o erro 2
+    initialClassification, 
+    hasUnsavedChanges,
   } = useTransicoes();
   
   // O hook useCriancas é mantido para as mutações individuais que DEVEM ser imediatas (Realocação)
@@ -76,20 +77,9 @@ const Transicoes = () => {
   const [openCmeis, setOpenCmeis] = useState<string[]>([]);
   
   // --- Lógica de Alterações Não Salvas ---
-  const hasUnsavedChanges = useMemo(() => {
-    if (isLoading || classificacao.length === 0) return false;
-    
-    // Compara o planejamento atual com a classificação inicial (que representa o estado do DB)
-    // Uma comparação profunda é necessária, mas vamos simplificar comparando os campos de planejamento
-    return classificacao.some(c => 
-        c.planned_status !== undefined || 
-        c.planned_cmei_id !== undefined || 
-        c.planned_turma_id !== undefined
-    );
-  }, [classificacao, isLoading]);
+  // hasUnsavedChanges agora é calculado no hook useTransicoes
   
   // Aplica o alerta de alterações não salvas
-  // O alerta de navegação interna será um toast.warning
   const blockNavigation = useUnsavedChangesWarning(hasUnsavedChanges, "Você tem alterações no planejamento de transição que não foram salvas ou aplicadas. Deseja realmente sair?");
 
   // --- Handlers de Seleção ---
@@ -292,7 +282,7 @@ const Transicoes = () => {
               <AlertTitle>Modo Planejamento Ativo</AlertTitle>
               <AlertDescription>
                   Todas as ações de Realocação em Massa e Mudança de Status (Desistente/Concluinte) são salvas no planejamento e só serão aplicadas ao banco de dados quando você clicar em 
-                  <span className="font-semibold"> "Aplicar Transição"</span>. A Realocação Individual é aplicada imediatamente.
+                  <span className="font-semibold"> "Aplicar Transição"</span>. O planejamento é persistido automaticamente no seu navegador.
               </AlertDescription>
           </Alert>
 
@@ -309,19 +299,7 @@ const Transicoes = () => {
             <CardContent className="space-y-4">
               
               <div className="flex gap-4 pt-4 border-t border-border">
-                  <Button 
-                      variant="outline"
-                      className="flex-1 text-primary border-primary hover:bg-primary/10"
-                      onClick={savePlanning}
-                      disabled={isSaving || isExecuting || isLoading || classificacao.length === 0}
-                  >
-                      {isSaving ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                          <Save className="mr-2 h-4 w-4" />
-                      )}
-                      {isSaving ? "Salvando Planejamento..." : "Salvar Planejamento"}
-                  </Button>
+                  {/* Botão Salvar Removido */}
                   
                   <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -371,7 +349,7 @@ const Transicoes = () => {
                               variant="outline" 
                               className="text-muted-foreground border-border hover:bg-muted"
                               onClick={handleClearSelection}
-                              disabled={isExecuting || isSaving}
+                              disabled={isExecuting}
                           >
                               <XCircle className="mr-2 h-4 w-4" />
                               Desfazer Seleção
@@ -380,7 +358,7 @@ const Transicoes = () => {
                               variant="outline" 
                               className="text-secondary border-secondary hover:bg-secondary/10"
                               onClick={() => handleMassAction('realocar')}
-                              disabled={isExecuting || isSaving}
+                              disabled={isExecuting}
                           >
                               <RotateCcw className="mr-2 h-4 w-4" />
                               Realocar em Massa
@@ -389,7 +367,7 @@ const Transicoes = () => {
                               variant="outline" 
                               className="text-destructive border-destructive hover:bg-destructive/10"
                               onClick={() => handleMassAction('status')}
-                              disabled={isExecuting || isSaving}
+                              disabled={isExecuting}
                           >
                               <ArrowRight className="mr-2 h-4 w-4" />
                               Conclusão em Massa
@@ -429,7 +407,7 @@ const Transicoes = () => {
                           <CmeiTransitionGroup
                               cmeiName={cmeiName}
                               turmaGroups={turmaGroups}
-                              isSaving={isSaving}
+                              // isSaving removido
                               isExecuting={isExecuting}
                               selectedIds={selectedIds}
                               toggleSelection={toggleSelection}

@@ -15,7 +15,7 @@ type JustificativaAction = 'desistente' | 'concluinte';
 interface CmeiTransitionGroupProps {
     cmeiName: string;
     turmaGroups: { [turmaName: string]: CriancaClassificada[] }; // Novo prop
-    isSaving: boolean;
+    // isSaving removido
     isExecuting: boolean;
     selectedIds: string[];
     toggleSelection: (id: string) => void;
@@ -41,7 +41,7 @@ const getStatusBadge = (status: CriancaClassificada['status']) => {
 export const CmeiTransitionGroup = ({
     cmeiName,
     turmaGroups,
-    isSaving,
+    // isSaving removido
     isExecuting,
     selectedIds,
     toggleSelection,
@@ -134,7 +134,7 @@ export const CmeiTransitionGroup = ({
                                     e.stopPropagation(); // Previne que o accordion feche
                                     toggleSelectAllTurma(criancasList);
                                 }}
-                                disabled={isExecuting || isSaving || criancasList.length === 0}
+                                disabled={isExecuting || criancasList.length === 0}
                                 className={cn(
                                     "text-xs h-7",
                                     allSelected && "bg-primary/10 text-primary border-primary/50",
@@ -176,7 +176,7 @@ export const CmeiTransitionGroup = ({
                                             <Checkbox
                                                 checked={isSelected}
                                                 onCheckedChange={() => toggleSelection(c.id)}
-                                                disabled={isExecuting || isSaving}
+                                                disabled={isExecuting}
                                             />
                                         </TableCell>
                                         <TableCell>
