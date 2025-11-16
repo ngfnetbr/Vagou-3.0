@@ -1,7 +1,6 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2, ArrowRight, CheckCircle, ListOrdered, GraduationCap, Users, Save } from "lucide-react";
 import { useState, useMemo } from "react";
@@ -46,38 +45,8 @@ const Transicoes = () => {
     return { matriculados, fila, concluintes };
   }, [classificacao]);
   
-  // Mock de funções de remanejamento em massa (para manter a funcionalidade de 'Aplicar')
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
   const handleExecuteTransition = async () => {
-    setIsExecuting(true);
-    try {
-        // Simulação de aplicação de remanejamento em massa
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        toast.success("Remanejamento aplicado com sucesso!", {
-            description: "As alterações de turma e status foram salvas (Simulação).",
-        });
-    } catch (e) {
-        toast.error("Erro ao aplicar remanejamento.");
-    } finally {
-        setIsExecuting(false);
-    }
-  };
-  
-  const handleSavePlanning = async () => {
-    setIsSaving(true);
-    try {
-        // Simulação de salvamento do planejamento
-        await new Promise(resolve => setTimeout(resolve, 500));
-        toast.success("Planejamento salvo com sucesso!", {
-            description: `Ajustes foram armazenados.`,
-        });
-    } catch (e) {
-        toast.error("Erro ao salvar planejamento.");
-    } finally {
-        setIsSaving(false);
-    }
+    await executeTransition();
   };
   
   if (isLoading) {
@@ -95,7 +64,7 @@ const Transicoes = () => {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Painel de Remanejamento</h1>
+          <h1 className="text-3xl font-bold text-foreground">Planejamento de Remanejamento</h1>
           <p className="text-muted-foreground">Revise a classificação etária e planeje a movimentação de crianças para o próximo ciclo.</p>
         </div>
 
@@ -186,7 +155,7 @@ const Transicoes = () => {
                         <AlertDialogHeader>
                             <AlertDialogTitle>Confirmar Aplicação do Remanejamento?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Esta ação irá aplicar o planejamento atual, alterando o status de todas as crianças marcadas. 
+                                Esta ação irá aplicar o planejamento atual, alterando o status de {classificacao.length} crianças. 
                                 <span className="font-semibold text-destructive block mt-2">Esta ação é irreversível e irá atualizar as turmas e a fila de espera.</span>
                             </AlertDialogDescription>
                         </AlertDialogHeader>
@@ -206,11 +175,50 @@ const Transicoes = () => {
           </CardContent>
         </Card>
         
-        <RemanejamentoPanel
-            turmas={turmas}
-            fila={fila}
-            isLoading={isLoading}
-        />
+        {/* Layout de Planejamento (Duas Colunas) */}
+        <h2 className="text-2xl font-bold text-foreground pt-4">Planejamento Detalhado</h2>
+        <CardDescription className="mb-4">
+            Revise e ajuste a ação sugerida para cada criança.
+        </CardDescription>
+
+        <ResizablePanelGroup
+            direction="horizontal"
+            className="min-h-[75vh] rounded-lg border"
+        >
+            <ResizablePanel defaultSize={50} minSize={30}>
+                <TransicoesList
+                    title="Matriculados Atuais"
+                    icon={GraduationCap}
+                    data={matriculados}
+                    updatePlanning={updatePlanning}
+                    isSaving={isSaving}
+                    isExecuting={isExecuting}
+                />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={50} minSize={30}>
+                <TransicoesList
+                    title="Fila de Espera / Convocados"
+                    icon={ListOrdered}
+                    data={fila}
+                    updatePlanning={updatePlanning}
+                    isSaving={isSaving}
+                    isExecuting={isExecuting}
+                />
+            </ResizablePanel>
+        </ResizablePanelGroup>
+        
+        {/* Concluintes (Evasão) - Lista separada */}
+        <div className="pt-6">
+            <TransicoesList
+                title="Concluintes (Evasão Sugerida)"
+                icon={Users}
+                data={concluintes}
+                updatePlanning={updatePlanning}
+                isSaving={isSaving}
+                isExecuting={isExecuting}
+            />
+        </div>
       </div>
     </AdminLayout>
   );
