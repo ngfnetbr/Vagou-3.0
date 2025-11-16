@@ -46,14 +46,18 @@ const Transicoes = () => {
     savePlanning, 
     isSaving,
     updateCriancaStatusInPlanning,
-    updateCriancaVagaInPlanning,
+    updateCriancaVagaInPlanning, // Usado apenas para ações em massa
     massUpdateStatusInPlanning,
     massUpdateVagaInPlanning,
   } = useTransicoes();
   
-  // O hook useCriancas é mantido apenas para as mutações individuais que não são de planejamento (ex: Realocação imediata em outras páginas)
-  // Aqui, usamos apenas as funções de planejamento do useTransicoes.
-  const { isRealocating, isMarkingDesistente, isTransferring } = useCriancas(); 
+  // O hook useCriancas é mantido para as mutações individuais que DEVEM ser imediatas (Realocação)
+  const { 
+    realocarCrianca, // Adicionado
+    isRealocating, 
+    isMarkingDesistente, 
+    isTransferring 
+  } = useCriancas(); 
 
   // --- Estados de Ação em Massa ---
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -122,13 +126,21 @@ const Transicoes = () => {
       setIsRealocacaoIndividualModalOpen(true);
   };
   
-  // Esta função agora atualiza o estado de planejamento, não o DB
+  // Esta função AGORA ATUALIZA O DB IMEDIATAMENTE, conforme solicitado pelo usuário.
   const handleRealocacaoIndividualConfirm = async (criancaId: string, data: ConvocationData, cmeiNome: string, turmaNome: string) => {
-      // Não usamos await realocarCrianca({ id: criancaId, data });
-      updateCriancaVagaInPlanning(criancaId, data.cmei_id, data.turma_id, cmeiNome, turmaNome);
-      toast.success("Realocação planejada!", { description: `A criança será movida para ${cmeiNome} - ${turmaNome} ao executar a transição.` });
-      setIsRealocacaoIndividualModalOpen(false);
-      setCriancaToAction(undefined);
+      try {
+          // Ação IMEDIATA no DB
+          await realocarCrianca({ id: criancaId, data });
+          
+          // Após a realocação, o useTransicoes será atualizado via re-fetch do useCriancas subjacente.
+          toast.success("Realocação concluída!", { description: `A criança foi movida imediatamente para ${cmeiNome} - ${turmaNome}.` });
+          
+          // Fechar modal
+          setIsRealocacaoIndividualModalOpen(false);
+          setCriancaToAction(undefined);
+      } catch (e: any) {
+          toast.error("Falha na Realocação Imediata", { description: e.message });
+      }
   };
   
   // 2. Mudança de Status (Desistente/Concluinte)
@@ -215,8 +227,8 @@ const Transicoes = () => {
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Modo Planejamento Ativo</AlertTitle>
               <AlertDescription>
-                  Todas as ações de Realocação e Mudança de Status nesta página são salvas no planejamento e só serão aplicadas ao banco de dados quando você clicar em 
-                  <span className="font-semibold"> "Aplicar Transição"</span>.
+                  Todas as ações de Realocação em Massa e Mudança de Status (Desistente/Concluinte) são salvas no planejamento e só serão aplicadas ao banco de dados quando você clicar em 
+                  <span className="font-semibold"> "Aplicar Transição"</span>. A Realocação Individual é aplicada imediatamente.
               </AlertDescription>
           </Alert>
 
@@ -369,10 +381,10 @@ const Transicoes = () => {
           {criancaToAction && (
             <RealocacaoModal
               crianca={criancaToAction}
-              // Aqui, passamos a função de planejamento para o onConfirm
+              // Passa a função de execução imediata
               onConfirm={handleRealocacaoIndividualConfirm} 
               onClose={() => setIsRealocacaoIndividualModalOpen(false)}
-              isPending={isRealocating} // Usamos o isPending do hook real apenas para feedback visual
+              isPending={isRealocating} // Usa o isPending da mutação real
             />
           )}
         </Dialog>
