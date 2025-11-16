@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Crianca, ConvocationData } from "@/integrations/supabase/types";
 import { useCriancas, useAvailableTurmas } from "@/hooks/use-criancas";
 import { useMemo } from "react";
-import { Loader2, Bell } from "lucide-react";
+import { Loader2, Bell, RotateCcw, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,8 +32,10 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
     const { convocarCrianca, isConvoking } = useCriancas();
     const { config, isLoading: isLoadingConfig } = useConfiguracoes();
     
-    // Hook que busca vagas disponíveis filtradas por idade e preferência
+    // Hook que busca vagas disponíveis filtradas por idade e preferência (ou remanejamento)
     const { data: availableTurmas, isLoading: isLoadingTurmas } = useAvailableTurmas(crianca.id);
+
+    const isRemanejamento = crianca.status === 'Remanejamento Solicitado';
 
     const form = useForm<ConvocarFormData>({
         resolver: zodResolver(convocarSchema),
@@ -86,22 +88,46 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
     return (
         <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-                <DialogTitle>{isReconvocacao ? 'Reconvocar' : 'Convocar'} Criança</DialogTitle>
+                <DialogTitle>
+                    {isRemanejamento ? 'Convocar para Remanejamento' : isReconvocacao ? 'Reconvocar' : 'Convocar'} Criança
+                </DialogTitle>
                 <DialogDescription>
                     Selecione a vaga compatível para a qual <span className="font-semibold">{crianca.nome}</span> será convocada.
                 </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-2 text-sm p-3 bg-primary/5 rounded-lg border border-primary/20">
-                <p className="font-semibold text-primary">Preferências da Criança:</p>
-                <p className="text-muted-foreground">
-                    1ª Opção: {crianca.cmei1_preferencia}
-                    {crianca.cmei2_preferencia && `, 2ª Opção: ${crianca.cmei2_preferencia}`}
-                </p>
-                <p className="text-muted-foreground">
-                    Aceita qualquer CMEI: {crianca.aceita_qualquer_cmei ? 'Sim' : 'Não'}
-                </p>
-            </div>
+            {isRemanejamento ? (
+                // Bloco específico para Remanejamento
+                <div className="space-y-3 text-sm p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <p className="font-semibold text-primary flex items-center gap-2">
+                        <RotateCcw className="h-4 w-4" />
+                        Solicitação de Remanejamento
+                    </p>
+                    <div className="space-y-1">
+                        <p className="text-muted-foreground flex items-center gap-2">
+                            <span className="font-medium text-foreground">CMEI Atual:</span> {crianca.cmeiNome} ({crianca.turmaNome})
+                        </p>
+                        <p className="text-muted-foreground flex items-center gap-2">
+                            <span className="font-medium text-foreground">CMEI Desejado:</span> {crianca.cmeiRemanejamentoNome}
+                        </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground italic pt-2 border-t border-primary/10">
+                        A lista de vagas abaixo é filtrada apenas para o CMEI desejado.
+                    </p>
+                </div>
+            ) : (
+                // Bloco para Fila de Espera normal (Preferências)
+                <div className="space-y-2 text-sm p-3 bg-primary/5 rounded-lg border border-primary/20">
+                    <p className="font-semibold text-primary">Preferências da Criança:</p>
+                    <p className="text-muted-foreground">
+                        1ª Opção: {crianca.cmei1_preferencia}
+                        {crianca.cmei2_preferencia && `, 2ª Opção: ${crianca.cmei2_preferencia}`}
+                    </p>
+                    <p className="text-muted-foreground">
+                        Aceita qualquer CMEI: {crianca.aceita_qualquer_cmei ? 'Sim' : 'Não'}
+                    </p>
+                </div>
+            )}
 
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -126,7 +152,8 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                                             </SelectItem>
                                         ) : availableTurmas && availableTurmas.length > 0 ? (
                                             availableTurmas.map((vaga, index) => {
-                                                const isPreferred = crianca.cmei1_preferencia === vaga.cmei || crianca.cmei2_preferencia === vaga.cmei;
+                                                // Se for remanejamento, não precisamos de destaque de preferência, pois já está filtrado
+                                                const isPreferred = !isRemanejamento && (crianca.cmei1_preferencia === vaga.cmei || crianca.cmei2_preferencia === vaga.cmei);
                                                 const label = `${vaga.cmei} - ${vaga.turma} (${vaga.vagas} vagas)`;
                                                 
                                                 // Valor combinado: cmei_id|turma_id|cmei_nome|turma_nome
@@ -179,12 +206,12 @@ const ConvocarModal = ({ crianca, onClose }: ConvocarModalProps) => {
                         ) : (
                             <Bell className="mr-2 h-4 w-4" />
                         )}
-                        {isReconvocacao ? 'Reconvocar Criança' : 'Convocar Criança'}
+                        {isRemanejamento ? 'Convocar para Remanejamento' : isReconvocacao ? 'Reconvocar Criança' : 'Convocar Criança'}
                     </Button>
                 </form>
             </Form>
             <DialogFooter className="text-xs text-muted-foreground pt-2">
-                A lista de vagas é filtrada automaticamente por compatibilidade de idade e preferências.
+                A lista de vagas é filtrada automaticamente por compatibilidade de idade e {isRemanejamento ? 'CMEI de destino.' : 'preferências.'}
             </DialogFooter>
         </DialogContent>
     );
