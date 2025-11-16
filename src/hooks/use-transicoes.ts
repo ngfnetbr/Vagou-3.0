@@ -8,7 +8,7 @@ import { format } from "date-fns";
 
 const TRANSICOES_QUERY_KEY = ["transicoes"];
 
-export type StatusTransicao = 'Remanejamento Interno' | 'Fila Reclassificada' | 'Manter Status';
+export type StatusTransicao = 'Remanejamento Interno' | 'Fila Reclassificada' | 'Manter Status' | 'Saída Final';
 
 // Tipagem para o resultado da classificação, incluindo campos de planejamento
 export interface CriancaClassificada extends Crianca {
@@ -26,20 +26,25 @@ export interface CriancaClassificada extends Crianca {
 // Função de classificação no frontend
 const classifyCriancasForTransition = (criancas: Crianca[]): CriancaClassificada[] => {
     
-    const activeCriancas = criancas.filter(c => 
+    // Inclui todos os status relevantes: ativos + status finais que representam saídas
+    const relevantCriancas = criancas.filter(c => 
         c.status === 'Matriculado' || 
         c.status === 'Matriculada' || 
         c.status === 'Fila de Espera' ||
-        c.status === 'Convocado'
+        c.status === 'Convocado' ||
+        c.status === 'Desistente' || // Incluído
+        c.status === 'Recusada' // Incluído
     );
 
-    return activeCriancas.map(crianca => {
+    return relevantCriancas.map(crianca => {
         let statusTransicao: StatusTransicao = 'Manter Status';
 
         if (crianca.status === 'Matriculado' || crianca.status === 'Matriculada') {
             statusTransicao = 'Remanejamento Interno';
         } else if (crianca.status === 'Fila de Espera' || crianca.status === 'Convocado') {
             statusTransicao = 'Fila Reclassificada';
+        } else if (crianca.status === 'Desistente' || crianca.status === 'Recusada') {
+            statusTransicao = 'Saída Final'; // Novo status de transição
         }
 
         return {
@@ -111,8 +116,8 @@ export function useTransicoes() {
                     newPlannedStatus = 'Convocado';
                 } 
                 // Se a criança já está matriculada, a realocação é uma MUDANÇA DE TURMA (mantém o status de matrícula).
-                else if (c.status === 'Matriculado' || c.status === 'Matriculada') {
-                    newPlannedStatus = c.status;
+                else if (c.status === 'Matriculado' || c.status === 'Matriculada' || c.statusTransicao === 'Saída Final') {
+                    newPlannedStatus = c.status; // Mantém o status atual (Matriculado/Desistente/Recusada)
                 } else {
                     // Fallback seguro
                     newPlannedStatus = 'Matriculado';
@@ -160,7 +165,7 @@ export function useTransicoes() {
                     newPlannedStatus = 'Convocado';
                 } 
                 // Se a criança já está matriculada, a realocação é uma MUDANÇA DE TURMA (mantém o status de matrícula).
-                else if (c.status === 'Matriculado' || c.status === 'Matriculada') {
+                else if (c.status === 'Matriculado' || c.status === 'Matriculada' || c.statusTransicao === 'Saída Final') {
                     newPlannedStatus = c.status;
                 } else {
                     // Fallback seguro
@@ -219,15 +224,23 @@ export function useTransicoes() {
         }
         
         // 2. Filtrar mudanças reais
-        const changesToApply = planningData.filter(c => 
+        const changesToApply = planningData.filter(c => {
+            // Se o status é Saída Final e não há planejamento, não há mudança a ser aplicada.
+            if (c.statusTransicao === 'Saída Final' && c.planned_status === undefined) {
+                return false;
+            }
+            
             // Consideramos mudança se o planned_status for definido E for diferente do status atual
-            (c.planned_status !== undefined && c.planned_status !== c.status) ||
+            const statusChanged = c.planned_status !== undefined && c.planned_status !== c.status;
+            
             // OU se a vaga planejada for diferente da vaga atual (e o status não for de saída)
-            (c.planned_status !== 'Desistente' && c.planned_status !== 'Recusada' && (
+            const vagaChanged = c.planned_status !== 'Desistente' && c.planned_status !== 'Recusada' && (
                 c.planned_cmei_id !== c.cmei_atual_id || 
                 c.planned_turma_id !== c.turma_atual_id
-            ))
-        );
+            );
+            
+            return statusChanged || vagaChanged;
+        });
         
         if (changesToApply.length === 0) {
             toast.info("Nenhuma alteração detectada no planejamento.");
@@ -241,6 +254,9 @@ export function useTransicoes() {
         
         for (const crianca of changesToApply) {
             const { id, planned_status, planned_cmei_id, planned_turma_id, planned_justificativa, planned_cmei_nome, planned_turma_nome } = crianca;
+            
+            // O status a ser aplicado é o planejado, ou o atual se for apenas realocação de vaga
+            const finalStatus = planned_status || crianca.status;
             
             // 1. Mudança de Status (Desistente/Concluinte/Fila/Convocado)
             if (planned_status !== crianca.status) {
@@ -262,7 +278,7 @@ export function useTransicoes() {
             
             // 2. Mudança de Vaga (Realocação)
             // Aplica realocação APENAS se o status for Matriculado/Matriculada E a vaga mudou
-            if ((planned_status === 'Matriculado' || planned_status === 'Matriculada') && 
+            if ((finalStatus === 'Matriculado' || finalStatus === 'Matriculada') && 
                 (planned_cmei_id !== crianca.cmei_atual_id || planned_turma_id !== crianca.turma_atual_id)) {
                 
                 if (planned_cmei_id && planned_turma_id && planned_cmei_nome && planned_turma_nome) {
