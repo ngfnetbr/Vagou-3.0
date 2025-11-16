@@ -3,17 +3,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Eye, RotateCcw, Trash2, ArrowRight, CheckCircle } from "lucide-react";
+import { MoreVertical, Eye, RotateCcw, Trash2, ArrowRight, CheckCircle, Users } from "lucide-react";
 import { CriancaClassificada, StatusTransicao } from "@/hooks/use-transicoes";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 
-type JustificativaAction = 'desistente' | 'concluinte'; // Alterado: 'transferir' removido, 'concluinte' adicionado
+type JustificativaAction = 'desistente' | 'concluinte';
 
 interface CmeiTransitionGroupProps {
     cmeiName: string;
-    criancas: CriancaClassificada[];
-    updatePlanning: (criancaId: string, newStatus: StatusTransicao) => void;
+    turmaGroups: { [turmaName: string]: CriancaClassificada[] }; // Novo prop
     isSaving: boolean;
     isExecuting: boolean;
     selectedIds: string[];
@@ -24,8 +24,7 @@ interface CmeiTransitionGroupProps {
 
 export const CmeiTransitionGroup = ({
     cmeiName,
-    criancas,
-    updatePlanning, // Mantido, mas não usado diretamente na tabela
+    turmaGroups,
     isSaving,
     isExecuting,
     selectedIds,
@@ -35,113 +34,108 @@ export const CmeiTransitionGroup = ({
 }: CmeiTransitionGroupProps) => {
     const navigate = useNavigate();
     
-    // Separa crianças matriculadas/convocadas (que têm CMEI atual) das que estão apenas na fila
-    const matriculados = criancas.filter(c => c.cmei_atual_id);
-    const fila = criancas.filter(c => !c.cmei_atual_id);
+    // Calcula o total de crianças no CMEI
+    const totalCriancas = Object.values(turmaGroups).flat().length;
+    const totalMatriculados = Object.entries(turmaGroups)
+        .filter(([turmaName]) => turmaName !== 'Fila de Espera')
+        .map(([, criancas]) => criancas.length)
+        .reduce((sum, count) => sum + count, 0);
     
-    // Combina e ordena para exibição (Matriculados primeiro)
-    const sortedCriancas = [...matriculados, ...fila];
+    const totalFila = turmaGroups['Fila de Espera']?.length || 0;
 
     return (
         <Card className="h-full">
             <CardHeader>
                 <CardTitle className="text-xl">{cmeiName}</CardTitle>
                 <CardDescription>
-                    {matriculados.length} alunos ativos e {fila.length} na fila de espera.
+                    {totalMatriculados} alunos ativos e {totalFila} na fila de espera.
                 </CardDescription>
             </CardHeader>
             <CardContent className="p-0 max-h-[70vh] overflow-y-auto">
-                <Table>
-                    <TableHeader className="sticky top-0 bg-card z-10 shadow-sm">
-                        <TableRow>
-                            <TableHead className="w-12">Sel.</TableHead>
-                            <TableHead>Criança</TableHead>
-                            <TableHead>Turma Atual</TableHead>
-                            <TableHead>Próxima Turma Base</TableHead>
-                            <TableHead className="text-right w-[80px]">Ações</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {sortedCriancas.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-16 text-center text-muted-foreground">
-                                    Nenhuma criança neste CMEI para transição.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            sortedCriancas.map(c => {
-                                const isMatriculado = c.status === 'Matriculado' || c.status === 'Matriculada' || c.status === 'Convocado';
-                                
-                                return (
-                                <TableRow key={c.id}>
-                                    <TableCell>
-                                        <Checkbox
-                                            checked={selectedIds.includes(c.id)}
-                                            onCheckedChange={() => toggleSelection(c.id)}
-                                            disabled={isExecuting || isSaving}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="font-medium">{c.nome}</div>
-                                    </TableCell>
-                                    <TableCell>
-                                        {isMatriculado && c.turmaNome ? (
-                                            <div className="text-sm font-medium">{c.turmaNome}</div>
-                                        ) : (
-                                            <div className="text-sm text-muted-foreground">Fila de Espera</div>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="secondary" className="text-xs">{c.turmaBaseProximoAno}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="sm">
-                                                    <MoreVertical className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => navigate(`/admin/criancas/${c.id}`)}>
-                                                    <Eye className="mr-2 h-4 w-4" />
-                                                    Ver Detalhes
-                                                </DropdownMenuItem>
-                                                
-                                                {/* Ação de Realocação (Mover para nova turma) */}
-                                                <DropdownMenuItem 
-                                                    onClick={() => handleRealocacaoIndividualClick(c)}
-                                                    disabled={!isMatriculado} // Só permite realocar se estiver matriculado/convocado
-                                                >
-                                                    <RotateCcw className="mr-2 h-4 w-4" />
-                                                    Realocar Vaga
-                                                </DropdownMenuItem>
-                                                
-                                                {/* Marcar Concluinte (Evasão) */}
-                                                <DropdownMenuItem 
-                                                    onClick={() => handleStatusIndividualClick(c, 'concluinte')}
-                                                    className="text-secondary focus:bg-secondary/10 focus:text-secondary"
-                                                >
-                                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                                    Marcar Concluinte
-                                                </DropdownMenuItem>
-                                                
-                                                {/* Marcar Desistente */}
-                                                <DropdownMenuItem 
-                                                    onClick={() => handleStatusIndividualClick(c, 'desistente')}
-                                                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                                >
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Marcar Desistente
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
+                
+                {Object.entries(turmaGroups).map(([turmaName, criancasList]) => (
+                    <div key={turmaName} className="mb-4">
+                        <div className="flex items-center gap-2 p-3 bg-muted/50 border-b border-t border-border">
+                            <Users className="h-4 w-4 text-primary" />
+                            <h3 className="font-semibold text-sm text-foreground">
+                                {turmaName} ({criancasList.length} crianças)
+                            </h3>
+                        </div>
+                        
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-12">Sel.</TableHead>
+                                    <TableHead>Criança</TableHead>
+                                    <TableHead className="text-right w-[80px]">Ações</TableHead>
                                 </TableRow>
-                                );
-                            })
-                        )}
-                    </TableBody>
-                </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {criancasList.map(c => {
+                                    const isMatriculado = c.status === 'Matriculado' || c.status === 'Matriculada' || c.status === 'Convocado';
+                                    
+                                    return (
+                                    <TableRow key={c.id}>
+                                        <TableCell>
+                                            <Checkbox
+                                                checked={selectedIds.includes(c.id)}
+                                                onCheckedChange={() => toggleSelection(c.id)}
+                                                disabled={isExecuting || isSaving}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="font-medium">{c.nome}</div>
+                                            <div className="text-xs text-muted-foreground">Próxima Turma Base: <Badge variant="secondary" className="text-xs">{c.turmaBaseProximoAno}</Badge></div>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="sm">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => navigate(`/admin/criancas/${c.id}`)}>
+                                                        <Eye className="mr-2 h-4 w-4" />
+                                                        Ver Detalhes
+                                                    </DropdownMenuItem>
+                                                    
+                                                    {/* Ação de Realocação (Mover para nova turma) */}
+                                                    <DropdownMenuItem 
+                                                        onClick={() => handleRealocacaoIndividualClick(c)}
+                                                        disabled={!isMatriculado} // Só permite realocar se estiver matriculado/convocado
+                                                    >
+                                                        <RotateCcw className="mr-2 h-4 w-4" />
+                                                        Realocar Vaga
+                                                    </DropdownMenuItem>
+                                                    
+                                                    {/* Marcar Concluinte (Evasão) */}
+                                                    <DropdownMenuItem 
+                                                        onClick={() => handleStatusIndividualClick(c, 'concluinte')}
+                                                        className="text-secondary focus:bg-secondary/10 focus:text-secondary"
+                                                    >
+                                                        <CheckCircle className="mr-2 h-4 w-4" />
+                                                        Marcar Concluinte
+                                                    </DropdownMenuItem>
+                                                    
+                                                    {/* Marcar Desistente */}
+                                                    <DropdownMenuItem 
+                                                        onClick={() => handleStatusIndividualClick(c, 'desistente')}
+                                                        className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Marcar Desistente
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
+                ))}
             </CardContent>
         </Card>
     );

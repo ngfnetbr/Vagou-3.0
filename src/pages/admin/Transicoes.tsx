@@ -2,7 +2,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Loader2, ArrowRight, CheckCircle, Save, RotateCcw, Trash2 } from "lucide-react";
+import { AlertCircle, Loader2, ArrowRight, CheckCircle, Save, RotateCcw, Trash2, Users } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useTransicoes, CriancaClassificada } from "@/hooks/use-transicoes";
 import { format } from "date-fns";
@@ -27,7 +27,14 @@ import { useCriancas } from "@/hooks/use-criancas";
 import { ConvocationData } from "@/integrations/supabase/types";
 import { CmeiTransitionGroup } from "@/components/transicoes/CmeiTransitionGroup";
 
-type JustificativaAction = 'desistente' | 'concluinte'; // Alterado: 'transferir' removido, 'concluinte' adicionado
+type JustificativaAction = 'desistente' | 'concluinte';
+
+// Estrutura de agrupamento: CMEI -> Turma -> Lista de Crianças
+interface GroupedData {
+    [cmeiName: string]: {
+        [turmaName: string]: CriancaClassificada[];
+    };
+}
 
 const Transicoes = () => {
   const currentYear = new Date().getFullYear();
@@ -37,7 +44,6 @@ const Transicoes = () => {
     isLoading, 
     isExecuting, 
     executeTransition, 
-    // updatePlanning, // Removido, pois a coluna de edição foi removida
     savePlanning, 
     isSaving 
   } = useTransicoes();
@@ -47,7 +53,7 @@ const Transicoes = () => {
     isRealocating, 
     marcarDesistente, 
     isMarkingDesistente,
-    transferirCrianca, // Mantido para a ação 'transferir' no modal de justificativa
+    transferirCrianca,
     isTransferring,
   } = useCriancas();
 
@@ -74,27 +80,23 @@ const Transicoes = () => {
   
   // --- Data Processing ---
   
-  // 1. Grouping by CMEI
-  const groupedByCmei = useMemo(() => {
+  // 1. Grouping by CMEI and then by Turma
+  const groupedData: GroupedData = useMemo(() => {
     return classificacao.reduce((acc, crianca) => {
         // Se a criança não tem CMEI atual, ela está na fila geral.
         const cmeiName = crianca.cmeiNome || 'Fila Geral / Sem CMEI Atual'; 
+        // Se a criança não tem Turma atual, ela está na fila de espera (dentro do CMEI ou Geral)
+        const turmaName = crianca.turmaNome || 'Fila de Espera'; 
+        
         if (!acc[cmeiName]) {
-            acc[cmeiName] = [];
+            acc[cmeiName] = {};
         }
-        acc[cmeiName].push(crianca);
+        if (!acc[cmeiName][turmaName]) {
+            acc[cmeiName][turmaName] = [];
+        }
+        acc[cmeiName][turmaName].push(crianca);
         return acc;
-    }, {} as Record<string, CriancaClassificada[]>);
-  }, [classificacao]);
-  
-  // 2. Recalculate stats based on the full classification list (Apenas para o resumo)
-  const { totalAtivos, matriculados, fila, concluintes } = useMemo(() => {
-    const totalAtivos = classificacao.length;
-    const matriculados = classificacao.filter(c => c.status === 'Matriculado' || c.status === 'Matriculada' || c.status === 'Remanejamento Solicitado');
-    const fila = classificacao.filter(c => c.status === 'Fila de Espera' || c.status === 'Convocado');
-    const concluintes = classificacao.filter(c => c.statusTransicao === 'Concluinte');
-    
-    return { totalAtivos, matriculados, fila, concluintes };
+    }, {} as GroupedData);
   }, [classificacao]);
   
   // --- Handlers de Ação em Massa ---
@@ -147,8 +149,6 @@ const Transicoes = () => {
           if (currentJustificativaAction === 'desistente') {
               await marcarDesistente({ id, justificativa });
           } else if (currentJustificativaAction === 'concluinte') {
-              // Para 'Concluinte', usamos a função de Transferir (que marca como Desistente e limpa a vaga)
-              // Em um sistema real, 'Concluinte' teria um status próprio, mas aqui usamos Transferir como proxy para 'saída do sistema'.
               await transferirCrianca({ id, justificativa: `Concluinte (Evasão). ${justificativa}` });
           }
           
@@ -177,7 +177,7 @@ const Transicoes = () => {
           title: `Marcar ${criancaNome} como Concluinte (Evasão)`,
           description: "Confirme a conclusão do ciclo no CMEI. A matrícula será encerrada e a criança marcada como desistente/transferida.",
           actionLabel: "Confirmar Conclusão",
-          isPending: isTransferring, // Usamos isTransferring como proxy para a ação de saída
+          isPending: isTransferring,
           actionVariant: 'secondary' as const,
         };
       default:
@@ -318,12 +318,11 @@ const Transicoes = () => {
         </CardDescription>
 
         <div className="space-y-6"> 
-            {Object.entries(groupedByCmei).map(([cmeiName, criancasList]) => (
+            {Object.entries(groupedData).map(([cmeiName, turmaGroups]) => (
                 <div key={cmeiName} className="w-full">
                     <CmeiTransitionGroup
                         cmeiName={cmeiName}
-                        criancas={criancasList}
-                        updatePlanning={() => {}} // Não é mais usado, mas mantemos a prop para evitar erro de tipo
+                        turmaGroups={turmaGroups} // Passando o novo agrupamento
                         isSaving={isSaving}
                         isExecuting={isExecuting}
                         selectedIds={selectedIds}
