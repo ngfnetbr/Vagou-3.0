@@ -76,11 +76,11 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-[380px] p-0 max-h-[90vh]" // Adicionado max-h-[90vh]
+        className="w-[380px] p-0 max-h-[90vh] sm:w-[400px]" // Aumentando a largura e mantendo max-h
         align="start"
-        side="bottom" // Força a abertura para baixo, se houver espaço
+        side="bottom" 
       >
-        <ScrollArea className="h-auto max-h-[400px]"> {/* h-auto para se ajustar ao PopoverContent */}
+        <ScrollArea className="h-auto max-h-[50vh]"> {/* Aumentando a altura máxima para 50vh */}
           <div className="p-1">
             {allAvailableTurmas.length === 0 && !isLoading ? (
               <div className="p-4 text-center text-muted-foreground text-sm">
