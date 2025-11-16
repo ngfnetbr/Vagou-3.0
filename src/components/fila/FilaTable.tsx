@@ -84,6 +84,10 @@ export const FilaTable = ({
                 const isConvocado = item.status === "Convocado";
                 const isFilaEspera = item.status === "Fila de Espera";
                 const isRemanejamento = item.status === "Remanejamento Solicitado";
+                
+                // NOVO: Verifica se é uma convocação de remanejamento
+                const isRemanejamentoAtivo = isRemanejamento || (isConvocado && !!item.cmei_remanejamento_id);
+                
                 const deadlineExpired = isDeadlineExpired(item.convocacao_deadline);
                 
                 // --- START: Age Calculation Logic ---
@@ -96,9 +100,9 @@ export const FilaTable = ({
                 const isPenalized = isFilaEspera && !!item.data_penalidade;
                 
                 return (
-                  <TableRow key={item.id} className={isConvocado ? "bg-primary/5 hover:bg-primary/10" : isRemanejamento ? "bg-accent/5 hover:bg-accent/10" : ""}>
+                  <TableRow key={item.id} className={isConvocado ? "bg-primary/5 hover:bg-primary/10" : isRemanejamentoAtivo ? "bg-accent/5 hover:bg-accent/10" : ""}>
                     <TableCell className="font-bold text-primary">
-                        {isRemanejamento ? (
+                        {isRemanejamentoAtivo ? (
                             <Badge className="bg-accent text-accent-foreground w-fit flex justify-center items-center">Remanej.</Badge>
                         ) : isConvocado ? (
                             <Badge className="bg-primary text-primary-foreground w-fit flex justify-center items-center">Conv.</Badge>
@@ -131,7 +135,7 @@ export const FilaTable = ({
                     <TableCell className="text-center">
                         {isConvocado && item.convocacao_deadline ? (
                             <CountdownTimer deadline={item.convocacao_deadline} />
-                        ) : isRemanejamento ? (
+                        ) : isRemanejamentoAtivo ? (
                             <div className="flex flex-col items-center">
                                 <Badge 
                                     variant="outline" 
