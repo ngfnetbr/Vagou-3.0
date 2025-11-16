@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Crianca } from "@/integrations/supabase/types";
-import { fetchCriancas, apiMarcarDesistente, apiTransferirCrianca, apiMassRealocate, apiMarcarFimDeFila } from "@/integrations/supabase/criancas-api";
+import { fetchCriancas, apiMarcarDesistente, apiTransferirCrianca, apiMassRealocate, apiMarcarFimDeFila, apiConvocarCrianca } from "@/integrations/supabase/criancas-api";
 import { toast } from "sonner";
 import { useMemo, useState, useEffect } from "react";
 import { ConvocationData } from "@/integrations/supabase/types";
+import { format } from "date-fns"; // Importação adicionada
 
 const TRANSICOES_QUERY_KEY = ["transicoes"];
 
@@ -103,11 +104,20 @@ export function useTransicoes() {
     const updateCriancaVagaInPlanning = (criancaId: string, cmei_id: string, turma_id: string, cmei_nome: string, turma_nome: string) => {
         setPlanningData(prev => prev.map(c => {
             if (c.id === criancaId) {
-                // Determina o status planejado: se já estava matriculado, mantém o status de matrícula (Matriculado/Matriculada).
-                // Se estava na fila/convocado, força para Matriculado.
-                const newPlannedStatus = (c.status === 'Matriculado' || c.status === 'Matriculada') 
-                    ? c.status 
-                    : 'Matriculado';
+                
+                let newPlannedStatus: Crianca['status'];
+                
+                // Se a criança está na fila ou convocada, a realocação é uma CONVOCAÇÃO.
+                if (c.status === 'Fila de Espera' || c.status === 'Convocado') {
+                    newPlannedStatus = 'Convocado';
+                } 
+                // Se a criança já está matriculada, a realocação é uma MUDANÇA DE TURMA (mantém o status de matrícula).
+                else if (c.status === 'Matriculado' || c.status === 'Matriculada') {
+                    newPlannedStatus = c.status;
+                } else {
+                    // Fallback seguro
+                    newPlannedStatus = 'Matriculado';
+                }
                     
                 return {
                     ...c,
@@ -143,10 +153,20 @@ export function useTransicoes() {
     const massUpdateVagaInPlanning = (criancaIds: string[], cmei_id: string, turma_id: string, cmei_nome: string, turma_nome: string) => {
         setPlanningData(prev => prev.map(c => {
             if (criancaIds.includes(c.id)) {
-                // Mantém o status de matrícula se já estiver matriculado, senão força para Matriculado
-                const newPlannedStatus = (c.status === 'Matriculado' || c.status === 'Matriculada') 
-                    ? c.status 
-                    : 'Matriculado';
+                
+                let newPlannedStatus: Crianca['status'];
+                
+                // Se a criança está na fila ou convocada, a realocação é uma CONVOCAÇÃO.
+                if (c.status === 'Fila de Espera' || c.status === 'Convocado') {
+                    newPlannedStatus = 'Convocado';
+                } 
+                // Se a criança já está matriculada, a realocação é uma MUDANÇA DE TURMA (mantém o status de matrícula).
+                else if (c.status === 'Matriculado' || c.status === 'Matriculada') {
+                    newPlannedStatus = c.status;
+                } else {
+                    // Fallback seguro
+                    newPlannedStatus = 'Matriculado';
+                }
                     
                 return {
                     ...c,
@@ -214,6 +234,13 @@ export function useTransicoes() {
                 } else if (planned_status === 'Fila de Espera') {
                     // Reativação na fila (sem penalidade, pois é reclassificação)
                     promises.push(apiMarcarFimDeFila(id, justificativa)); // Usamos Fim de Fila para garantir reclassificação
+                } else if (planned_status === 'Convocado') {
+                    // Se o status planejado é Convocado, precisamos de cmei_id e turma_id
+                    if (planned_cmei_id && planned_turma_id && planned_cmei_nome && planned_turma_nome) {
+                        // Nota: A convocação precisa de um deadline. Usaremos um prazo padrão de 7 dias.
+                        const deadline = format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+                        promises.push(apiConvocarCrianca(id, { cmei_id: planned_cmei_id, turma_id: planned_turma_id }, planned_cmei_nome, planned_turma_nome, deadline));
+                    }
                 }
             } 
             
