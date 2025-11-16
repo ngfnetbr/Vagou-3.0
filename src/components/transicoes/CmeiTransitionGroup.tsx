@@ -91,21 +91,12 @@ export const CmeiTransitionGroup = ({
     const getPlannedStatus = (crianca: CriancaClassificada) => {
         // Se houver um status planejado, exibe-o
         if (crianca.planned_status) {
-            // Se estiver no grupo de Saídas Planejadas, exibe o status de saída
-            if (cmeiName === 'Saídas Planejadas') {
-                // Se for uma realocação de Saída Final, o status planejado é Convocado
-                if (crianca.planned_status === 'Convocado') {
-                    return getStatusBadge('Convocado');
-                }
-                // Caso contrário, exibe o status de saída planejado (Desistente/Recusada)
-                return getStatusBadge(crianca.planned_status);
+            // Se for uma realocação de Saída Final, o status planejado é Convocado
+            if (crianca.planned_status === 'Convocado') {
+                return getStatusBadge('Convocado');
             }
             
-            // Se for Remanejamento Interno e o status planejado for Desistente, exibe o badge de Desistente
-            if (crianca.statusTransicao === 'Remanejamento Interno' && crianca.planned_status === 'Desistente') {
-                return getStatusBadge('Desistente');
-            }
-            
+            // Caso contrário, exibe o status de saída planejado (Desistente/Recusada)
             return getStatusBadge(crianca.planned_status);
         }
         
@@ -173,11 +164,11 @@ export const CmeiTransitionGroup = ({
                                     const hasPlannedChange = !!c.planned_status || !!c.planned_cmei_id || !!c.planned_turma_id;
                                     
                                     // Determina se as ações de Realocação e Conclusão devem ser exibidas
-                                    // showRealocacao: Permite realocação para Remanejamento Interno E Saídas Planejadas (Desistente/Recusada)
-                                    const showRealocacao = cmeiName !== 'Fila Geral';
+                                    // Realocação: Permitida para Remanejamento Interno E Fila Reclassificada
+                                    const showRealocacao = c.statusTransicao === 'Remanejamento Interno' || c.statusTransicao === 'Fila Reclassificada';
                                     
-                                    // showConclusao: Permite marcar Desistente/Concluinte para Remanejamento Interno
-                                    const showConclusao = cmeiName === 'Remanejamento Interno';
+                                    // Conclusão/Desistência: Permitida para Remanejamento Interno
+                                    const showConclusao = c.statusTransicao === 'Remanejamento Interno';
                                     
                                     return (
                                     <TableRow key={c.id} className={cn(hasPlannedChange && "bg-yellow-50/50 hover:bg-yellow-50/70", isSelected && "bg-primary/10 hover:bg-primary/15")}>
