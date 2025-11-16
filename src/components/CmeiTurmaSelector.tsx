@@ -76,7 +76,7 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-[var(--radix-popover-trigger-width)] p-0" // Removendo max-h-[90vh]
+        className="w-[var(--radix-popover-trigger-width)] p-0 overflow-hidden" // Adicionado overflow-hidden para PopoverContent
         align="start"
         side="bottom" 
       >
@@ -93,8 +93,8 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
                   <AccordionItem key={cmeiName} value={cmeiName} className="border-b">
                     <AccordionTrigger className="px-3 py-2 text-sm font-semibold hover:no-underline">
                       <div className="flex items-center justify-between w-full pr-2">
-                        <span>{cmeiName}</span>
-                        <Badge variant="secondary" className="text-xs">
+                        <span className="truncate">{cmeiName}</span> {/* Adicionado truncate aqui */}
+                        <Badge variant="secondary" className="text-xs flex-shrink-0">
                             {turmas.reduce((sum, t) => sum + t.vagas, 0)} vagas
                         </Badge>
                       </div>
