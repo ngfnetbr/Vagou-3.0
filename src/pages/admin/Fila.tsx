@@ -145,8 +145,13 @@ const Fila = () => {
     const comPrioridade = criancas.filter(c => c.status === "Fila de Espera" && c.programas_sociais).length;
     const totalConvocados = criancas.filter(c => c.status === "Convocado").length;
     
-    // 4. Histórico: Apenas crianças que saíram da fila (Desistente/Recusada)
-    const historico = criancas.filter(c => c.status === "Desistente" || c.status === "Recusada");
+    // 4. Histórico: Crianças que saíram da fila (Matriculado/Matriculada, Desistente, Recusada)
+    const historico = criancas.filter(c => 
+        c.status === "Desistente" || 
+        c.status === "Recusada" ||
+        c.status === "Matriculado" ||
+        c.status === "Matriculada"
+    );
 
     return { 
         filteredFila: [...convocados, ...sortedFila], 
