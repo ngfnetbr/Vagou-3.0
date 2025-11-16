@@ -88,19 +88,19 @@ export async function seedTurmas(cmeis: any[], turmasBase: any[]) {
   // Cria 2 turmas de cada modelo em cada CMEI (Manhã e Tarde)
   cmeis.forEach(cmei => {
     turmasBase.forEach(base => {
-      // Turma Manhã - Sala A
+      // Turma Sala A
       turmasToInsert.push({
         cmei_id: cmei.id,
         turma_base_id: base.id,
-        nome: `${base.nome} - Sala A (Manhã)`,
+        nome: `${base.nome} - Sala A`, // Nome sem (Manhã)
         sala: "A",
         capacidade: Math.floor(cmei.capacidade / (turmasBase.length * 2)), // Distribui a capacidade
       });
-      // Turma Tarde - Sala B
+      // Turma Sala B
       turmasToInsert.push({
         cmei_id: cmei.id,
         turma_base_id: base.id,
-        nome: `${base.nome} - Sala B (Tarde)`,
+        nome: `${base.nome} - Sala B`, // Nome sem (Tarde)
         sala: "B",
         capacidade: Math.floor(cmei.capacidade / (turmasBase.length * 2)),
       });
