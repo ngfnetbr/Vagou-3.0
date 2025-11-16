@@ -64,7 +64,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ deadline }) => {
     : "bg-accent/20 text-foreground";
 
   return (
-    <div className={cn("flex flex-col items-start text-xs font-medium px-2 py-1 rounded w-fit mx-auto", className)}>
+    <div className={cn("flex flex-col items-center text-xs font-medium px-2 py-1 rounded w-fit mx-auto", className)}>
       <div className="flex items-center gap-1">
         <Clock className="h-3 w-3" />
         <span className="font-bold">{timeString}</span>
