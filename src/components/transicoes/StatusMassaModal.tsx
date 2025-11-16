@@ -6,23 +6,28 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
+import { useMassActions } from "@/hooks/use-mass-actions";
+import { Crianca } from "@/integrations/supabase/types";
 
 interface StatusMassaModalProps {
-    selectedCount: number;
+    selectedIds: string[]; // Recebe os IDs selecionados
     onClose: () => void;
 }
 
-const statusOptions = [
+const statusOptions: { value: Crianca['status'], label: string }[] = [
     { value: "Desistente", label: "Desistente" },
     { value: "Recusada", label: "Recusada" },
-    { value: "Fim de Fila", label: "Fim de Fila (Penalidade)" },
+    { value: "Fila de Espera", label: "Fim de Fila (Penalidade)" }, // Usamos Fila de Espera, mas o API aplica a penalidade
     { value: "Remanejamento Solicitado", label: "Remanejamento Solicitado" },
 ];
 
-const StatusMassaModal = ({ selectedCount, onClose }: StatusMassaModalProps) => {
-    const [selectedStatus, setSelectedStatus] = useState("");
+const StatusMassaModal = ({ selectedIds, onClose }: StatusMassaModalProps) => {
+    const { massStatusUpdate, isMassStatusUpdating } = useMassActions();
+    
+    const [selectedStatus, setSelectedStatus] = useState<Crianca['status'] | ''>("");
     const [justificativa, setJustificativa] = useState("");
-    const [isProcessing, setIsProcessing] = useState(false);
+    
+    const isProcessing = isMassStatusUpdating;
 
     const handleConfirm = async () => {
         if (!selectedStatus) {
@@ -34,16 +39,16 @@ const StatusMassaModal = ({ selectedCount, onClose }: StatusMassaModalProps) => 
             return;
         }
         
-        setIsProcessing(true);
-        // Simulação de API call para mudança de status em massa
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        toast.success(`Status de ${selectedCount} crianças alterado!`, {
-            description: `Novo status: ${selectedStatus}.`,
-        });
-        
-        setIsProcessing(false);
-        onClose();
+        try {
+            await massStatusUpdate({
+                criancaIds: selectedIds,
+                status: selectedStatus as Crianca['status'],
+                justificativa,
+            });
+            onClose();
+        } catch (e) {
+            // Erro tratado pelo hook
+        }
     };
 
     return (
@@ -54,14 +59,14 @@ const StatusMassaModal = ({ selectedCount, onClose }: StatusMassaModalProps) => 
                     <DialogTitle>Mudar Status em Massa</DialogTitle>
                 </div>
                 <DialogDescription>
-                    Altere o status de <span className="font-semibold">{selectedCount} crianças</span> e forneça uma justificativa.
+                    Altere o status de <span className="font-semibold">{selectedIds.length} crianças</span> e forneça uma justificativa.
                 </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4 py-4">
                 <div className="space-y-2">
                     <Label htmlFor="novo-status">Novo Status *</Label>
-                    <Select onValueChange={setSelectedStatus} value={selectedStatus} disabled={isProcessing}>
+                    <Select onValueChange={(value) => setSelectedStatus(value as Crianca['status'])} value={selectedStatus} disabled={isProcessing}>
                         <SelectTrigger id="novo-status">
                             <SelectValue placeholder="Selecione o Status" />
                         </SelectTrigger>

@@ -3,41 +3,66 @@ import { Button } from "@/components/ui/button";
 import { RotateCcw, Loader2, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
+import { useMassActions } from "@/hooks/use-mass-actions";
+import { useTurmas } from "@/hooks/use-turmas";
+import { useCMEIs } from "@/hooks/use-cmeis";
 
 interface RealocacaoMassaModalProps {
-    selectedCount: number;
+    selectedIds: string[]; // Recebe os IDs selecionados
     onClose: () => void;
 }
 
-// Mock de Turmas (em um ambiente real, isso viria de um hook)
-const mockTurmas = [
-    { id: "t1", nome: "Infantil 1 - Sala A (CMEI Centro)" },
-    { id: "t2", nome: "Infantil 2 - Sala B (CMEI Norte)" },
-    { id: "t3", nome: "Infantil 3 - Sala A (CMEI Sul)" },
-];
+const RealocacaoMassaModal = ({ selectedIds, onClose }: RealocacaoMassaModalProps) => {
+    const { massRealocate, isMassRealocating } = useMassActions();
+    const { turmas, isLoading: isLoadingTurmas } = useTurmas();
+    const { cmeis, isLoading: isLoadingCmeis } = useCMEIs();
+    
+    const [selectedVaga, setSelectedVaga] = useState("");
+    
+    const isProcessing = isMassRealocating || isLoadingTurmas || isLoadingCmeis;
 
-const RealocacaoMassaModal = ({ selectedCount, onClose }: RealocacaoMassaModalProps) => {
-    const [selectedTurma, setSelectedTurma] = useState("");
-    const [isProcessing, setIsProcessing] = useState(false);
+    const availableTurmas = useMemo(() => {
+        if (!turmas || !cmeis) return [];
+        
+        const cmeiMap = new Map(cmeis.map(c => [c.id, c.nome]));
+        
+        return turmas.map(t => ({
+            id: t.id,
+            cmei_id: t.cmei_id,
+            nome: `${t.nome} (${cmeiMap.get(t.cmei_id) || 'CMEI Desconhecido'})`,
+            // Valor combinado: turma_id|cmei_id|turma_nome|cmei_nome
+            value: `${t.id}|${t.cmei_id}|${t.nome}|${cmeiMap.get(t.cmei_id) || 'CMEI Desconhecido'}`,
+        }));
+    }, [turmas, cmeis]);
 
     const handleConfirm = async () => {
-        if (!selectedTurma) {
+        if (!selectedVaga) {
             toast.error("Selecione a turma de destino.");
             return;
         }
         
-        setIsProcessing(true);
-        // Simulação de API call para realocação em massa
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Valor combinado: turma_id|cmei_id|turma_nome|cmei_nome
+        const [turma_id, cmei_id, turma_nome, cmei_nome] = selectedVaga.split('|');
         
-        toast.success(`Realocação de ${selectedCount} crianças concluída!`, {
-            description: `Movidas para a turma ${mockTurmas.find(t => t.id === selectedTurma)?.nome}.`,
-        });
+        if (!turma_id || !cmei_id) {
+            toast.error("Erro de seleção. Tente novamente.");
+            return;
+        }
         
-        setIsProcessing(false);
-        onClose();
+        try {
+            await massRealocate({
+                criancaIds: selectedIds,
+                cmei_id,
+                turma_id,
+                cmeiNome: cmei_nome,
+                turmaNome: turma_nome,
+            });
+            onClose();
+        } catch (e) {
+            // Erro tratado pelo hook
+        }
     };
 
     return (
@@ -48,20 +73,20 @@ const RealocacaoMassaModal = ({ selectedCount, onClose }: RealocacaoMassaModalPr
                     <DialogTitle>Realocação em Massa</DialogTitle>
                 </div>
                 <DialogDescription>
-                    Mova <span className="font-semibold">{selectedCount} crianças</span> para uma nova turma.
+                    Mova <span className="font-semibold">{selectedIds.length} crianças</span> para uma nova turma.
                 </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4 py-4">
                 <div className="space-y-2">
                     <Label htmlFor="turma-destino">Turma de Destino *</Label>
-                    <Select onValueChange={setSelectedTurma} value={selectedTurma} disabled={isProcessing}>
+                    <Select onValueChange={setSelectedVaga} value={selectedVaga} disabled={isProcessing}>
                         <SelectTrigger id="turma-destino">
-                            <SelectValue placeholder="Selecione a Turma" />
+                            <SelectValue placeholder={isLoadingTurmas ? "Carregando turmas..." : "Selecione a Turma"} />
                         </SelectTrigger>
                         <SelectContent>
-                            {mockTurmas.map(turma => (
-                                <SelectItem key={turma.id} value={turma.id}>
+                            {availableTurmas.map(turma => (
+                                <SelectItem key={turma.id} value={turma.value}>
                                     {turma.nome}
                                 </SelectItem>
                             ))}
@@ -79,7 +104,7 @@ const RealocacaoMassaModal = ({ selectedCount, onClose }: RealocacaoMassaModalPr
                     type="button" 
                     className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
                     onClick={handleConfirm}
-                    disabled={isProcessing || !selectedTurma}
+                    disabled={isProcessing || !selectedVaga}
                 >
                     {isProcessing ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

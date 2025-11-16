@@ -392,3 +392,78 @@ export const apiSolicitarRemanejamento = async (criancaId: string, justificativa
         usuario: user,
     });
 };
+
+// --- NOVAS FUNÇÕES DE AÇÃO EM MASSA ---
+
+export interface MassRealocationData {
+    criancaIds: string[];
+    cmei_id: string;
+    turma_id: string;
+    cmeiNome: string;
+    turmaNome: string;
+}
+
+export const apiMassRealocate = async (data: MassRealocationData) => {
+    const user = await getAdminUser();
+    
+    const { error } = await supabase
+        .from('criancas')
+        .update({
+            cmei_atual_id: data.cmei_id,
+            turma_atual_id: data.turma_id,
+        })
+        .in('id', data.criancaIds);
+
+    if (error) {
+        throw new Error(`Erro ao realocar crianças em massa: ${error.message}`);
+    }
+    
+    await insertHistoricoEntry({
+        crianca_id: 'sistema', // Usamos 'sistema' ou um ID genérico para ações em massa
+        acao: "Realocação em Massa",
+        detalhes: `Realocação de ${data.criancaIds.length} crianças para ${data.cmeiNome} - ${data.turmaNome}.`,
+        usuario: user,
+    });
+};
+
+export interface MassStatusUpdateData {
+    criancaIds: string[];
+    status: Crianca['status'];
+    justificativa: string;
+}
+
+export const apiMassStatusUpdate = async (data: MassStatusUpdateData) => {
+    const user = await getAdminUser();
+    
+    let updatePayload: Partial<Crianca> = {
+        status: data.status,
+    };
+    
+    // Limpa campos de vaga/fila se o status for final
+    if (['Desistente', 'Recusada', 'Fila de Espera'].includes(data.status)) {
+        updatePayload = {
+            ...updatePayload,
+            cmei_atual_id: null,
+            turma_atual_id: null,
+            posicao_fila: null,
+            convocacao_deadline: null,
+            data_penalidade: data.status === 'Fila de Espera' ? new Date().toISOString() : null, // Aplica penalidade se for Fim de Fila
+        };
+    }
+
+    const { error } = await supabase
+        .from('criancas')
+        .update(updatePayload)
+        .in('id', data.criancaIds);
+
+    if (error) {
+        throw new Error(`Erro ao atualizar status em massa: ${error.message}`);
+    }
+    
+    await insertHistoricoEntry({
+        crianca_id: 'sistema',
+        acao: `Status em Massa: ${data.status}`,
+        detalhes: `Status de ${data.criancaIds.length} crianças alterado para ${data.status}. Justificativa: ${data.justificativa}`,
+        usuario: user,
+    });
+};

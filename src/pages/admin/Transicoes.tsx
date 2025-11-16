@@ -403,14 +403,14 @@ const Transicoes = () => {
       {/* Modais de Ação em Massa */}
       <Dialog open={isRealocacaoMassaModalOpen} onOpenChange={setIsRealocacaoMassaModalOpen}>
         <RealocacaoMassaModal 
-            selectedCount={selectedIds.length}
+            selectedIds={selectedIds}
             onClose={handleMassModalClose}
         />
       </Dialog>
       
       <Dialog open={isStatusMassaModalOpen} onOpenChange={setIsStatusMassaModalOpen}>
         <StatusMassaModal 
-            selectedCount={selectedIds.length}
+            selectedIds={selectedIds}
             onClose={handleMassModalClose}
         />
       </Dialog>

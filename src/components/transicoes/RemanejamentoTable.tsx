@@ -173,7 +173,7 @@ const RemanejamentoTable = ({
                                     </TableCell>
                                 </TableRow>
                                 );
-                            })}
+                            })
                         )}
                     </TableBody>
                 </Table>
