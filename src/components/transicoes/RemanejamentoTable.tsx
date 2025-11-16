@@ -2,14 +2,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CriancaClassificada, StatusTransicao } from "@/hooks/use-transicoes";
-import { Users, ArrowRight, CheckCircle, ListOrdered, GraduationCap, XCircle, MoreVertical, Eye, RotateCcw } from "lucide-react";
+import { Users, ArrowRight, CheckCircle, ListOrdered, GraduationCap, XCircle, MoreVertical, Eye, RotateCcw, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner"; // Importação adicionada
+import { toast } from "sonner";
+
+type JustificativaAction = 'desistente' | 'transferir';
 
 interface RemanejamentoTableProps {
     title: string;
@@ -21,6 +23,8 @@ interface RemanejamentoTableProps {
     selectedIds: string[];
     toggleSelection: (id: string) => void;
     toggleAllSelection: (ids: string[]) => void;
+    handleRealocacaoIndividualClick: (crianca: CriancaClassificada) => void;
+    handleStatusIndividualClick: (crianca: CriancaClassificada, action: JustificativaAction) => void;
 }
 
 const statusOptions: { value: StatusTransicao, label: string }[] = [
@@ -30,16 +34,7 @@ const statusOptions: { value: StatusTransicao, label: string }[] = [
     { value: 'Manter Status', label: 'Manter Status Atual' },
 ];
 
-const getStatusColor = (status: StatusTransicao) => {
-    switch (status) {
-        case 'Concluinte': return "bg-destructive/20 text-destructive";
-        case 'Remanejamento Interno': return "bg-secondary/20 text-secondary";
-        case 'Fila Reclassificada': return "bg-accent/20 text-foreground";
-        default: return "bg-muted/50 text-muted-foreground";
-    }
-};
-
-export const RemanejamentoTable = ({ 
+const RemanejamentoTable = ({ 
     title, 
     icon: Icon, 
     data, 
@@ -49,11 +44,13 @@ export const RemanejamentoTable = ({
     selectedIds,
     toggleSelection,
     toggleAllSelection,
+    handleRealocacaoIndividualClick,
+    handleStatusIndividualClick,
 }: RemanejamentoTableProps) => {
     const navigate = useNavigate();
     const allIds = useMemo(() => data.map(c => c.id), [data]);
     const isAllSelected = allIds.length > 0 && allIds.every(id => selectedIds.includes(id));
-    const isIndeterminate = selectedIds.length > 0 && !isAllSelected;
+    // const isIndeterminate = selectedIds.length > 0 && !isAllSelected; // Não usado
 
     return (
         <Card className="h-full">
@@ -89,7 +86,10 @@ export const RemanejamentoTable = ({
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            data.map(c => (
+                            data.map(c => {
+                                const isMatriculado = c.status === 'Matriculado' || c.status === 'Matriculada';
+                                
+                                return (
                                 <TableRow key={c.id}>
                                     <TableCell>
                                         <Checkbox
@@ -142,15 +142,38 @@ export const RemanejamentoTable = ({
                                                     <Eye className="mr-2 h-4 w-4" />
                                                     Ver Detalhes
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => toast.info("Abrir modal de Realocação individual...")}>
+                                                
+                                                {/* Ação de Realocação (Mover para nova turma) */}
+                                                <DropdownMenuItem 
+                                                    onClick={() => handleRealocacaoIndividualClick(c)}
+                                                    disabled={!isMatriculado} // Só permite realocar se estiver matriculado
+                                                >
                                                     <RotateCcw className="mr-2 h-4 w-4" />
                                                     Realocar Vaga
+                                                </DropdownMenuItem>
+                                                
+                                                {/* Ações de Status (Desistente/Transferir) */}
+                                                <DropdownMenuItem 
+                                                    onClick={() => handleStatusIndividualClick(c, 'desistente')}
+                                                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Marcar Desistente
+                                                </DropdownMenuItem>
+                                                
+                                                <DropdownMenuItem 
+                                                    onClick={() => handleStatusIndividualClick(c, 'transferir')}
+                                                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                                >
+                                                    <ArrowRight className="mr-2 h-4 w-4" />
+                                                    Transferir (Sair)
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
-                            ))
+                                );
+                            })}
                         )}
                     </TableBody>
                 </Table>
@@ -158,3 +181,5 @@ export const RemanejamentoTable = ({
         </Card>
     );
 };
+
+export { RemanejamentoTable };

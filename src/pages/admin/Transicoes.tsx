@@ -23,6 +23,12 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import RealocacaoMassaModal from "@/components/transicoes/RealocacaoMassaModal";
 import StatusMassaModal from "@/components/transicoes/StatusMassaModal";
+import RealocacaoModal from "@/components/RealocacaoModal"; // Modal de Realocação Individual
+import JustificativaModal from "@/components/JustificativaModal"; // Modal de Status Individual
+import { useCriancas } from "@/hooks/use-criancas";
+import { ConvocationData } from "@/integrations/supabase/types";
+
+type JustificativaAction = 'desistente' | 'transferir'; // Ações de status que exigem justificativa
 
 const Transicoes = () => {
   const currentYear = new Date().getFullYear();
@@ -36,15 +42,31 @@ const Transicoes = () => {
     savePlanning, 
     isSaving 
   } = useTransicoes();
+  
+  const { 
+    realocarCrianca, 
+    isRealocating, 
+    marcarDesistente, 
+    isMarkingDesistente,
+    transferirCrianca,
+    isTransferring,
+  } = useCriancas();
 
   const targetYear = currentYear;
   const cutoffDate = format(new Date(targetYear, 2, 31), 'dd/MM/yyyy');
   
-  // --- Lógica de Seleção em Massa ---
+  // --- Estados de Ação em Massa ---
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isRealocacaoMassaModalOpen, setIsRealocacaoMassaModalOpen] = useState(false);
   const [isStatusMassaModalOpen, setIsStatusMassaModalOpen] = useState(false);
   
+  // --- Estados de Ação Individual ---
+  const [isRealocacaoIndividualModalOpen, setIsRealocacaoIndividualModalOpen] = useState(false);
+  const [isJustificativaIndividualModalOpen, setIsJustificativaIndividualModalOpen] = useState(false);
+  const [criancaToAction, setCriancaToAction] = useState<CriancaClassificada | undefined>(undefined);
+  const [currentJustificativaAction, setCurrentJustificativaAction] = useState<JustificativaAction | undefined>(undefined);
+
+  // --- Handlers de Seleção ---
   const toggleSelection = (id: string) => {
     setSelectedIds(prev => 
         prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
@@ -60,6 +82,7 @@ const Transicoes = () => {
     }
   };
   
+  // --- Handlers de Ação em Massa (Mock) ---
   const handleMassAction = (action: 'realocar' | 'status') => {
       if (selectedIds.length === 0) {
           toast.warning("Selecione pelo menos uma criança para realizar a ação em massa.");
@@ -76,13 +99,79 @@ const Transicoes = () => {
   const handleMassModalClose = () => {
       setIsRealocacaoMassaModalOpen(false);
       setIsStatusMassaModalOpen(false);
-      // Após a ação em massa, desmarcamos todos os selecionados
       setSelectedIds([]);
-      // Em um cenário real, aqui você invalidaria a query de crianças para refletir as mudanças
   };
-  // --- Fim Lógica de Seleção em Massa ---
-
-
+  
+  // --- Handlers de Ação Individual ---
+  
+  // 1. Realocação (Mover para nova turma)
+  const handleRealocacaoIndividualClick = (crianca: CriancaClassificada) => {
+      setCriancaToAction(crianca);
+      setIsRealocacaoIndividualModalOpen(true);
+  };
+  
+  const handleRealocacaoIndividualConfirm = async (criancaId: string, data: ConvocationData) => {
+      await realocarCrianca({ id: criancaId, data });
+      // Após a realocação, o planejamento deve ser atualizado (re-fetch)
+      // O hook useCriancas já invalida a query principal, o useTransicoes irá recarregar.
+      setIsRealocacaoIndividualModalOpen(false);
+      setCriancaToAction(undefined);
+  };
+  
+  // 2. Mudança de Status (Desistente/Transferir)
+  const handleStatusIndividualClick = (crianca: CriancaClassificada, action: JustificativaAction) => {
+      setCriancaToAction(crianca);
+      setCurrentJustificativaAction(action);
+      setIsJustificativaIndividualModalOpen(true);
+  };
+  
+  const handleJustificativaIndividualConfirm = async (justificativa: string) => {
+      if (!criancaToAction || !currentJustificativaAction) return;
+      
+      const id = criancaToAction.id;
+      
+      try {
+          if (currentJustificativaAction === 'desistente') {
+              await marcarDesistente({ id, justificativa });
+          } else if (currentJustificativaAction === 'transferir') {
+              await transferirCrianca({ id, justificativa });
+          }
+          
+          // Após a mudança de status, o planejamento deve ser atualizado (re-fetch)
+          setIsJustificativaIndividualModalOpen(false);
+          setCriancaToAction(undefined);
+          setCurrentJustificativaAction(undefined);
+      } catch (e) {
+          // Erro tratado pelo hook
+      }
+  };
+  
+  const getJustificativaProps = (action: JustificativaAction) => {
+    const criancaNome = criancaToAction?.nome || 'a criança';
+    
+    switch (action) {
+      case 'desistente':
+        return {
+          title: `Marcar ${criancaNome} como Desistente`,
+          description: "Confirme a desistência. A criança será marcada como 'Desistente' e removida da lista de matrículas ativas.",
+          actionLabel: "Confirmar Desistência",
+          isPending: isMarkingDesistente,
+          actionVariant: 'destructive' as const,
+        };
+      case 'transferir':
+        return {
+          title: `Transferir ${criancaNome} (Mudança de Cidade)`,
+          description: "Confirme a transferência por mudança de cidade. A matrícula será encerrada e a criança marcada como desistente.",
+          actionLabel: "Confirmar Transferência",
+          isPending: isTransferring,
+          actionVariant: 'destructive' as const,
+        };
+      default:
+        return { title: "", description: "", actionLabel: "", isPending: false, actionVariant: 'destructive' as const };
+    }
+  };
+  
+  // --- Data Processing ---
   const { matriculados, fila, concluintes } = useMemo(() => {
     const matriculados = classificacao.filter(c => c.status === 'Matriculado' || c.status === 'Matriculada' || c.status === 'Remanejamento Solicitado');
     const fila = classificacao.filter(c => c.status === 'Fila de Espera' || c.status === 'Convocado');
@@ -271,6 +360,8 @@ const Transicoes = () => {
                     selectedIds={selectedIds}
                     toggleSelection={toggleSelection}
                     toggleAllSelection={(ids) => toggleAllSelection(ids.filter(id => matriculados.map(m => m.id).includes(id)))}
+                    handleRealocacaoIndividualClick={handleRealocacaoIndividualClick}
+                    handleStatusIndividualClick={handleStatusIndividualClick}
                 />
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -285,6 +376,8 @@ const Transicoes = () => {
                     selectedIds={selectedIds}
                     toggleSelection={toggleSelection}
                     toggleAllSelection={(ids) => toggleAllSelection(ids.filter(id => fila.map(f => f.id).includes(id)))}
+                    handleRealocacaoIndividualClick={handleRealocacaoIndividualClick}
+                    handleStatusIndividualClick={handleStatusIndividualClick}
                 />
             </ResizablePanel>
         </ResizablePanelGroup>
@@ -301,6 +394,8 @@ const Transicoes = () => {
                 selectedIds={selectedIds}
                 toggleSelection={toggleSelection}
                 toggleAllSelection={(ids) => toggleAllSelection(ids.filter(id => concluintes.map(c => c.id).includes(id)))}
+                handleRealocacaoIndividualClick={handleRealocacaoIndividualClick}
+                handleStatusIndividualClick={handleStatusIndividualClick}
             />
         </div>
       </div>
@@ -318,6 +413,33 @@ const Transicoes = () => {
             selectedCount={selectedIds.length}
             onClose={handleMassModalClose}
         />
+      </Dialog>
+      
+      {/* Modal de Realocação Individual */}
+      <Dialog open={isRealocacaoIndividualModalOpen} onOpenChange={setIsRealocacaoIndividualModalOpen}>
+        {criancaToAction && (
+          <RealocacaoModal
+            crianca={criancaToAction}
+            onConfirm={handleRealocacaoIndividualConfirm}
+            onClose={() => setIsRealocacaoIndividualModalOpen(false)}
+            isPending={isRealocating}
+          />
+        )}
+      </Dialog>
+      
+      {/* Modal de Justificativa Individual (Status) */}
+      <Dialog open={isJustificativaIndividualModalOpen} onOpenChange={setIsJustificativaIndividualModalOpen}>
+        {criancaToAction && currentJustificativaAction && (
+          <JustificativaModal
+            {...getJustificativaProps(currentJustificativaAction)}
+            onConfirm={handleJustificativaIndividualConfirm}
+            onClose={() => {
+              setIsJustificativaIndividualModalOpen(false);
+              setCriancaToAction(undefined);
+              setCurrentJustificativaAction(undefined);
+            }}
+          />
+        )}
       </Dialog>
     </AdminLayout>
   );
