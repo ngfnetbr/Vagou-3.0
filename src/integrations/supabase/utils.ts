@@ -113,15 +113,17 @@ export const mapDbToCrianca = (dbData: any): Crianca => {
         status: dbData.status,
         cmei_atual_id: dbData.cmei_atual_id,
         turma_atual_id: dbData.turma_atual_id,
+        cmei_remanejamento_id: dbData.cmei_remanejamento_id, // NOVO
         posicao_fila: dbData.posicao_fila,
         convocacao_deadline: dbData.convocacao_deadline,
         created_at: dbData.created_at,
-        data_penalidade: dbData.data_penalidade, // Incluindo data_penalidade
+        data_penalidade: dbData.data_penalidade,
         
         // Campos calculados
         idade: calculateAgeString(dbData.data_nascimento),
         cmeiNome: dbData.cmeis?.nome, // Assume que o JOIN 'cmeis' está disponível
         turmaNome: dbData.turmas?.nome, // Assume que o JOIN 'turmas' está disponível
+        cmeiRemanejamentoNome: dbData.cmeis_remanejamento?.nome, // NOVO: Assume que o JOIN 'cmeis_remanejamento' está disponível
     };
 };
 
@@ -147,6 +149,7 @@ export const mapFormToDb = (data: InscricaoFormData) => {
         status: "Fila de Espera",
         cmei_atual_id: null,
         turma_atual_id: null,
+        cmei_remanejamento_id: null, // NOVO
         posicao_fila: null, // Será gerenciado por uma função de fila ou trigger
         convocacao_deadline: null,
         data_penalidade: null,

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Download, MoreVertical, Loader2, Eye, Trash2, RotateCcw, ArrowRight, ListRestart } from "lucide-react";
+import { Search, Download, MoreVertical, Loader2, Eye, Trash2, RotateCcw, ArrowRight, ListRestart, Bell } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +18,8 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import JustificativaModal from "@/components/JustificativaModal";
 import RealocacaoModal from "@/components/RealocacaoModal";
-import { Crianca, ConvocationData } from "@/integrations/supabase/types"; // Importação atualizada
+import RemanejamentoModal from "@/components/RemanejamentoModal"; // NOVO MODAL
+import { Crianca, ConvocationData } from "@/integrations/supabase/types";
 import { Badge } from "@/components/ui/badge";
 import { HistoricoMatriculasAccordion } from "@/components/matriculas/HistoricoMatriculasAccordion";
 
@@ -26,8 +27,9 @@ const mockTurmas = [
   "Berçário I", "Berçário II", "Maternal I", "Maternal II", "Pré I", "Pré II"
 ];
 
-type JustificativaAction = 'desistente' | 'remanejamento' | 'transferir';
+type JustificativaAction = 'desistente' | 'transferir'; // Remanejamento sai daqui
 type VagaAction = 'realocar';
+type RemanejamentoAction = 'solicitar'; // Nova ação
 
 const Matriculas = () => {
   const { 
@@ -39,7 +41,7 @@ const Matriculas = () => {
     isRealocating,
     transferirCrianca,
     isTransferring,
-    solicitarRemanejamento,
+    solicitarRemanejamento, // Usando a nova função
     isRequestingRemanejamento,
     reativarCrianca,
     isReactivating,
@@ -58,6 +60,10 @@ const Matriculas = () => {
   const [isVagaModalOpen, setIsVagaModalOpen] = useState(false);
   const [criancaToVaga, setCriancaToVaga] = useState<Crianca | undefined>(undefined);
   const [currentVagaAction, setCurrentVagaAction] = useState<VagaAction | undefined>(undefined);
+  
+  // Novo estado para Remanejamento
+  const [isRemanejamentoModalOpen, setIsRemanejamentoModalOpen] = useState(false);
+  const [criancaToRemanejamento, setCriancaToRemanejamento] = useState<Crianca | undefined>(undefined);
 
 
   const { matriculasAtivas, historicoEncerradas } = useMemo(() => {
@@ -67,7 +73,7 @@ const Matriculas = () => {
         c.status === "Remanejamento Solicitado"
     ).filter(c => {
         if (cmeiFilter !== "todos" && c.cmeiNome !== cmeiFilter) return false;
-        if (turmaFilter !== "todas" && c.turmaNome && c.turmaNome.includes(turmaFilter)) return false; // Corrigido: verifica se turmaNome existe antes de usar includes
+        if (turmaFilter !== "todas" && c.turmaNome && c.turmaNome.includes(turmaFilter)) return false;
         if (searchTerm) {
             const lowerCaseSearch = searchTerm.toLowerCase();
             if (!c.nome.toLowerCase().includes(lowerCaseSearch) && !c.responsavel_nome.toLowerCase().includes(lowerCaseSearch)) return false;
@@ -75,17 +81,6 @@ const Matriculas = () => {
         return true;
     });
     
-    // Histórico: Crianças que estão em status final (Desistente ou Recusada) E que já tiveram um CMEI/Turma atribuído.
-    // Para simplificar e garantir que o histórico de matrículas só mostre encerramentos de matrículas ativas:
-    // Vamos filtrar todas as crianças em status final (Desistente/Recusada) e confiar que a lógica de negócio garante que
-    // se elas foram marcadas como desistentes/recusadas, elas vieram de um contexto de matrícula/convocação.
-    
-    // REVISÃO: A lógica mais segura é: se o status é Desistente ou Recusada, ela é histórico.
-    // A distinção entre histórico da Fila e Histórico de Matrículas é feita pelo contexto da ação.
-    // Na página de Matrículas, queremos ver os encerramentos de matrículas.
-    
-    // Vamos manter a lógica original, mas com a ressalva de que os IDs podem ser nulos após a desistência.
-    // Se a criança foi marcada como desistente/recusada, ela deve aparecer aqui.
     const historicoEncerradas = criancas.filter(c => 
         c.status === "Desistente" || c.status === "Recusada"
     );
@@ -94,7 +89,7 @@ const Matriculas = () => {
   }, [criancas, cmeiFilter, turmaFilter, searchTerm]);
   
   // Get list of unique CMEIs where children are currently matriculated
-  const allCmeiNames = useMemo(() => Array.from(new Set(criancas.filter(c => c.status === "Matriculado" || c.status === "Matriculada").map(c => c.cmeiNome))).filter(name => name), [criancas]);
+  const allCmeiNames = useMemo(() => Array.from(new Set(criancas.filter(c => c.status === "Matriculado" || c.status === "Matriculada" || c.status === "Remanejamento Solicitado").map(c => c.cmeiNome))).filter(name => name), [criancas]);
 
   // --- Handlers para Modais de Vaga (Realocar) ---
   
@@ -104,26 +99,19 @@ const Matriculas = () => {
     setIsVagaModalOpen(true);
   };
   
-  // FIX: Update signature to match RealocacaoModalProps['onConfirm']
   const handleVagaConfirm = async (id: string, vagaString: string) => {
-    // vagaString: "cmei_id|turma_id|cmei_nome|turma_nome"
     const parts = vagaString.split('|');
     if (parts.length !== 4) {
-        // Lança erro para ser capturado pelo RealocacaoModal e exibido como toast
         throw new Error("Formato de vaga inválido."); 
     }
     const [cmei_id, turma_id] = parts;
     
     const data: ConvocationData = { cmei_id, turma_id };
     
-    // Apenas Realocar usa este modal agora
     await realocarCrianca({ id, data });
-    
-    // A lógica de fechar o modal (setIsVagaModalOpen(false)) foi movida para o RealocacaoModal.tsx
-    // A limpeza do estado (setCriancaToVaga(undefined)) foi movida para o onClose do Dialog.
   };
   
-  // --- Handlers para Modais de Justificativa (Desistente/Remanejamento/Transferir) ---
+  // --- Handlers para Modais de Justificativa (Desistente/Transferir) ---
 
   const handleJustificativaActionClick = (crianca: Crianca, action: JustificativaAction) => {
     setCriancaToJustify(crianca);
@@ -141,11 +129,7 @@ const Matriculas = () => {
           case 'desistente':
             await marcarDesistente({ id, justificativa });
             break;
-          case 'remanejamento':
-            await solicitarRemanejamento({ id, justificativa });
-            break;
           case 'transferir':
-            // Transferir agora é uma ação de saída do sistema (mudança de cidade)
             await transferirCrianca({ id, justificativa });
             break;
         }
@@ -170,14 +154,6 @@ const Matriculas = () => {
           isPending: isMarkingDesistente,
           actionVariant: 'destructive' as const,
         };
-      case 'remanejamento':
-        return {
-          title: `Solicitar Remanejamento para ${criancaNome}`,
-          description: "Descreva o motivo da solicitação de remanejamento. O status da criança será atualizado.",
-          actionLabel: "Solicitar Remanejamento",
-          isPending: isRequestingRemanejamento,
-          actionVariant: 'secondary' as const,
-        };
       case 'transferir':
         return {
           title: `Transferir ${criancaNome} (Mudança de Cidade)`,
@@ -191,14 +167,26 @@ const Matriculas = () => {
     }
   };
   
+  // --- Handlers para Remanejamento ---
+  
+  const handleRemanejamentoActionClick = (crianca: Crianca) => {
+    setCriancaToRemanejamento(crianca);
+    setIsRemanejamentoModalOpen(true);
+  };
+  
+  const handleRemanejamentoConfirm = async (criancaId: string, cmeiId: string, cmeiNome: string, justificativa: string) => {
+    await solicitarRemanejamento({ id: criancaId, cmeiId, cmeiNome, justificativa });
+    // O hook useCriancas já invalida as queries e mostra o toast
+  };
+  
   const getStatusBadge = (status: Crianca['status']) => {
     const variants: Record<Crianca['status'], { className: string, text: string }> = {
       "Matriculada": { className: "bg-secondary/20 text-secondary", text: "Matriculada" },
       "Matriculado": { className: "bg-secondary/20 text-secondary", text: "Matriculado" },
-      "Remanejamento Solicitado": { className: "bg-accent/20 text-foreground", text: "Remanejamento Solicitado" },
+      "Remanejamento Solicitado": { className: "bg-primary/20 text-primary", text: "Remanejamento Solicitado" }, // Cor alterada para primária
       // Fallbacks
       "Fila de Espera": { className: "bg-muted/50 text-muted-foreground", text: "Fila de Espera" },
-      "Convocado": { className: "bg-primary/20 text-primary", text: "Convocado" },
+      "Convocado": { className: "bg-accent/20 text-foreground", text: "Convocado" },
       "Desistente": { className: "bg-destructive/20 text-destructive", text: "Desistente" },
       "Recusada": { className: "bg-destructive/20 text-destructive", text: "Recusada" },
     };
@@ -324,16 +312,15 @@ const Matriculas = () => {
                                 </>
                               )}
                               
-                              {/* Ações que exigem justificativa */}
+                              {/* Ações de Remanejamento e Saída */}
                               {(matricula.status === "Matriculado" || matricula.status === "Matriculada") && (
                                 <>
-                                  <DropdownMenuItem onClick={() => handleJustificativaActionClick(matricula, 'remanejamento')}>
-                                    <ListRestart className="mr-2 h-4 w-4" />
-                                    Solicitar remanejamento
+                                  <DropdownMenuItem onClick={() => handleRemanejamentoActionClick(matricula)} className="text-primary focus:bg-primary/10 focus:text-primary">
+                                    <Bell className="mr-2 h-4 w-4" />
+                                    Solicitar Remanejamento
                                   </DropdownMenuItem>
                                   
                                   <DropdownMenuItem 
-                                    className="text-destructive"
                                     onClick={() => handleJustificativaActionClick(matricula, 'transferir')}
                                   >
                                     <ArrowRight className="mr-2 h-4 w-4" />
@@ -375,7 +362,7 @@ const Matriculas = () => {
         />
       </div>
       
-      {/* Modal de Justificativa (Desistente, Remanejamento, Transferir) */}
+      {/* Modal de Justificativa (Desistente, Transferir) */}
       <Dialog open={isJustificativaModalOpen} onOpenChange={setIsJustificativaModalOpen}>
         {criancaToJustify && currentJustificativaAction && (
           <JustificativaModal
@@ -390,7 +377,7 @@ const Matriculas = () => {
         )}
       </Dialog>
       
-      {/* Modal de Realocação (Apenas Realocar usa este modal agora) */}
+      {/* Modal de Realocação */}
       <Dialog open={isVagaModalOpen} onOpenChange={setIsVagaModalOpen}>
         {criancaToVaga && currentVagaAction && (
           <RealocacaoModal
@@ -402,6 +389,21 @@ const Matriculas = () => {
               setCurrentVagaAction(undefined);
             }}
             isPending={isRealocating}
+          />
+        )}
+      </Dialog>
+      
+      {/* Modal de Remanejamento (NOVO) */}
+      <Dialog open={isRemanejamentoModalOpen} onOpenChange={setIsRemanejamentoModalOpen}>
+        {criancaToRemanejamento && (
+          <RemanejamentoModal
+            crianca={criancaToRemanejamento}
+            onConfirm={handleRemanejamentoConfirm}
+            onClose={() => {
+              setIsRemanejamentoModalOpen(false);
+              setCriancaToRemanejamento(undefined);
+            }}
+            isPending={isRequestingRemanejamento}
           />
         )}
       </Dialog>

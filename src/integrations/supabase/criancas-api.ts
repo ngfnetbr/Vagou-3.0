@@ -14,7 +14,8 @@ const getAdminUser = async (): Promise<string> => {
 const SELECT_FIELDS = `
     *,
     cmeis (nome),
-    turmas (nome)
+    turmas (nome),
+    cmeis_remanejamento:cmei_remanejamento_id (nome)
 `;
 
 // --- Funções de Busca ---
@@ -119,6 +120,7 @@ export const apiUpdateCrianca = async (id: string, data: InscricaoFormData): Pro
     delete payload.posicao_fila;
     delete payload.convocacao_deadline;
     delete payload.data_penalidade;
+    delete payload.cmei_remanejamento_id; // Não atualiza o remanejamento aqui
 
     const { data: updatedCriancaDb, error } = await supabase
         .from('criancas')
@@ -153,6 +155,7 @@ export const apiConfirmarMatricula = async (criancaId: string, cmeiNome: string,
             status: 'Matriculado',
             convocacao_deadline: null, // Limpa o prazo
             data_penalidade: null,
+            cmei_remanejamento_id: null, // Limpa remanejamento ao matricular
         })
         .eq('id', criancaId)
         .select()
@@ -180,6 +183,7 @@ export const apiConvocarCrianca = async (criancaId: string, data: ConvocationDat
             posicao_fila: null,
             convocacao_deadline: deadline,
             data_penalidade: null, // Limpa penalidade ao convocar
+            cmei_remanejamento_id: null, // Limpa remanejamento ao convocar
         })
         .eq('id', criancaId);
 
@@ -204,6 +208,7 @@ export const apiMarcarRecusada = async (criancaId: string, justificativa: string
             cmei_atual_id: null,
             turma_atual_id: null,
             data_penalidade: null,
+            cmei_remanejamento_id: null, // Limpa remanejamento
         })
         .eq('id', criancaId);
 
@@ -229,6 +234,7 @@ export const apiMarcarDesistente = async (criancaId: string, justificativa: stri
             turma_atual_id: null,
             posicao_fila: null,
             data_penalidade: null,
+            cmei_remanejamento_id: null, // Limpa remanejamento
         })
         .eq('id', criancaId);
 
@@ -257,6 +263,7 @@ export const apiMarcarFimDeFila = async (criancaId: string, justificativa: strin
             cmei_atual_id: null,
             turma_atual_id: null,
             data_penalidade: penalidadeDateString, // Aplica a penalidade temporal
+            cmei_remanejamento_id: null, // Limpa remanejamento
         })
         .eq('id', criancaId);
 
@@ -281,6 +288,7 @@ export const apiReativarCrianca = async (criancaId: string) => {
             cmei_atual_id: null,
             turma_atual_id: null,
             data_penalidade: null, // Sempre limpa a penalidade na reativação manual
+            cmei_remanejamento_id: null, // Limpa remanejamento
         })
         .eq('id', criancaId);
 
@@ -360,6 +368,7 @@ export const apiTransferirCrianca = async (criancaId: string, justificativa: str
             posicao_fila: null,
             convocacao_deadline: null,
             data_penalidade: null,
+            cmei_remanejamento_id: null, // Limpa remanejamento
         })
         .eq('id', criancaId);
 
@@ -373,13 +382,27 @@ export const apiTransferirCrianca = async (criancaId: string, justificativa: str
     });
 };
 
-export const apiSolicitarRemanejamento = async (criancaId: string, justificativa: string) => {
+export const apiSolicitarRemanejamento = async (criancaId: string, cmeiId: string, cmeiNome: string, justificativa: string) => {
     const user = await getAdminUser();
     
+    // 1. Verifica se a criança está matriculada
+    const { data: crianca, error: fetchError } = await supabase
+        .from('criancas')
+        .select('status')
+        .eq('id', criancaId)
+        .single();
+        
+    if (fetchError || !crianca || !['Matriculado', 'Matriculada'].includes(crianca.status)) {
+        throw new Error("A solicitação de remanejamento é exclusiva para crianças matriculadas.");
+    }
+    
+    // 2. Atualiza o status e o CMEI de remanejamento
     const { error } = await supabase
         .from('criancas')
         .update({
             status: "Remanejamento Solicitado",
+            cmei_remanejamento_id: cmeiId, // Define o CMEI desejado
+            // Mantém cmei_atual_id e turma_atual_id
         })
         .eq('id', criancaId);
 
@@ -388,7 +411,7 @@ export const apiSolicitarRemanejamento = async (criancaId: string, justificativa
     await insertHistoricoEntry({
         crianca_id: criancaId,
         acao: "Solicitação de Remanejamento",
-        detalhes: `Remanejamento solicitado. Justificativa: ${justificativa}`,
+        detalhes: `Remanejamento solicitado para ${cmeiNome}. Justificativa: ${justificativa}`,
         usuario: user,
     });
 };
@@ -447,6 +470,7 @@ export const apiMassStatusUpdate = async (data: MassStatusUpdateData) => {
             turma_atual_id: null,
             posicao_fila: null,
             convocacao_deadline: null,
+            cmei_remanejamento_id: null, // Limpa remanejamento
             data_penalidade: data.status === 'Fila de Espera' ? new Date().toISOString() : null, // Aplica penalidade se for Fim de Fila
         };
     }
