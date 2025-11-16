@@ -1,7 +1,8 @@
+Turma) dentro do Popover, em vez de um grande acordeão.">
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, ArrowLeft, School } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -10,13 +11,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-}
-from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useGroupedAvailableTurmas } from "@/hooks/use-grouped-available-turmas";
 import { AvailableTurma } from "@/hooks/use-all-available-turmas";
@@ -34,6 +28,7 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
   disabled,
 }) => {
   const [open, setOpen] = React.useState(false);
+  const [selectedCmeiName, setSelectedCmeiName] = React.useState<string | null>(null);
   const { groupedTurmas, allAvailableTurmas, isLoading } = useGroupedAvailableTurmas();
 
   const selectedVaga = React.useMemo(() => {
@@ -48,15 +43,27 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
     };
   }, [value]);
 
-  const handleSelect = (vaga: AvailableTurma) => {
+  const handleSelectTurma = (vaga: AvailableTurma) => {
     const newValue = `${vaga.cmei_id}|${vaga.turma_id}|${vaga.cmei}|${vaga.turma}`;
     onChange(newValue);
     setOpen(false);
+    setSelectedCmeiName(null); // Reseta a visualização
   };
   
+  const handleSelectCmei = (cmeiName: string) => {
+    setSelectedCmeiName(cmeiName);
+  };
+  
+  const handleBack = () => {
+    setSelectedCmeiName(null);
+  };
+
   const displayValue = selectedVaga 
     ? `${selectedVaga.cmei} - ${selectedVaga.turma}` 
     : "Selecione a Turma";
+    
+  const cmeiNames = Object.keys(groupedTurmas);
+  const currentTurmas = selectedCmeiName ? groupedTurmas[selectedCmeiName] : [];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -81,65 +88,85 @@ const CmeiTurmaSelector: React.FC<CmeiTurmaSelectorProps> = ({
         align="start"
         side="bottom" 
       >
-        {/* A ScrollArea agora define a altura máxima e a rolagem */}
-        <ScrollArea className="h-auto max-h-[70vh]">
-          <div className="p-1">
-            {isLoading ? (
-                <div className="flex items-center justify-center p-4 text-muted-foreground text-sm">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando vagas...
+        {isLoading ? (
+            <div className="flex items-center justify-center p-4 text-muted-foreground text-sm">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando vagas...
+            </div>
+        ) : allAvailableTurmas.length === 0 ? (
+          <div className="p-4 text-center text-muted-foreground text-sm">
+            Nenhuma vaga disponível.
+          </div>
+        ) : (
+          <ScrollArea className="h-auto max-h-[70vh]">
+            <div className="p-1">
+              {selectedCmeiName ? (
+                // --- Etapa 2: Seleção da Turma ---
+                <div className="space-y-2">
+                    <div className="flex items-center p-2 border-b border-border sticky top-0 bg-card z-10">
+                        <Button variant="ghost" size="icon" onClick={handleBack} className="mr-2">
+                            <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="font-semibold text-sm truncate">{selectedCmeiName}</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 p-1">
+                        {currentTurmas.map((vaga) => {
+                            const vagaValue = `${vaga.cmei_id}|${vaga.turma_id}|${vaga.cmei}|${vaga.turma}`;
+                            const isSelected = value === vagaValue;
+                            
+                            return (
+                                <div
+                                    key={vaga.turma_id}
+                                    onClick={() => handleSelectTurma(vaga)}
+                                    className={cn(
+                                        "flex items-center justify-between p-3 rounded-md text-sm cursor-pointer transition-colors border",
+                                        isSelected 
+                                            ? "bg-primary text-primary-foreground border-primary shadow-md" 
+                                            : "hover:bg-accent border-transparent bg-background"
+                                    )}
+                                >
+                                    <div className="flex flex-col items-start">
+                                        <span>{vaga.turma}</span>
+                                        <span className={cn("text-xs", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Vagas: {vaga.vagas}</span>
+                                    </div>
+                                    <Check
+                                        className={cn(
+                                            "h-4 w-4",
+                                            isSelected ? "opacity-100" : "opacity-0"
+                                        )}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
-            ) : allAvailableTurmas.length === 0 ? (
-              <div className="p-4 text-center text-muted-foreground text-sm">
-                Nenhuma vaga disponível.
-              </div>
-            ) : (
-              <Accordion type="multiple" className="w-full">
-                {Object.entries(groupedTurmas).map(([cmeiName, turmas]) => (
-                  <AccordionItem key={cmeiName} value={cmeiName} className="border-b">
-                    <AccordionTrigger className="px-3 py-2 text-sm font-semibold hover:no-underline">
-                      <div className="flex items-center justify-between w-full pr-2">
-                        <span>{cmeiName}</span>
-                        <Badge variant="secondary" className="text-xs">
-                            {turmas.reduce((sum, t) => sum + t.vagas, 0)} vagas
-                        </Badge>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="p-1 grid grid-cols-1 sm:grid-cols-2 gap-1">
-                      {turmas.map((vaga) => {
-                        const vagaValue = `${vaga.cmei_id}|${vaga.turma_id}|${vaga.cmei}|${vaga.turma}`;
-                        const isSelected = value === vagaValue;
+              ) : (
+                // --- Etapa 1: Seleção do CMEI ---
+                <div className="space-y-1 p-1">
+                    {cmeiNames.map((cmeiName) => {
+                        const totalVagas = groupedTurmas[cmeiName].reduce((sum, t) => sum + t.vagas, 0);
                         
                         return (
-                          <div
-                            key={vaga.turma_id}
-                            onClick={() => handleSelect(vaga)}
-                            className={cn(
-                              "flex items-center justify-between p-3 rounded-md text-sm cursor-pointer transition-colors border",
-                              isSelected 
-                                ? "bg-primary text-primary-foreground border-primary shadow-md" 
-                                : "hover:bg-accent border-transparent bg-background"
-                            )}
-                          >
-                            <div className="flex flex-col items-start">
-                                <span>{vaga.turma}</span>
-                                <span className={cn("text-xs", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Vagas: {vaga.vagas}</span>
+                            <div
+                                key={cmeiName}
+                                onClick={() => handleSelectCmei(cmeiName)}
+                                className="flex items-center justify-between p-3 rounded-md text-sm cursor-pointer transition-colors hover:bg-muted"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <School className="h-4 w-4 text-primary" />
+                                    <span className="font-medium">{cmeiName}</span>
+                                </div>
+                                <Badge variant="secondary" className="text-xs">
+                                    {totalVagas} vagas
+                                </Badge>
                             </div>
-                            <Check
-                              className={cn(
-                                "h-4 w-4",
-                                isSelected ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                          </div>
                         );
-                      })}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            )}
-          </div>
-        </ScrollArea>
+                    })}
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        )}
       </PopoverContent>
     </Popover>
   );
