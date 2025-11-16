@@ -35,10 +35,11 @@ const menuItems = [
 
 interface AdminSidebarProps {
   shouldBlockNavigation: boolean;
-  blockNavigation: (to: string) => boolean; // Nova prop
+  blockNavigation: (to: string) => string | null; // Retorna o destino se bloqueado
+  onNavigationBlocked: (to: string) => void; // Novo callback para o Layout
 }
 
-export const AdminSidebar = ({ shouldBlockNavigation, blockNavigation }: AdminSidebarProps) => {
+export const AdminSidebar = ({ shouldBlockNavigation, blockNavigation, onNavigationBlocked }: AdminSidebarProps) => {
   const { isOpen, toggle } = useSidebarStore();
   const navigate = useNavigate();
   const location = useLocation(); // Usado para o estilo ativo
@@ -53,20 +54,17 @@ export const AdminSidebar = ({ shouldBlockNavigation, blockNavigation }: AdminSi
     }
     
     if (shouldBlockNavigation) {
-      e.preventDefault();
+      const blockedTo = blockNavigation(to);
       
-      // Usa a função de bloqueio que exibe o toast
-      const isBlocked = blockNavigation(to);
-      
-      // Se não foi bloqueado (o que só acontece se shouldBlockNavigation for false), navega.
-      // Se foi bloqueado, o toast com a opção de descarte foi exibido.
-      if (!isBlocked) {
-        navigate(to);
+      if (blockedTo) {
+        e.preventDefault();
+        onNavigationBlocked(blockedTo); // Chama o callback no Layout para abrir o modal
+        return;
       }
-      
-    } else {
-      navigate(to);
     }
+    
+    // Se não houver bloqueio ou se shouldBlockNavigation for false, navega normalmente
+    navigate(to);
   };
 
   return (

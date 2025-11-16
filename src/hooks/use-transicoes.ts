@@ -97,8 +97,9 @@ export function useTransicoes() {
     const queryClient = useQueryClient();
     
     const [planningData, setPlanningData] = useState<CriancaClassificada[]>([]);
-    // Removendo lastSavedPlanning e isSaving
-    
+    const [lastSavedPlanning, setLastSavedPlanning] = useState<CriancaClassificada[]>([]); // Reintroduzido
+    const [isSaving, setIsSaving] = useState(false); // Reintroduzido
+
     const { data: criancas, isLoading, error } = useQuery<Crianca[], Error>({
         queryKey: ["criancas"], 
         queryFn: fetchCriancas,
@@ -124,6 +125,7 @@ export function useTransicoes() {
                 // Se os IDs forem idênticos, carrega o planejamento salvo
                 if (savedIds.size > 0 && savedIds.size === currentIds.size && [...savedIds].every(id => currentIds.has(id))) {
                     setPlanningData(parsedPlanning);
+                    setLastSavedPlanning(parsedPlanning); // Define como o último estado salvo
                     toast.info("Planejamento anterior carregado.", { duration: 3000 });
                     return;
                 }
@@ -136,6 +138,7 @@ export function useTransicoes() {
         // Se não houver planejamento salvo ou se os dados estiverem desatualizados, usa a classificação inicial
         if (initialClassification.length > 0 && planningData.length === 0) {
             setPlanningData(initialClassification);
+            setLastSavedPlanning(initialClassification); // Define a classificação inicial como o último estado salvo
         }
         
     }, [initialClassification]); // Depende apenas da classificação inicial
@@ -144,9 +147,9 @@ export function useTransicoes() {
     const hasUnsavedChanges = useMemo(() => {
         if (isLoading || planningData.length === 0) return false;
         
-        // Compara o estado atual (planningData) com o estado inicial (initialClassification)
-        return !arePlanningStatesEqual(planningData, initialClassification);
-    }, [planningData, initialClassification, isLoading]);
+        // Compara o estado atual com o último estado salvo
+        return !arePlanningStatesEqual(planningData, lastSavedPlanning);
+    }, [planningData, lastSavedPlanning, isLoading]);
 
 
     // --- Funções de Manipulação do Planejamento ---
@@ -155,13 +158,6 @@ export function useTransicoes() {
         setPlanningData(prev => prev.map(c => 
             c.id === criancaId ? { ...c, ...updates } : c
         ));
-        // Salva no localStorage imediatamente após a alteração
-        // Isso garante que o estado seja persistido, mas o alerta de navegação continua ativo
-        // até que o usuário aplique a transição ou descarte.
-        const updatedPlanning = planningData.map(c => 
-            c.id === criancaId ? { ...c, ...updates } : c
-        );
-        localStorage.setItem(PLANNING_STORAGE_KEY, JSON.stringify(updatedPlanning));
     };
 
     const updateCriancaStatusInPlanning = (criancaId: string, newStatus: Crianca['status'], justificativa: string) => {
@@ -288,11 +284,27 @@ export function useTransicoes() {
         });
     };
 
-    // Função para salvar o planejamento no localStorage (mantida para persistência, mas não chamada pelo botão)
+    // Função para salvar o planejamento no localStorage (usada pelo modal de navegação)
     const savePlanning = async () => {
-        // Esta função não é mais chamada pelo botão, mas é mantida para compatibilidade futura
-        // e para garantir que o estado seja persistido no localStorage.
-        localStorage.setItem(PLANNING_STORAGE_KEY, JSON.stringify(planningData));
+        setIsSaving(true);
+        try {
+            localStorage.setItem(PLANNING_STORAGE_KEY, JSON.stringify(planningData));
+            
+            // Atualiza o estado salvo para redefinir hasUnsavedChanges
+            setLastSavedPlanning(JSON.parse(JSON.stringify(planningData))); 
+            
+            await new Promise(resolve => setTimeout(resolve, 500)); // Simula delay de salvamento
+            toast.success("Planejamento salvo com sucesso!", {
+                description: `Ajustes foram armazenados localmente no navegador.`,
+            });
+        } catch (e) {
+            toast.error("Erro ao salvar planejamento.", {
+                description: "Não foi possível acessar o armazenamento local.",
+            });
+            throw new Error("Falha ao salvar planejamento.");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     // --- Execução da Transição (Aplica as mudanças planejadas ao DB) ---
@@ -404,7 +416,8 @@ export function useTransicoes() {
         
         // Limpa o planejamento local após a execução bem-sucedida
         localStorage.removeItem(PLANNING_STORAGE_KEY);
-        // Não precisamos mais de setLastSavedPlanning
+        setPlanningData([]);
+        setLastSavedPlanning([]); // Limpa o estado salvo, forçando o recálculo baseado no DB
     };
 
     const transitionMutation = useMutation({
@@ -432,7 +445,8 @@ export function useTransicoes() {
         classificacao: planningData,
         isLoading,
         error,
-        // savePlanning removido do retorno
+        savePlanning,
+        isSaving,
         executeTransition: transitionMutation.mutateAsync,
         isExecuting: transitionMutation.isPending,
         initialClassification, 

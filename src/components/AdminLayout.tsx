@@ -1,7 +1,7 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { Building2, LogOut, User, Menu } from "lucide-react";
-import { Link, useNavigate, useLocation } from "react-router-dom"; // Importando useLocation
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSession } from "./SessionContextProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,23 +9,59 @@ import { Button } from "@/components/ui/button";
 import { useSidebarStore } from "@/hooks/use-sidebar-store";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { useUnsavedChangesWarning } from "@/hooks/use-unsaved-changes-warning"; // Importando o hook
+import { useUnsavedChangesWarning } from "@/hooks/use-unsaved-changes-warning";
+import { Dialog } from "@/components/ui/dialog";
+import UnsavedChangesModal from "./UnsavedChangesModal"; // Importando o novo modal
 
 interface AdminLayoutProps {
   children: ReactNode;
-  shouldBlockNavigation?: boolean; // Novo prop
+  shouldBlockNavigation?: boolean;
+  onSaveAndNavigate?: (to: string) => Promise<void>; // Novo prop para salvar e navegar
+  onDiscardAndNavigate?: (to: string) => void; // Novo prop para descartar e navegar
+  isSaving?: boolean; // Novo prop para estado de salvamento
 }
 
-export const AdminLayout = ({ children, shouldBlockNavigation = false }: AdminLayoutProps) => {
+export const AdminLayout = ({ 
+    children, 
+    shouldBlockNavigation = false,
+    onSaveAndNavigate,
+    onDiscardAndNavigate,
+    isSaving = false,
+}: AdminLayoutProps) => {
   const { user } = useSession();
   const navigate = useNavigate();
-  const location = useLocation(); // Usado para verificar a rota atual
   const { isOpen, toggle } = useSidebarStore();
   const isMobile = useIsMobile();
+  
+  // Estado para o modal de navegação bloqueada
+  const [isUnsavedModalOpen, setIsUnsavedModalOpen] = useState(false);
+  const [targetPath, setTargetPath] = useState<string | null>(null);
   
   // Usa o hook de alerta de navegação
   const blockNavigation = useUnsavedChangesWarning(shouldBlockNavigation);
   
+  const handleNavigationBlocked = (to: string) => {
+      setTargetPath(to);
+      setIsUnsavedModalOpen(true);
+  };
+  
+  const handleSaveAndNavigate = async () => {
+      if (targetPath && onSaveAndNavigate) {
+          await onSaveAndNavigate(targetPath);
+          setIsUnsavedModalOpen(false);
+          setTargetPath(null);
+          // A navegação é feita dentro do onSaveAndNavigate (na página Transicoes)
+      }
+  };
+  
+  const handleDiscardAndNavigate = () => {
+      if (targetPath && onDiscardAndNavigate) {
+          onDiscardAndNavigate(targetPath);
+          setIsUnsavedModalOpen(false);
+          setTargetPath(null);
+      }
+  };
+
   const handleLogout = async () => {
     // Se houver bloqueio, usa o alerta nativo para garantir que o usuário não perca dados
     if (shouldBlockNavigation) {
@@ -52,7 +88,8 @@ export const AdminLayout = ({ children, shouldBlockNavigation = false }: AdminLa
       {/* Sidebar (Visível em desktop, oculta/fixa em mobile) */}
       <AdminSidebar 
         shouldBlockNavigation={shouldBlockNavigation} 
-        blockNavigation={blockNavigation} // Passa a função de bloqueio
+        blockNavigation={blockNavigation}
+        onNavigationBlocked={handleNavigationBlocked} // Novo callback
       />
       
       {/* Overlay para mobile quando a sidebar está aberta */}
@@ -66,9 +103,7 @@ export const AdminLayout = ({ children, shouldBlockNavigation = false }: AdminLa
       <div 
         className={cn(
           "flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out",
-          // Em desktop, ajusta a margem se a sidebar estiver aberta (64) ou fechada (16)
-          // Em mobile, a sidebar é fixed, então o conteúdo não precisa de margem
-          !isMobile && (isOpen ? "ml-0" : "ml-0") // A sidebar é static, então o flex-1 cuida do espaço
+          !isMobile && (isOpen ? "ml-0" : "ml-0")
         )}
       >
         <header className="bg-card border-b border-border px-6 py-4 flex-shrink-0">
@@ -111,6 +146,17 @@ export const AdminLayout = ({ children, shouldBlockNavigation = false }: AdminLa
           {children}
         </main>
       </div>
+      
+      {/* Modal de Alterações Não Salvas */}
+      <Dialog open={isUnsavedModalOpen} onOpenChange={setIsUnsavedModalOpen}>
+        <UnsavedChangesModal
+            isOpen={isUnsavedModalOpen}
+            onClose={() => setIsUnsavedModalOpen(false)}
+            onSaveAndNavigate={handleSaveAndNavigate}
+            onDiscardAndNavigate={handleDiscardAndNavigate}
+            isSaving={isSaving}
+        />
+      </Dialog>
     </div>
   );
 };
