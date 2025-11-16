@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/alert-dialog";
 
 // Definindo a interface local para TurmaBase (usando o tipo do hook)
-// Usamos o tipo importado do hook, que já reflete a estrutura do Supabase.
 interface TurmaBase extends TurmaBaseHookType {}
 
 const TurmasBase = () => {
@@ -120,6 +119,7 @@ const TurmasBase = () => {
                   </div>
                   <div>
                     <CardTitle className="text-lg">{turma.nome}</CardTitle>
+                    {/* Exibe a descrição que contém a regra de corte etário */}
                     <CardDescription>{turma.descricao}</CardDescription>
                   </div>
                 </div>
@@ -128,7 +128,7 @@ const TurmasBase = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Faixa Etária:</span>
+                  <span className="text-muted-foreground">Faixa Etária (Meses):</span>
                   <Badge variant="secondary">
                     {turma.idade_minima_meses} - {turma.idade_maxima_meses} meses
                   </Badge>
@@ -150,7 +150,7 @@ const TurmasBase = () => {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta ação não pode ser desfeita. Isso excluirá permanentemente a turma base
+                        Esta ação não pode ser desfeita. Isso excluirá permanentemente a turma base 
                         <span className="font-semibold"> {turma.nome} </span>
                         e removerá todos os dados associados.
                       </AlertDialogDescription>
