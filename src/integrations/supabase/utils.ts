@@ -94,6 +94,11 @@ export const calculateAgeString = (dobString: string): string => {
 
 // Mapeia o formato do DB para o formato do Frontend (Crianca)
 export const mapDbToCrianca = (dbData: any): Crianca => {
+    // Nomes dos relacionamentos são baseados nos aliases definidos em criancas-api.ts
+    const cmeiAtual = dbData['cmeis!criancas_cmei_atual_id_fkey'];
+    const turmaAtual = dbData['turmas!criancas_turma_atual_id_fkey'];
+    const cmeiRemanejamento = dbData.cmeis_remanejamento;
+    
     return {
         id: dbData.id,
         nome: dbData.nome,
@@ -121,10 +126,9 @@ export const mapDbToCrianca = (dbData: any): Crianca => {
         
         // Campos calculados
         idade: calculateAgeString(dbData.data_nascimento),
-        cmeiNome: dbData.cmeis?.nome, // Assume que o JOIN 'cmeis' está disponível
-        turmaNome: dbData.turmas?.nome, // Assume que o JOIN 'turmas' está disponível
-        // cmeiRemanejamentoNome: dbData.cmeis_remanejamento?.nome, // REMOVIDO TEMPORARIAMENTE
-        cmeiRemanejamentoNome: undefined, // Define como undefined para evitar erro de acesso
+        cmeiNome: cmeiAtual?.nome, // Nome do CMEI atual
+        turmaNome: turmaAtual?.nome, // Nome da Turma atual
+        cmeiRemanejamentoNome: cmeiRemanejamento?.nome, // Nome do CMEI de remanejamento
     };
 };
 

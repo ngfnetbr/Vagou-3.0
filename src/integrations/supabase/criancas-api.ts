@@ -16,7 +16,8 @@ const getAdminUser = async (): Promise<string> => {
 const SELECT_FIELDS = `
     *,
     cmeis!criancas_cmei_atual_id_fkey(nome),
-    turmas!criancas_turma_atual_id_fkey(nome)
+    turmas!criancas_turma_atual_id_fkey(nome),
+    cmeis_remanejamento:cmeis!criancas_cmei_remanejamento_id_fkey(nome)
 `;
 
 // --- Funções de Busca ---
@@ -344,6 +345,8 @@ export const apiRealocarCrianca = async (criancaId: string, data: ConvocationDat
         .update({
             cmei_atual_id: data.cmei_id,
             turma_atual_id: data.turma_id,
+            cmei_remanejamento_id: null, // Limpa remanejamento ao realocar
+            status: 'Matriculado', // Garante que o status volte a ser Matriculado se for Remanejamento Solicitado
         })
         .eq('id', criancaId);
 
@@ -435,6 +438,8 @@ export const apiMassRealocate = async (data: MassRealocationData) => {
         .update({
             cmei_atual_id: data.cmei_id,
             turma_atual_id: data.turma_id,
+            cmei_remanejamento_id: null, // Limpa remanejamento ao realocar
+            status: 'Matriculado', // Garante que o status volte a ser Matriculado se for Remanejamento Solicitado
         })
         .in('id', data.criancaIds);
 

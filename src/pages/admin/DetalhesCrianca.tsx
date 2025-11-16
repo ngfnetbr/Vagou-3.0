@@ -212,7 +212,8 @@ const DetalhesCrianca = () => {
   const isConvocado = crianca.status === 'Convocado';
   const isDesistente = crianca.status === 'Desistente';
   const isRecusada = crianca.status === 'Recusada';
-  
+  const isRemanejamento = crianca.status === 'Remanejamento Solicitado'; // Novo status
+
   const deadlineInfo = isConvocado && crianca.convocacao_deadline ? (() => {
     const deadlineDate = parseISO(crianca.convocacao_deadline + 'T00:00:00');
     const today = new Date();
@@ -361,7 +362,7 @@ const DetalhesCrianca = () => {
             )}
             
             {/* 3. Se Fila de Espera, Convocado (expirado) ou Recusada: Convocar/Reconvocar */}
-            {(!isMatriculado && !isDesistente) && (
+            {(!isMatriculado && !isDesistente && !isRemanejamento) && (
                 <Dialog open={isConvocarModalOpen} onOpenChange={setIsConvocarModalOpen}>
                     <DialogTrigger asChild>
                         <Button 
@@ -388,8 +389,8 @@ const DetalhesCrianca = () => {
                 </Dialog>
             )}
             
-            {/* 4. Se Matriculado: Marcar Desistente */}
-            {isMatriculado && (
+            {/* 4. Se Matriculado OU Remanejamento Solicitado: Marcar Desistente */}
+            {(isMatriculado || isRemanejamento) && (
                 <Button 
                     variant="outline" 
                     className="text-destructive border-destructive hover:bg-destructive/10"
@@ -418,7 +419,7 @@ const DetalhesCrianca = () => {
             {/* Botão de Excluir (Apenas se não estiver em status ativo) */}
             <AlertDialog>
                 <AlertDialogTrigger asChild>
-                    <Button variant="destructive" disabled={isDeleting || isMatriculado || isFila || isConvocado}>
+                    <Button variant="destructive" disabled={isDeleting || isMatriculado || isFila || isConvocado || isRemanejamento}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Excluir
                     </Button>
@@ -430,7 +431,7 @@ const DetalhesCrianca = () => {
                             Esta ação não pode ser desfeita. Isso excluirá permanentemente a criança 
                             <span className="font-semibold"> {crianca.nome} </span>
                             e todos os seus registros.
-                            <p className="mt-2 text-sm text-destructive font-semibold">A exclusão só é permitida se a criança não estiver em status ativo (Fila, Convocado ou Matriculado).</p>
+                            <p className="mt-2 text-sm text-destructive font-semibold">A exclusão só é permitida se a criança não estiver em status ativo (Fila, Convocado, Matriculado ou Remanejamento Solicitado).</p>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -459,6 +460,8 @@ const DetalhesCrianca = () => {
               <p className="text-sm text-muted-foreground mt-2">
                 {isMatriculado 
                   ? `Matriculado(a) no ${crianca.cmeiNome}` 
+                  : isRemanejamento
+                  ? `Matriculado(a) no ${crianca.cmeiNome} (Aguardando Remanejamento)`
                   : isConvocado
                   ? `Convocado(a) para ${crianca.cmeiNome}`
                   : isDesistente
@@ -476,10 +479,10 @@ const DetalhesCrianca = () => {
               <CardTitle className="text-lg">Detalhes da Vaga</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {isMatriculado && crianca.turmaNome ? (
+              {(isMatriculado || isRemanejamento) && crianca.turmaNome ? (
                 <div className="flex items-center gap-2">
                   <School className="h-4 w-4 text-primary" />
-                  <p className="text-sm font-medium">Turma: {crianca.turmaNome}</p>
+                  <p className="text-sm font-medium">Turma Atual: {crianca.turmaNome}</p>
                 </div>
               ) : isFila && crianca.posicao_fila !== undefined ? (
                 <div className="flex items-center gap-2">
@@ -493,6 +496,13 @@ const DetalhesCrianca = () => {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Nenhuma turma ou posição na fila definida.</p>
+              )}
+              
+              {isRemanejamento && crianca.cmeiRemanejamentoNome && (
+                <div className="flex items-center gap-2 pt-2 border-t border-border">
+                  <RotateCcw className="h-4 w-4 text-accent" />
+                  <p className="text-sm font-medium text-accent">Remanejamento para: {crianca.cmeiRemanejamentoNome}</p>
+                </div>
               )}
             </CardContent>
           </Card>
