@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Crianca } from "@/integrations/supabase/types";
 import { fetchCriancas, apiMarcarDesistente, apiTransferirCrianca, apiMassRealocate, apiMarcarFimDeFila, apiConvocarCrianca } from "@/integrations/supabase/criancas-api";
 import { toast } from "sonner";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react"; // Importando useRef
 import { ConvocationData } from "@/integrations/supabase/types";
 import { format } from "date-fns";
 
@@ -97,8 +97,9 @@ export function useTransicoes() {
     const queryClient = useQueryClient();
     
     const [planningData, setPlanningData] = useState<CriancaClassificada[]>([]);
-    const [lastSavedPlanning, setLastSavedPlanning] = useState<CriancaClassificada[]>([]); // Reintroduzido
-    const [isSaving, setIsSaving] = useState(false); // Reintroduzido
+    const [lastSavedPlanning, setLastSavedPlanning] = useState<CriancaClassificada[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
+    const isInitialized = useRef(false); // Flag para garantir inicialização única
 
     const { data: criancas, isLoading, error } = useQuery<Crianca[], Error>({
         queryKey: ["criancas"], 
@@ -112,22 +113,25 @@ export function useTransicoes() {
     
     // Efeito para carregar o planejamento do localStorage na montagem
     useEffect(() => {
+        if (isLoading || isInitialized.current) return;
+        
         const savedPlanning = localStorage.getItem(PLANNING_STORAGE_KEY);
+        let loadedPlanning: CriancaClassificada[] | null = null;
         
         if (savedPlanning) {
             try {
                 const parsedPlanning = JSON.parse(savedPlanning) as CriancaClassificada[];
                 
-                // Verifica se o planejamento salvo corresponde à lista atual de IDs de crianças
+                // 1. Verifica se o planejamento salvo corresponde à lista atual de IDs de crianças
                 const savedIds = new Set(parsedPlanning.map(c => c.id));
                 const currentIds = new Set(initialClassification.map(c => c.id));
                 
-                // Se os IDs forem idênticos, carrega o planejamento salvo
                 if (savedIds.size > 0 && savedIds.size === currentIds.size && [...savedIds].every(id => currentIds.has(id))) {
-                    setPlanningData(parsedPlanning);
-                    setLastSavedPlanning(parsedPlanning); // Define como o último estado salvo
+                    loadedPlanning = parsedPlanning;
                     toast.info("Planejamento anterior carregado.", { duration: 3000 });
-                    return;
+                } else {
+                    // Se os dados estiverem desatualizados, limpa o localStorage
+                    localStorage.removeItem(PLANNING_STORAGE_KEY);
                 }
             } catch (e) {
                 console.error("Erro ao carregar planejamento do localStorage:", e);
@@ -135,13 +139,16 @@ export function useTransicoes() {
             }
         }
         
-        // Se não houver planejamento salvo ou se os dados estiverem desatualizados, usa a classificação inicial
-        if (initialClassification.length > 0 && planningData.length === 0) {
-            setPlanningData(initialClassification);
-            setLastSavedPlanning(initialClassification); // Define a classificação inicial como o último estado salvo
+        // 2. Define o estado: usa o carregado ou a classificação inicial
+        const finalPlanning = loadedPlanning || initialClassification;
+        
+        if (finalPlanning.length > 0) {
+            setPlanningData(finalPlanning);
+            setLastSavedPlanning(finalPlanning);
+            isInitialized.current = true;
         }
         
-    }, [initialClassification]); // Depende apenas da classificação inicial
+    }, [initialClassification, isLoading]); // Depende de initialClassification e isLoading
 
     // --- Lógica de Alterações Não Salvas (Calculado) ---
     const hasUnsavedChanges = useMemo(() => {
@@ -307,9 +314,10 @@ export function useTransicoes() {
         }
     };
     
-    // NOVO: Função para descartar o planejamento
+    // Função para descartar o planejamento
     const discardPlanning = () => {
-        // NÃO LIMPA O LOCAL STORAGE. Apenas reverte o estado atual para o último estado salvo (lastSavedPlanning).
+        // Reverte o estado atual para o último estado salvo (lastSavedPlanning).
+        // O lastSavedPlanning é o que foi carregado do localStorage ou salvo pela última vez.
         setPlanningData(lastSavedPlanning);
         toast.info("Alterações descartadas.", {
             description: "O planejamento foi revertido para o último estado salvo no navegador.",
