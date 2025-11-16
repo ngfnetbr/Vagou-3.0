@@ -123,7 +123,8 @@ export const mapDbToCrianca = (dbData: any): Crianca => {
         idade: calculateAgeString(dbData.data_nascimento),
         cmeiNome: dbData.cmeis?.nome, // Assume que o JOIN 'cmeis' está disponível
         turmaNome: dbData.turmas?.nome, // Assume que o JOIN 'turmas' está disponível
-        cmeiRemanejamentoNome: dbData.cmeis_remanejamento?.nome, // NOVO: Assume que o JOIN 'cmeis_remanejamento' está disponível
+        // cmeiRemanejamentoNome: dbData.cmeis_remanejamento?.nome, // REMOVIDO TEMPORARIAMENTE
+        cmeiRemanejamentoNome: undefined, // Define como undefined para evitar erro de acesso
     };
 };
 
