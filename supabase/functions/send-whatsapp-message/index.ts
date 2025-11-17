@@ -78,6 +78,10 @@ serve(async (req) => {
 
     // 5. Receber dados da requisição
     const { phone, message } = await req.json();
+    
+    // --- DEBUG LOG ---
+    console.log(`[DEBUG] Received Phone: ${phone}, Message Length: ${message?.length}`);
+    // -----------------
 
     if (!phone || !message) {
       return new Response(JSON.stringify({ error: 'Missing required fields: phone and message' }), {
