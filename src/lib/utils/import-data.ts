@@ -18,12 +18,14 @@ const EDGE_FUNCTION_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/
  * @returns A promise resolving to the import results summary.
  */
 export async function importChildrenData(csvContent: string): Promise<ImportResult> {
-    // Usamos getAccessToken() para garantir que o token mais recente seja obtido
-    const { data: { access_token }, error: tokenError } = await supabase.auth.getAccessToken();
+    // Usamos getSession() para obter a sessão e o token de acesso
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-    if (tokenError || !access_token) {
-        throw new Error("User is not authenticated or token is missing.");
+    if (sessionError || !session || !session.access_token) {
+        throw new Error("User is not authenticated or session token is missing.");
     }
+    
+    const access_token = session.access_token;
 
     const response = await fetch(EDGE_FUNCTION_URL, {
         method: 'POST',
