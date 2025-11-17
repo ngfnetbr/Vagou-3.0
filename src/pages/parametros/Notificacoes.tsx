@@ -7,32 +7,45 @@ import { useConfiguracoes, ConfiguracoesFormData } from "@/hooks/use-configuraco
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input"; // Importando Input
 
 // Esquema de validação para as configurações de notificação (subconjunto do schema principal)
 const notificacaoSchema = z.object({
   notificacao_email: z.boolean(),
   notificacao_sms: z.boolean(),
   notificacao_whatsapp: z.boolean(),
+  zapi_instance_id: z.string().optional().or(z.literal('')),
+  zapi_token: z.string().optional().or(z.literal('')),
 });
+
+type NotificacaoFormData = z.infer<typeof notificacaoSchema>;
 
 const Notificacoes = () => {
   const { config, isLoading, updateConfiguracoes, isUpdating } = useConfiguracoes();
 
-  const form = useForm<z.infer<typeof notificacaoSchema>>({
+  const form = useForm<NotificacaoFormData>({
     resolver: zodResolver(notificacaoSchema),
     values: {
       notificacao_email: config?.notificacao_email ?? true,
       notificacao_sms: config?.notificacao_sms ?? false,
       notificacao_whatsapp: config?.notificacao_whatsapp ?? false,
+      zapi_instance_id: config?.zapi_instance_id || '',
+      zapi_token: config?.zapi_token || '',
     },
     mode: "onChange",
   });
 
-  const onSubmit = async (data: z.infer<typeof notificacaoSchema>) => {
+  const onSubmit = async (data: NotificacaoFormData) => {
     if (!config) {
         toast.error("Erro", { description: "Configurações não carregadas." });
+        return;
+    }
+    
+    // Validação adicional para garantir que as chaves sejam preenchidas se o WhatsApp estiver ativo
+    if (data.notificacao_whatsapp && (!data.zapi_instance_id || !data.zapi_token)) {
+        toast.error("Configuração Incompleta", { description: "Se a notificação por WhatsApp estiver ativa, o ID da Instância e o Token são obrigatórios." });
         return;
     }
     
@@ -141,29 +154,47 @@ const Notificacoes = () => {
 
             <Separator />
             
-            {/* Instruções de Configuração do WhatsApp */}
-            <div className="space-y-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <h3 className="text-lg font-semibold text-yellow-800 flex items-center gap-2">
+            {/* Configuração do WhatsApp (Chaves no DB) */}
+            <div className="space-y-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
                     <AlertCircle className="h-5 w-5" />
-                    Configuração do Z-API (WhatsApp)
+                    Chaves de Acesso Z-API
                 </h3>
-                <p className="text-sm text-yellow-700">
-                    Para que as notificações por WhatsApp funcionem, você deve configurar as chaves de acesso do Z-API diretamente no ambiente de Edge Functions do Supabase.
+                <p className="text-sm text-muted-foreground">
+                    Insira as chaves de acesso do Z-API. Elas serão usadas pela Edge Function para enviar mensagens.
                 </p>
-                <ol className="list-decimal list-inside text-sm text-yellow-700 space-y-1">
-                    <li>Acesse o Supabase Console do seu projeto.</li>
-                    <li>Vá para a seção **Edge Functions**.</li>
-                    <li>Clique em **Manage Secrets**.</li>
-                    <li>Adicione os seguintes segredos:
-                        <ul className="list-disc list-inside ml-4 mt-1 font-mono text-xs">
-                            <li><span className="font-bold">ZAPI_URL</span>: O URL base da sua instância Z-API.</li>
-                            <li><span className="font-bold">ZAPI_TOKEN</span>: O token de acesso secreto do Z-API.</li>
-                        </ul>
-                    </li>
-                    <li>Certifique-se de que a Edge Function `send-whatsapp-message` esteja implantada.</li>
-                </ol>
-                <p className="text-xs text-yellow-700 italic mt-3">
-                    O VAGOU não armazena suas chaves de API no banco de dados por motivos de segurança.
+                
+                <div className="grid md:grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="zapi_instance_id"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>ID da Instância (ZAPI_INSTANCE_ID)</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Ex: 3DC7A776B94830AB77B756C5A090F8FA" {...field} disabled={isUpdating} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="zapi_token"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Token de Acesso (ZAPI_TOKEN)</FormLabel>
+                                <FormControl>
+                                    <Input type="password" placeholder="Ex: 51BBE9B5994BCE59700A948E" {...field} disabled={isUpdating} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+                
+                <p className="text-xs text-muted-foreground italic mt-3">
+                    Nota: Se você já configurou esses valores como Secrets no Supabase, eles serão ignorados em favor dos valores salvos aqui no DB.
                 </p>
             </div>
 

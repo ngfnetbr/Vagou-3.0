@@ -15,6 +15,8 @@ export interface Configuracoes {
   notificacao_email: boolean;
   notificacao_sms: boolean;
   notificacao_whatsapp: boolean; // NOVO CAMPO
+  zapi_instance_id?: string; // NOVO CAMPO
+  zapi_token?: string; // NOVO CAMPO
   updated_at: string;
 }
 
@@ -44,6 +46,8 @@ const fetchConfiguracoes = async (): Promise<Configuracoes> => {
     email_contato: data.email_contato || '',
     telefone_contato: data.telefone_contato || '',
     notificacao_whatsapp: data.notificacao_whatsapp ?? false, // Garante valor padrão
+    zapi_instance_id: data.zapi_instance_id || '', // Garante valor padrão
+    zapi_token: data.zapi_token || '', // Garante valor padrão
   } as Configuracoes;
 };
 

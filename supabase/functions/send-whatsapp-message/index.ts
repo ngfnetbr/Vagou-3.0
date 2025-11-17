@@ -8,12 +8,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// AGORA LÊ OS SEGREDOS DO AMBIENTE
-// @ts-ignore
-const ZAPI_INSTANCE_ID = Deno.env.get('ZAPI_INSTANCE_ID'); 
-// @ts-ignore
-const ZAPI_TOKEN = Deno.env.get('ZAPI_TOKEN');
-
 // URL base da API Z-API
 const ZAPI_BASE_URL = 'https://api.z-api.io/instances/';
 
@@ -80,10 +74,10 @@ serve(async (req) => {
       }
     );
 
-    // 3. Verifica a configuração de notificação do WhatsApp no DB
+    // 3. Busca as configurações de notificação e as chaves Z-API do DB
     const { data: configData, error: configError } = await supabase
         .from('configuracoes_sistema')
-        .select('notificacao_whatsapp')
+        .select('notificacao_whatsapp, zapi_instance_id, zapi_token')
         .eq('id', 1)
         .single();
         
@@ -101,13 +95,13 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
     }
+    
+    const ZAPI_INSTANCE_ID = configData.zapi_instance_id;
+    const ZAPI_TOKEN = configData.zapi_token;
 
-    // 4. Validação de Segredos
+    // 4. Validação de Segredos (agora lidos do DB)
     if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN) {
-        // Adicionando log para debug
-        console.error(`[ZAPI DEBUG] ZAPI_INSTANCE_ID is null: ${ZAPI_INSTANCE_ID === null}, ZAPI_TOKEN is null: ${ZAPI_TOKEN === null}`);
-        
-        return new Response(JSON.stringify({ error: 'Z-API secrets not configured in environment. Cannot send message.' }), {
+        return new Response(JSON.stringify({ error: 'Z-API secrets not configured in database. Cannot send message.' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
