@@ -18,6 +18,39 @@ const ZAPI_TOKEN = Deno.env.get('ZAPI_TOKEN');
 // URL base da API Z-API
 const ZAPI_BASE_URL = 'https://api.z-api.io/instances/';
 
+// Helper para limpar e formatar o telefone para o padrão E.164 (55 + DDD + Número)
+function formatPhoneForZapi(phone: string): string | null {
+    if (!phone) return null;
+    
+    let cleanPhone = phone.replace(/\D/g, '');
+    
+    // Se o número já começar com 55, assumimos que está correto
+    if (cleanPhone.startsWith('55')) {
+        // Remove o 55 para revalidar o comprimento
+        cleanPhone = cleanPhone.substring(2);
+    }
+    
+    // Esperamos 10 dígitos (DDD + 8 dígitos) ou 11 dígitos (DDD + 9 + 8 dígitos)
+    if (cleanPhone.length === 10) { // Ex: 4488887777 (sem o 9)
+        // Adiciona o 9 se for um número de celular (assumindo que todos são celulares)
+        // Isso é arriscado, mas necessário se o número foi salvo sem o 9.
+        // Vamos manter a lógica mais simples: se tiver 10 ou 11 dígitos, adiciona 55.
+        return `55${cleanPhone}`;
+    }
+    
+    if (cleanPhone.length === 11) { // Ex: 44988887777 (com o 9)
+        return `55${cleanPhone}`;
+    }
+    
+    // Se o número for muito longo ou muito curto, é inválido
+    if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+        return null;
+    }
+    
+    return `55${cleanPhone}`;
+}
+
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -97,13 +130,13 @@ serve(async (req) => {
     }
     
     // 6. Limpeza e Validação do Telefone
-    let cleanPhone = phone ? phone.replace(/\D/g, '') : undefined;
+    const formattedPhone = formatPhoneForZapi(phone || '');
     
-    console.log(`[DEBUG] Original Phone: ${phone}, Cleaned Phone: ${cleanPhone}, Message Length: ${message?.length}`);
+    console.log(`[DEBUG] Original Phone: ${phone}, Formatted Phone: ${formattedPhone}, Message Length: ${message?.length}`);
 
-    if (!cleanPhone || !message) {
+    if (!formattedPhone || !message) {
       return new Response(JSON.stringify({ 
-          error: 'Missing required fields: phone and message',
+          error: 'Missing required fields: phone and message, or phone format is invalid.',
           debug_phone: phone,
           debug_message_length: message?.length,
       }), {
@@ -112,28 +145,20 @@ serve(async (req) => {
       });
     }
     
-    // 7. Formatar o número de telefone
-    if (!cleanPhone.startsWith('55')) {
-        if (cleanPhone.length === 10 || cleanPhone.length === 11) {
-            cleanPhone = '55' + cleanPhone;
-        }
-    }
-    
-    // 8. Preparar payload para o Z-API
+    // 7. Preparar payload para o Z-API
     const zapiPayload = {
-        phone: cleanPhone,
+        phone: formattedPhone,
         message: message,
     };
     
     // CONSTRUÇÃO DO URL FINAL: Base + ID da Instância + /token/ + Token + /send-text
     const finalUrl = `${ZAPI_BASE_URL}${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`;
 
-    // 9. Enviar requisição para o Z-API
+    // 8. Enviar requisição para o Z-API
     const zapiResponse = await fetch(finalUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            // Removendo o header Client-Token, pois o token já está no URL
         },
         body: JSON.stringify(zapiPayload),
     });
