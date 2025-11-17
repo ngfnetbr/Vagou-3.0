@@ -73,7 +73,6 @@ serve(async (req) => {
 
     // 4. Validação de Segredos
     if (!ZAPI_URL || !ZAPI_TOKEN) {
-        // Adicionando log de debug para o token (apenas nos logs do Supabase)
         console.error(`[ZAPI DEBUG] ZAPI_URL configured: ${!!ZAPI_URL}, ZAPI_TOKEN configured: ${!!ZAPI_TOKEN}`);
         
         return new Response(JSON.stringify({ error: 'Z-API secrets not configured in environment. Cannot send message.' }), {
@@ -98,15 +97,12 @@ serve(async (req) => {
     // 6. Limpeza e Validação do Telefone
     let cleanPhone = phone ? phone.replace(/\D/g, '') : undefined;
     
-    // --- DEBUG LOG (Mantido para logs do servidor) ---
     console.log(`[DEBUG] Original Phone: ${phone}, Cleaned Phone: ${cleanPhone}, Message Length: ${message?.length}`);
-    // -----------------
 
     if (!cleanPhone || !message) {
-      // RETORNA O PAYLOAD RECEBIDO NO ERRO 400 PARA DEBUG NO CLIENTE
       return new Response(JSON.stringify({ 
           error: 'Missing required fields: phone and message',
-          debug_phone: phone, // Retorna o valor BRUTO recebido
+          debug_phone: phone,
           debug_message_length: message?.length,
       }), {
         status: 400,
@@ -114,11 +110,8 @@ serve(async (req) => {
       });
     }
     
-    // 7. Formatar o número de telefone (cleanPhone já deve ser apenas dígitos)
-    
-    // Adiciona '55' se o número não começar com ele (formato brasileiro)
+    // 7. Formatar o número de telefone
     if (!cleanPhone.startsWith('55')) {
-        // Se o número tiver 10 ou 11 dígitos (padrão DDD + Número), adiciona 55
         if (cleanPhone.length === 10 || cleanPhone.length === 11) {
             cleanPhone = '55' + cleanPhone;
         }
@@ -130,12 +123,13 @@ serve(async (req) => {
         message: message,
     };
 
-    // 9. Enviar requisição para o Z-API
+    // 9. Enviar requisição para o Z-API, usando o header Client-Token
     const zapiResponse = await fetch(ZAPI_URL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${ZAPI_TOKEN}`, // Usando o token secreto
+            // <--- MUDANÇA CRÍTICA AQUI: USANDO CLIENT-TOKEN --->
+            'Client-Token': ZAPI_TOKEN, 
         },
         body: JSON.stringify(zapiPayload),
     });
@@ -145,16 +139,14 @@ serve(async (req) => {
     if (!zapiResponse.ok) {
         console.error('Z-API Error:', zapiResult);
         
-        // Tenta extrair a mensagem de erro do Z-API
         let zapiErrorMessage = zapiResult.error || zapiResult.message || JSON.stringify(zapiResult);
         
-        // Retorna 502 Bad Gateway para indicar erro de serviço externo
         return new Response(JSON.stringify({ 
             error: `Failed to send message via Z-API: ${zapiErrorMessage}`, 
             details: zapiResult,
             zapi_status: zapiResponse.status,
         }), {
-            status: 502, // Retorna 502 para indicar erro de gateway
+            status: 502,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     }
