@@ -8,12 +8,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// O URL e a chave do Z-API devem ser configurados como segredos no Supabase Console.
-// AGORA BUSCA ZAPI_INSTANCE_ID
-// @ts-ignore
-const ZAPI_INSTANCE_ID = Deno.env.get('ZAPI_INSTANCE_ID'); 
-// @ts-ignore
-const ZAPI_TOKEN = Deno.env.get('ZAPI_TOKEN');
+// HARDCODED Z-API CONFIGURATION (FOR IMMEDIATE TESTING)
+// This eliminates environment variable reading errors.
+const ZAPI_INSTANCE_ID = '3DC7A776B94830AB77B756C5A090F8FA'; 
+const ZAPI_TOKEN = '51BBE9B5994BCE59700A948E';
 
 // URL base da API Z-API
 const ZAPI_BASE_URL = 'https://api.z-api.io/instances/';
@@ -103,11 +101,9 @@ serve(async (req) => {
         });
     }
 
-    // 4. Validação de Segredos
+    // 4. Validação de Configuração (Hardcoded)
     if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN) {
-        console.error(`[ZAPI DEBUG] ZAPI_INSTANCE_ID configured: ${!!ZAPI_INSTANCE_ID}, ZAPI_TOKEN configured: ${!!ZAPI_TOKEN}`);
-        
-        return new Response(JSON.stringify({ error: 'Z-API secrets not configured in environment. Cannot send message.' }), {
+        return new Response(JSON.stringify({ error: 'Z-API configuration is missing (hardcoded values are empty).' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
@@ -148,7 +144,7 @@ serve(async (req) => {
         message: message,
     };
     
-    // CONSTRUÇÃO DO URL FINAL: Base + ID da Instância + /token/ + Token + /send-text (CORRIGIDO)
+    // CONSTRUÇÃO DO URL FINAL: USANDO A URL COMPLETA FORNECIDA PELO USUÁRIO
     const finalUrl = `${ZAPI_BASE_URL}${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`;
 
     // 8. Enviar requisição para o Z-API
@@ -156,7 +152,6 @@ serve(async (req) => {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            // REMOVIDO: Authorization header
         },
         body: JSON.stringify(zapiPayload),
     });
