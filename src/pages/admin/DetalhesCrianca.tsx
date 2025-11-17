@@ -50,6 +50,8 @@ const DetalhesCrianca = () => {
     isConfirmingMatricula,
     deleteCrianca,
     isDeleting,
+    resendConvocationNotification, // NOVO
+    isResendingNotification, // NOVO
   } = useCriancas();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -206,6 +208,18 @@ const DetalhesCrianca = () => {
       refetch();
     }
   };
+  
+  const handleResendNotification = async () => {
+    if (criancaId) {
+        try {
+            await resendConvocationNotification(criancaId);
+        } catch (e: any) {
+            toast.error("Falha no Reenvio", {
+                description: e.message,
+            });
+        }
+    }
+  };
 
   const isMatriculado = crianca.status === 'Matriculado' || crianca.status === 'Matriculada';
   const isFila = crianca.status === 'Fila de Espera';
@@ -323,6 +337,20 @@ const DetalhesCrianca = () => {
                     >
                         <ListRestart className="mr-2 h-4 w-4" />
                         Fim de Fila
+                    </Button>
+                    
+                    <Button 
+                        variant="outline" 
+                        className="text-primary border-primary hover:bg-primary/10"
+                        onClick={handleResendNotification}
+                        disabled={isResendingNotification}
+                    >
+                        {isResendingNotification ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Bell className="mr-2 h-4 w-4" />
+                        )}
+                        Reenviar Notificação
                     </Button>
                 </>
             )}

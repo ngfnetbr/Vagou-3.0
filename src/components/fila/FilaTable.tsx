@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { format, parseISO, isValid, differenceInMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import CountdownTimer from "../CountdownTimer"; // Importando o novo componente
+import { useCriancas } from "@/hooks/use-criancas"; // Importando useCriancas para a mutação de reenvio
 
 type JustificativaAction = 'recusada' | 'desistente' | 'fim_de_fila';
 
@@ -61,6 +62,17 @@ export const FilaTable = ({
   getInscriptionDate,
 }: FilaTableProps) => {
   const navigate = useNavigate();
+  const { resendConvocationNotification, isResendingNotification } = useCriancas(); // Usando o hook de reenvio
+
+  const handleResendNotification = async (criancaId: string) => {
+    try {
+        await resendConvocationNotification(criancaId);
+    } catch (e: any) {
+        toast.error("Falha no Reenvio", {
+            description: e.message,
+        });
+    }
+  };
 
   return (
     <Card>
@@ -206,8 +218,15 @@ export const FilaTable = ({
                                 </AlertDialogContent>
                               </AlertDialog>
                               
-                              <DropdownMenuItem onSelect={() => toast.info("Reenviar notificação em desenvolvimento...")}>
-                                <Bell className="mr-2 h-4 w-4" />
+                              <DropdownMenuItem 
+                                onSelect={() => handleResendNotification(item.id)}
+                                disabled={isResendingNotification}
+                              >
+                                {isResendingNotification ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Bell className="mr-2 h-4 w-4" />
+                                )}
                                 Reenviar notificação
                               </DropdownMenuItem>
                               

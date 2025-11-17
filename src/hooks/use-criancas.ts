@@ -14,6 +14,7 @@ import {
     apiRealocarCrianca,
     apiTransferirCrianca,
     apiSolicitarRemanejamento,
+    apiResendConvocationNotification, // NOVO
     getCriancaById,
     fetchCriancasByTurmaId,
 } from "@/integrations/supabase/criancas-api";
@@ -234,6 +235,18 @@ export const useCriancas = () => {
       toast.error("Falha na exclusão", { description: e.message });
     },
   });
+  
+  // 11. Reenviar Notificação (WhatsApp) - NOVO
+  const { mutateAsync: resendConvocationNotification, isPending: isResendingNotification } = useMutation({
+    mutationFn: apiResendConvocationNotification,
+    onSuccess: (criancaId) => {
+        // Não precisa invalidar queries, apenas mostra o toast
+        toast.success("Notificação de convocação reenviada via WhatsApp!");
+    },
+    onError: (e: Error) => {
+        toast.error("Falha ao reenviar notificação", { description: e.message });
+    },
+  });
 
   return {
     criancas: criancas || [],
@@ -268,6 +281,10 @@ export const useCriancas = () => {
     isTransferring,
     solicitarRemanejamento: (args: { id: string, cmeiId: string, cmeiNome: string, justificativa: string }) => solicitarRemanejamento(args),
     isRequestingRemanejamento,
+    
+    // NOVO: Notificações
+    resendConvocationNotification,
+    isResendingNotification,
   };
 };
 
