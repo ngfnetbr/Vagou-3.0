@@ -30,7 +30,14 @@ const CSV_HEADERS = [
     "responsavel_email",
     "endereco",
     "bairro",
-    "observacoes"
+    "observacoes",
+    // Novos campos para migração
+    "status",
+    "cmei_atual_nome",
+    "turma_atual_nome",
+    "posicao_fila",
+    "convocacao_deadline",
+    "data_penalidade"
 ];
 
 const CSV_EXAMPLE_ROW = [
@@ -47,7 +54,14 @@ const CSV_EXAMPLE_ROW = [
     "maria@email.com",
     "Rua Exemplo, 100",
     "Bairro Novo",
-    "Alergia a amendoim"
+    "Alergia a amendoim",
+    // Exemplo de status
+    "Fila de Espera",
+    "",
+    "",
+    "10",
+    "",
+    ""
 ];
 
 const Importar = () => {
@@ -198,7 +212,7 @@ const Importar = () => {
                         O arquivo CSV deve conter as seguintes colunas (cabeçalhos obrigatórios):
                     </p>
                     <code className="block p-2 text-xs bg-gray-100 rounded-md overflow-x-auto text-gray-700">
-                        nome,data_nascimento (AAAA-MM-DD),sexo (M/F),programas_sociais (Sim/Não),aceita_qualquer_cmei (Sim/Não),cmei1_preferencia,cmei2_preferencia,responsavel_nome,responsavel_cpf,responsavel_telefone,responsavel_email,endereco,bairro,observacoes
+                        nome,data_nascimento (AAAA-MM-DD),sexo (M/F),programas_sociais (Sim/Não),aceita_qualquer_cmei (Sim/Não),cmei1_preferencia,cmei2_preferencia,responsavel_nome,responsavel_cpf,responsavel_telefone,responsavel_email,endereco,bairro,observacoes,status (Matriculado/Fila de Espera/etc),cmei_atual_nome,turma_atual_nome,posicao_fila,convocacao_deadline (AAAA-MM-DD),data_penalidade (AAAA-MM-DD)
                     </code>
                     <p className="text-xs text-red-500">
                         Atenção: A importação insere novos registros. Não use para atualização de dados existentes.
