@@ -17,6 +17,7 @@ export interface Configuracoes {
   notificacao_whatsapp: boolean; // NOVO CAMPO
   zapi_instance_id?: string; // NOVO CAMPO
   zapi_token?: string; // NOVO CAMPO
+  webhook_url_notificacao?: string; // NOVO CAMPO
   updated_at: string;
 }
 
@@ -48,6 +49,7 @@ const fetchConfiguracoes = async (): Promise<Configuracoes> => {
     notificacao_whatsapp: data.notificacao_whatsapp ?? false, // Garante valor padrão
     zapi_instance_id: data.zapi_instance_id || '', // Garante valor padrão
     zapi_token: data.zapi_token || '', // Garante valor padrão
+    webhook_url_notificacao: data.webhook_url_notificacao || '', // Garante valor padrão
   } as Configuracoes;
 };
 
