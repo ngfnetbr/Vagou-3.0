@@ -73,6 +73,9 @@ serve(async (req) => {
 
     // 4. Validação de Segredos
     if (!ZAPI_URL || !ZAPI_TOKEN) {
+        // Adicionando log de debug para o token (apenas nos logs do Supabase)
+        console.error(`[ZAPI DEBUG] ZAPI_URL configured: ${!!ZAPI_URL}, ZAPI_TOKEN configured: ${!!ZAPI_TOKEN}`);
+        
         return new Response(JSON.stringify({ error: 'Z-API secrets not configured in environment. Cannot send message.' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -142,9 +145,12 @@ serve(async (req) => {
     if (!zapiResponse.ok) {
         console.error('Z-API Error:', zapiResult);
         
+        // Tenta extrair a mensagem de erro do Z-API
+        let zapiErrorMessage = zapiResult.error || zapiResult.message || JSON.stringify(zapiResult);
+        
         // Retorna 502 Bad Gateway para indicar erro de serviço externo
         return new Response(JSON.stringify({ 
-            error: 'Failed to send message via Z-API', 
+            error: `Failed to send message via Z-API: ${zapiErrorMessage}`, 
             details: zapiResult,
             zapi_status: zapiResponse.status,
         }), {
