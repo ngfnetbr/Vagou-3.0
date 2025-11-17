@@ -104,7 +104,8 @@ serve(async (req) => {
 
     // 4. Validação de Segredos
     if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN) {
-        console.error(`[ZAPI DEBUG] ZAPI_INSTANCE_ID configured: ${!!ZAPI_INSTANCE_ID}, ZAPI_TOKEN configured: ${!!ZAPI_TOKEN}`);
+        // Adicionando log para debug
+        console.error(`[ZAPI DEBUG] ZAPI_INSTANCE_ID is null: ${ZAPI_INSTANCE_ID === null}, ZAPI_TOKEN is null: ${ZAPI_TOKEN === null}`);
         
         return new Response(JSON.stringify({ error: 'Z-API secrets not configured in environment. Cannot send message.' }), {
             status: 500,
