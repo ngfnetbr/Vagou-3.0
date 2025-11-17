@@ -155,8 +155,10 @@ export const apiAddCrianca = async (data: InscricaoFormData): Promise<Crianca> =
     const newCrianca = mapDbToCrianca(newCriancaDb);
     
     // --- AÇÃO DE WHATSAPP: INSCRIÇÃO ---
-    const message = `Olá, ${newCrianca.responsavel_nome}! Sua inscrição para a criança ${newCrianca.nome} na fila de espera do VAGOU foi confirmada. Status atual: Fila de Espera. Você será notificado(a) por este canal quando houver uma convocação.`;
-    await invokeWhatsappFunction(newCrianca.responsavel_telefone, message, "Inscrição");
+    if (newCrianca.responsavel_telefone) {
+        const message = `Olá, ${newCrianca.responsavel_nome}! Sua inscrição para a criança ${newCrianca.nome} na fila de espera do VAGOU foi confirmada. Status atual: Fila de Espera. Você será notificado(a) por este canal quando houver uma convocação.`;
+        await invokeWhatsappFunction(newCrianca.responsavel_telefone, message, "Inscrição");
+    }
     // -----------------------------------
     
     await insertHistoricoEntry({
@@ -226,8 +228,10 @@ export const apiConfirmarMatricula = async (criancaId: string, cmeiNome: string,
     const updatedCrianca = mapDbToCrianca(updatedCriancaDb);
     
     // --- AÇÃO DE WHATSAPP: MATRÍCULA CONFIRMADA ---
-    const message = `Parabéns, ${updatedCrianca.responsavel_nome}! A matrícula de ${updatedCrianca.nome} foi confirmada com sucesso no CMEI ${cmeiNome} (Turma: ${turmaNome}).`;
-    await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Matrícula Confirmada");
+    if (updatedCrianca.responsavel_telefone) {
+        const message = `Parabéns, ${updatedCrianca.responsavel_nome}! A matrícula de ${updatedCrianca.nome} foi confirmada com sucesso no CMEI ${cmeiNome} (Turma: ${turmaNome}).`;
+        await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Matrícula Confirmada");
+    }
     // -----------------------------------
     
     await insertHistoricoEntry({
@@ -270,8 +274,10 @@ export const apiConvocarCrianca = async (criancaId: string, data: ConvocationDat
         : `Convocado(a) para ${cmeiNome} - ${turmaNome}. Prazo até ${format(parseISO(deadline + 'T00:00:00'), 'dd/MM/yyyy')}.`;
         
     // --- AÇÃO DE WHATSAPP: CONVOCAÇÃO ---
-    const message = `*CONVOCAÇÃO URGENTE* - Olá, ${updatedCrianca.responsavel_nome}! A criança ${updatedCrianca.nome} foi convocada para uma vaga no CMEI ${cmeiNome} (Turma: ${turmaNome}). O prazo para resposta é até ${format(parseISO(deadline + 'T00:00:00'), 'dd/MM/yyyy')}. Acesse o sistema para confirmar.`;
-    await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Convocação");
+    if (updatedCrianca.responsavel_telefone) {
+        const message = `*CONVOCAÇÃO URGENTE* - Olá, ${updatedCrianca.responsavel_nome}! A criança ${updatedCrianca.nome} foi convocada para uma vaga no CMEI ${cmeiNome} (Turma: ${turmaNome}). O prazo para resposta é até ${format(parseISO(deadline + 'T00:00:00'), 'dd/MM/yyyy')}. Acesse o sistema para confirmar.`;
+        await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Convocação");
+    }
     // -----------------------------------
         
     await insertHistoricoEntry({
@@ -304,8 +310,10 @@ export const apiMarcarRecusada = async (criancaId: string, justificativa: string
     const updatedCrianca = mapDbToCrianca(updatedCriancaDb);
     
     // --- AÇÃO DE WHATSAPP: RECUSA ---
-    const message = `A convocação de ${updatedCrianca.nome} para o CMEI ${updatedCrianca.cmeiNome} foi marcada como recusada. A criança foi removida da fila. Justificativa: ${justificativa}`;
-    await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Recusa");
+    if (updatedCrianca.responsavel_telefone) {
+        const message = `A convocação de ${updatedCrianca.nome} para o CMEI ${updatedCrianca.cmeiNome} foi marcada como recusada. A criança foi removida da fila. Justificativa: ${justificativa}`;
+        await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Recusa");
+    }
     // -----------------------------------
     
     await insertHistoricoEntry({
@@ -339,8 +347,10 @@ export const apiMarcarDesistente = async (criancaId: string, justificativa: stri
     const updatedCrianca = mapDbToCrianca(updatedCriancaDb);
     
     // --- AÇÃO DE WHATSAPP: DESISTÊNCIA ---
-    const message = `A matrícula/inscrição de ${updatedCrianca.nome} foi marcada como Desistente. Justificativa: ${justificativa}`;
-    await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Desistência");
+    if (updatedCrianca.responsavel_telefone) {
+        const message = `A matrícula/inscrição de ${updatedCrianca.nome} foi marcada como Desistente. Justificativa: ${justificativa}`;
+        await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Desistência");
+    }
     // -----------------------------------
     
     await insertHistoricoEntry({
@@ -377,8 +387,10 @@ export const apiMarcarFimDeFila = async (criancaId: string, justificativa: strin
     const updatedCrianca = mapDbToCrianca(updatedCriancaDb);
     
     // --- AÇÃO DE WHATSAPP: FIM DE FILA ---
-    const message = `A convocação de ${updatedCrianca.nome} foi recusada e a criança foi movida para o fim da fila de espera. Justificativa: ${justificativa}`;
-    await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Fim de Fila");
+    if (updatedCrianca.responsavel_telefone) {
+        const message = `A convocação de ${updatedCrianca.nome} foi recusada e a criança foi movida para o fim da fila de espera. Justificativa: ${justificativa}`;
+        await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Fim de Fila");
+    }
     // -----------------------------------
     
     await insertHistoricoEntry({
@@ -411,8 +423,10 @@ export const apiReativarCrianca = async (criancaId: string) => {
     const updatedCrianca = mapDbToCrianca(updatedCriancaDb);
     
     // --- AÇÃO DE WHATSAPP: REATIVAÇÃO ---
-    const message = `A criança ${updatedCrianca.nome} foi reativada na fila de espera do VAGOU.`;
-    await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Reativação");
+    if (updatedCrianca.responsavel_telefone) {
+        const message = `A criança ${updatedCrianca.nome} foi reativada na fila de espera do VAGOU.`;
+        await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Reativação");
+    }
     // -----------------------------------
     
     await insertHistoricoEntry({
@@ -476,8 +490,10 @@ export const apiRealocarCrianca = async (criancaId: string, data: ConvocationDat
     const updatedCrianca = mapDbToCrianca(updatedCriancaDb);
     
     // --- AÇÃO DE WHATSAPP: REALOCAÇÃO ---
-    const message = `A criança ${updatedCrianca.nome} foi realocada para a turma ${turmaNome} no CMEI ${cmeiNome}.`;
-    await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Realocação");
+    if (updatedCrianca.responsavel_telefone) {
+        const message = `A criança ${updatedCrianca.nome} foi realocada para a turma ${turmaNome} no CMEI ${cmeiNome}.`;
+        await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Realocação");
+    }
     // -----------------------------------
     
     await insertHistoricoEntry({
@@ -511,8 +527,10 @@ export const apiTransferirCrianca = async (criancaId: string, justificativa: str
     const updatedCrianca = mapDbToCrianca(updatedCriancaDb);
     
     // --- AÇÃO DE WHATSAPP: TRANSFERÊNCIA ---
-    const message = `A matrícula de ${updatedCrianca.nome} foi encerrada por transferência (mudança de cidade). Justificativa: ${justificativa}`;
-    await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Transferência");
+    if (updatedCrianca.responsavel_telefone) {
+        const message = `A matrícula de ${updatedCrianca.nome} foi encerrada por transferência (mudança de cidade). Justificativa: ${justificativa}`;
+        await invokeWhatsappFunction(updatedCrianca.responsavel_telefone, message, "Transferência");
+    }
     // -----------------------------------
     
     await insertHistoricoEntry({
@@ -551,8 +569,10 @@ export const apiSolicitarRemanejamento = async (criancaId: string, cmeiId: strin
     if (error) throw new Error(`Erro ao solicitar remanejamento: ${error.message}`);
     
     // --- AÇÃO DE WHATSAPP: SOLICITAÇÃO DE REMANEJAMENTO ---
-    const message = `A solicitação de remanejamento para a criança ${crianca.nome} para o CMEI ${cmeiNome} foi registrada com sucesso. Status: Remanejamento Solicitado.`;
-    await invokeWhatsappFunction(crianca.responsavel_telefone, message, "Solicitação de Remanejamento");
+    if (crianca.responsavel_telefone) {
+        const message = `A solicitação de remanejamento para a criança ${crianca.nome} para o CMEI ${cmeiNome} foi registrada com sucesso. Status: Remanejamento Solicitado.`;
+        await invokeWhatsappFunction(crianca.responsavel_telefone, message, "Solicitação de Remanejamento");
+    }
     // -----------------------------------
     
     await insertHistoricoEntry({
@@ -660,6 +680,11 @@ export const apiResendConvocationNotification = async (criancaId: string) => {
         throw new Error("A criança não está em status de convocação ativa.");
     }
     
+    // 1. Validação explícita do telefone
+    if (!crianca.responsavel_telefone) {
+        throw new Error("Telefone do responsável não cadastrado ou inválido para envio de WhatsApp.");
+    }
+    
     const deadline = crianca.convocacao_deadline;
     const cmeiNome = crianca.cmeiNome;
     const turmaNome = crianca.turmaNome;
@@ -677,6 +702,8 @@ export const apiResendConvocationNotification = async (criancaId: string) => {
             usuario: user,
         });
     } else {
-        throw new Error("Falha ao reenviar notificação via WhatsApp.");
+        // Se invokeWhatsappFunction retornar false, significa que houve um erro na Edge Function
+        // O erro detalhado já foi lançado dentro de invokeWhatsappFunction, mas se for um erro genérico, lançamos este:
+        throw new Error("Falha ao reenviar notificação via WhatsApp. Verifique os logs do servidor para detalhes.");
     }
 };
