@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
-import { Building2, LogOut, User, Menu, CircleHelp } from "lucide-react";
+import { Building2, LogOut, User, Menu, Accessibility } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSession } from "./SessionContextProvider";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,7 +141,7 @@ export const AdminLayout = ({
                             aria-label="Configurações de Acessibilidade"
                             className="text-muted-foreground hover:text-primary"
                         >
-                            <CircleHelp className="h-5 w-5" />
+                            <Accessibility className="h-5 w-5" />
                         </Button>
                     </SheetTrigger>
                     <AccessibilityPanel />
