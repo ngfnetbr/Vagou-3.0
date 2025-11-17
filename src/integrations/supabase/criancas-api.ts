@@ -24,51 +24,61 @@ const SELECT_FIELDS = `
 // --- NOVO: Função para invocar a Edge Function de WhatsApp ---
 const invokeWhatsappFunction = async (phone: string, message: string, action: string) => {
     // 1. Validação no cliente antes de invocar
-    // REMOVENDO LIMPEZA AQUI PARA ENVIAR O VALOR BRUTO DO DB PARA DEBUG NA EDGE FUNCTION
     if (!phone || !message) {
         console.warn(`[WhatsApp] Skipping invocation for action '${action}': Phone or message is empty.`);
         return false;
     }
     
+    // DEBUG: Log the phone number and message length before sending
+    console.log(`[WhatsApp Client Debug] Sending to EF. Original Phone: ${phone}, Message Length: ${message.length}, Action: ${action}`);
+    
     try {
-        // Enviamos o phone bruto (mascarado) para a Edge Function
-        const { data, error } = await supabase.functions.invoke('send-whatsapp-message', {
-            body: { phone: phone, message }, 
+        // Usamos fetch diretamente para ter controle total sobre a resposta de erro
+        const { data: session } = await supabase.auth.getSession();
+        
+        if (!session.session?.access_token) {
+            throw new Error("Sessão de usuário não encontrada para invocar a função.");
+        }
+        
+        const response = await fetch(`https://bibsduqgpmeuwbsgdoih.supabase.co/functions/v1/send-whatsapp-message`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.session.access_token}`,
+            },
+            body: JSON.stringify({ phone: phone, message }),
         });
 
-        if (error) {
-            console.error(`Erro ao enviar WhatsApp (${action}):`, error);
+        const result = await response.json();
+
+        if (!response.ok) {
+            let errorMessage = `Edge Function returned status ${response.status}.`;
             
-            // Tenta extrair a mensagem de erro detalhada do corpo da resposta 400/500
-            let errorMessage = error.message;
-            if (error.context?.body) {
-                try {
-                    const errorBody = JSON.parse(error.context.body);
-                    if (errorBody.error) {
-                        errorMessage = errorBody.error;
-                        if (errorBody.debug_phone) {
-                            errorMessage += ` (Debug: Phone=${errorBody.debug_phone}, MsgLen=${errorBody.debug_message_length})`;
-                        }
-                    }
-                } catch (e) {
-                    // Ignora se o corpo não for JSON
+            if (result && result.error) {
+                errorMessage = result.error;
+                if (result.debug_phone) {
+                    errorMessage += ` (Debug: Phone=${result.debug_phone}, MsgLen=${result.debug_message_length})`;
                 }
             }
             
             throw new Error(`Falha no envio de notificação WhatsApp: ${errorMessage}`);
         }
         
-        if (data && data.error) {
-            console.error(`Erro do Z-API (${action}):`, data.error);
-            throw new Error(`Erro do Z-API: ${data.error.details?.message || data.error}`);
+        if (result && result.error) {
+            console.error(`Erro do Z-API (${action}):`, result.error);
+            throw new Error(`Erro do Z-API: ${result.error.details?.message || result.error}`);
         }
         
-        console.log(`WhatsApp enviado com sucesso (${action}):`, data);
+        console.log(`WhatsApp enviado com sucesso (${action}):`, result);
         return true;
 
     } catch (e) {
         console.error(`Erro ao invocar função WhatsApp (${action}):`, e);
-        // Retorna false para que a operação principal não seja interrompida
+        // Se for um erro de rede ou parsing, lançamos o erro original
+        if (e instanceof Error) {
+            throw e;
+        }
+        // Se for um erro de Edge Function que conseguimos detalhar, ele já foi lançado acima.
         return false;
     }
 };
