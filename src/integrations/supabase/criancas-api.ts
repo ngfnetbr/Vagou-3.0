@@ -21,10 +21,6 @@ const SELECT_FIELDS = `
     cmei_remanejamento:cmeis!criancas_cmei_remanejamento_id_fkey(nome)
 `;
 
-// --- FUNÇÃO DE NOTIFICAÇÃO REMOVIDA ---
-// A lógica de notificação será movida para um Webhook/Make.
-// A função de reenvio de notificação será removida, pois o Make/Integromat fará o trabalho.
-
 // --- Funções de Busca ---
 
 export const fetchCriancas = async (): Promise<Crianca[]> => {
@@ -107,7 +103,7 @@ export const apiAddCrianca = async (data: InscricaoFormData): Promise<Crianca> =
     
     const newCrianca = mapDbToCrianca(newCriancaDb);
     
-    // AÇÃO DE WHATSAPP REMOVIDA
+    // O trigger AFTER INSERT agora lida com a notificação de nova inscrição.
     
     await insertHistoricoEntry({
         crianca_id: newCrianca.id,
@@ -173,7 +169,7 @@ export const apiConfirmarMatricula = async (criancaId: string, cmeiNome: string,
 
     if (error) throw new Error(`Falha ao confirmar matrícula: ${error.message}`);
     
-    // AÇÃO DE WHATSAPP REMOVIDA
+    // O trigger AFTER UPDATE agora lida com a notificação de matrícula confirmada.
     
     await insertHistoricoEntry({
         crianca_id: criancaId,
@@ -214,7 +210,7 @@ export const apiConvocarCrianca = async (criancaId: string, data: ConvocationDat
         ? `Convocado(a) para remanejamento no CMEI ${cmeiNome} - ${turmaNome}. Prazo até ${format(parseISO(deadline + 'T00:00:00'), 'dd/MM/yyyy')}.`
         : `Convocado(a) para ${cmeiNome} - ${turmaNome}. Prazo até ${format(parseISO(deadline + 'T00:00:00'), 'dd/MM/yyyy')}.`;
         
-    // AÇÃO DE WHATSAPP REMOVIDA
+    // O trigger AFTER UPDATE agora lida com a notificação de convocação.
         
     await insertHistoricoEntry({
         crianca_id: criancaId,
@@ -243,8 +239,6 @@ export const apiMarcarRecusada = async (criancaId: string, justificativa: string
 
     if (error) throw new Error(`Falha ao marcar como recusada: ${error.message}`);
     
-    // AÇÃO DE WHATSAPP REMOVIDA
-    
     await insertHistoricoEntry({
         crianca_id: criancaId,
         acao: "Convocação Recusada",
@@ -272,8 +266,6 @@ export const apiMarcarDesistente = async (criancaId: string, justificativa: stri
         .single();
 
     if (error) throw new Error(`Falha ao marcar como desistente: ${error.message}`);
-    
-    // AÇÃO DE WHATSAPP REMOVIDA
     
     await insertHistoricoEntry({
         crianca_id: criancaId,
@@ -306,8 +298,6 @@ export const apiMarcarFimDeFila = async (criancaId: string, justificativa: strin
 
     if (error) throw new Error(`Falha ao marcar fim de fila: ${error.message}`);
     
-    // AÇÃO DE WHATSAPP REMOVIDA
-    
     await insertHistoricoEntry({
         crianca_id: criancaId,
         acao: "Fim de Fila Aplicado",
@@ -334,8 +324,6 @@ export const apiReativarCrianca = async (criancaId: string) => {
         .single();
 
     if (error) throw new Error(`Falha ao reativar criança: ${error.message}`);
-    
-    // AÇÃO DE WHATSAPP REMOVIDA
     
     await insertHistoricoEntry({
         crianca_id: criancaId,
@@ -395,8 +383,6 @@ export const apiRealocarCrianca = async (criancaId: string, data: ConvocationDat
 
     if (error) throw new Error(`Erro ao realocar criança: ${error.message}`);
     
-    // AÇÃO DE WHATSAPP REMOVIDA
-    
     await insertHistoricoEntry({
         crianca_id: criancaId,
         acao: "Realocação de Turma",
@@ -424,8 +410,6 @@ export const apiTransferirCrianca = async (criancaId: string, justificativa: str
         .single();
 
     if (error) throw new Error(`Erro ao transferir criança: ${error.message}`);
-    
-    // AÇÃO DE WHATSAPP REMOVIDA
     
     await insertHistoricoEntry({
         crianca_id: criancaId,
@@ -462,8 +446,6 @@ export const apiSolicitarRemanejamento = async (criancaId: string, cmeiId: strin
 
     if (error) throw new Error(`Erro ao solicitar remanejamento: ${error.message}`);
     
-    // AÇÃO DE WHATSAPP REMOVIDA
-    
     await insertHistoricoEntry({
         crianca_id: criancaId,
         acao: "Solicitação de Remanejamento",
@@ -472,7 +454,7 @@ export const apiSolicitarRemanejamento = async (criancaId: string, cmeiId: strin
     });
 };
 
-// --- NOVAS FUNÇÕES DE AÇÃO EM MASSA ---
+// --- FUNÇÕES DE AÇÃO EM MASSA ---
 
 export interface MassRealocationData {
     criancaIds: string[];
@@ -498,8 +480,6 @@ export const apiMassRealocate = async (data: MassRealocationData) => {
     if (error) {
         throw new Error(`Erro ao realocar crianças em massa: ${error.message}`);
     }
-    
-    // Não enviamos WhatsApp individualmente para ações em massa, apenas um log geral
     
     await insertHistoricoEntry({
         crianca_id: 'sistema', // Usamos 'sistema' ou um ID genérico para ações em massa
@@ -544,8 +524,6 @@ export const apiMassStatusUpdate = async (data: MassStatusUpdateData) => {
         throw new Error(`Erro ao atualizar status em massa: ${error.message}`);
     }
     
-    // Não enviamos WhatsApp individualmente para ações em massa, apenas um log geral
-    
     await insertHistoricoEntry({
         crianca_id: 'sistema',
         acao: `Status em Massa: ${data.status}`,
@@ -554,8 +532,33 @@ export const apiMassStatusUpdate = async (data: MassStatusUpdateData) => {
     });
 };
 
-// --- NOVO: Função para Reenviar Notificação (REMOVIDA) ---
-// Esta função não é mais necessária, pois o Make/Integromat fará o trabalho.
+// --- NOVO: Função para Reenviar Notificação (Chama Edge Function) ---
+
+const SUPABASE_PROJECT_ID = "bibsduqgpmeuwbsgdoih"; 
+const EDGE_FUNCTION_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/resend-notification`;
+
 export const apiResendConvocationNotification = async (criancaId: string) => {
-    throw new Error("A notificação via WhatsApp agora é gerenciada por Webhook (Make/Integromat). O reenvio manual não é suportado nesta versão.");
+    const session = await supabase.auth.getSession();
+    const access_token = session.data.session?.access_token;
+
+    if (!access_token) {
+        throw new Error("Usuário não autenticado. Não é possível reenviar notificação.");
+    }
+
+    const response = await fetch(EDGE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${access_token}`,
+        },
+        body: JSON.stringify({ criancaId }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.error || "Falha ao reenviar notificação via Edge Function.");
+    }
+    
+    // O registro no histórico é feito dentro da Edge Function
 };

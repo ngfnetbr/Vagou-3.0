@@ -240,8 +240,10 @@ export const useCriancas = () => {
   const { mutateAsync: resendConvocationNotification, isPending: isResendingNotification } = useMutation({
     mutationFn: apiResendConvocationNotification,
     onSuccess: (criancaId) => {
-        // Não precisa invalidar queries, apenas mostra o toast
-        toast.success("Notificação de convocação reenviada via WhatsApp!");
+        // Invalida o histórico para registrar o reenvio
+        queryClient.invalidateQueries({ queryKey: [HISTORICO_QUERY_KEY, criancaId] });
+        queryClient.invalidateQueries({ queryKey: ['historicoGeral'] });
+        toast.success("Notificação de convocação reenviada via Webhook!");
     },
     onError: (e: Error) => {
         toast.error("Falha ao reenviar notificação", { description: e.message });
