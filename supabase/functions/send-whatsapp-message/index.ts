@@ -15,20 +15,17 @@ const ZAPI_BASE_URL = 'https://api.z-api.io/instances/';
 function formatPhoneForZapi(phone: string): string | null {
     if (!phone) return null;
     
-    let cleanPhone = phone.replace(/\D/g, '');
+    let cleanPhone = phone.replace(/\D/g, ''); // Remove tudo que não é dígito
     
-    // Se o número já começar com 55, assumimos que está correto
+    // Se o número já começar com 55, remove para revalidar o comprimento
     if (cleanPhone.startsWith('55')) {
-        // Remove o 55 para revalidar o comprimento
         cleanPhone = cleanPhone.substring(2);
     }
     
     // Esperamos 10 dígitos (DDD + 8 dígitos) ou 11 dígitos (DDD + 9 + 8 dígitos)
-    if (cleanPhone.length === 10) { // Ex: 4488887777 (sem o 9)
-        return `55${cleanPhone}`;
-    }
+    // O Z-API espera o formato 55 + DDD + Número.
     
-    if (cleanPhone.length === 11) { // Ex: 44988887777 (com o 9)
+    if (cleanPhone.length === 10 || cleanPhone.length === 11) { 
         return `55${cleanPhone}`;
     }
     
@@ -168,6 +165,11 @@ serve(async (req) => {
         console.error('Z-API Error:', zapiResult);
         
         let zapiErrorMessage = zapiResult.error || zapiResult.message || JSON.stringify(zapiResult);
+        
+        // Se o erro for de autenticação/token, tentamos dar um feedback mais claro
+        if (zapiErrorMessage.includes('client-token is not configured') || zapiErrorMessage.includes('Invalid token')) {
+             zapiErrorMessage = "Token de acesso (ZAPI_TOKEN) não configurado ou inválido no Z-API. Verifique as credenciais salvas.";
+        }
         
         return new Response(JSON.stringify({ 
             error: `Failed to send message via Z-API: ${zapiErrorMessage}`, 
