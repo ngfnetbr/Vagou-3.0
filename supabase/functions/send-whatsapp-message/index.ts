@@ -151,8 +151,8 @@ serve(async (req) => {
         message: message,
     };
     
-    // CONSTRUÇÃO DO URL FINAL: Base + ID da Instância + /token/ + Token + /send-text
-    const finalUrl = `${ZAPI_BASE_URL}${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`;
+    // CONSTRUÇÃO DO URL FINAL CORRETO: Base + ID da Instância + /send-text?token=Token
+    const finalUrl = `${ZAPI_BASE_URL}${ZAPI_INSTANCE_ID}/send-text?token=${ZAPI_TOKEN}`;
 
     // 8. Enviar requisição para o Z-API
     const zapiResponse = await fetch(finalUrl, {
