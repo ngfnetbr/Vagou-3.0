@@ -20,6 +20,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
   
+  let phone: string | undefined;
+  let message: string | undefined;
+  
   try {
     // 1. Autenticação Manual (Verifica se o usuário está logado)
     const authHeader = req.headers.get('Authorization')
@@ -77,7 +80,17 @@ serve(async (req) => {
     }
 
     // 5. Receber dados da requisição
-    const { phone, message } = await req.json();
+    try {
+        const body = await req.json();
+        phone = body.phone;
+        message = body.message;
+    } catch (e) {
+        console.error('Error parsing request body:', e);
+        return new Response(JSON.stringify({ error: 'Invalid JSON body received.' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+    }
     
     // --- DEBUG LOG (Mantido para logs do servidor) ---
     console.log(`[DEBUG] Received Phone: ${phone}, Message Length: ${message?.length}`);
