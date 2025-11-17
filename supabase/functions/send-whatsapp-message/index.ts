@@ -8,10 +8,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// HARDCODED Z-API CONFIGURATION (FOR IMMEDIATE TESTING)
-// This eliminates environment variable reading errors.
-const ZAPI_INSTANCE_ID = '3DC7A776B94830AB77B756C5A090F8FA'; 
-const ZAPI_TOKEN = '51BBE9B5994BCE59700A948E';
+// AGORA LÊ OS SEGREDOS DO AMBIENTE
+// @ts-ignore
+const ZAPI_INSTANCE_ID = Deno.env.get('ZAPI_INSTANCE_ID'); 
+// @ts-ignore
+const ZAPI_TOKEN = Deno.env.get('ZAPI_TOKEN');
 
 // URL base da API Z-API
 const ZAPI_BASE_URL = 'https://api.z-api.io/instances/';
@@ -101,9 +102,11 @@ serve(async (req) => {
         });
     }
 
-    // 4. Validação de Configuração (Hardcoded)
+    // 4. Validação de Segredos
     if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN) {
-        return new Response(JSON.stringify({ error: 'Z-API configuration is missing (hardcoded values are empty).' }), {
+        console.error(`[ZAPI DEBUG] ZAPI_INSTANCE_ID configured: ${!!ZAPI_INSTANCE_ID}, ZAPI_TOKEN configured: ${!!ZAPI_TOKEN}`);
+        
+        return new Response(JSON.stringify({ error: 'Z-API secrets not configured in environment. Cannot send message.' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
@@ -144,7 +147,7 @@ serve(async (req) => {
         message: message,
     };
     
-    // CONSTRUÇÃO DO URL FINAL: USANDO A URL COMPLETA FORNECIDA PELO USUÁRIO
+    // CONSTRUÇÃO DO URL FINAL: Base + ID da Instância + /token/ + Token + /send-text
     const finalUrl = `${ZAPI_BASE_URL}${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`;
 
     // 8. Enviar requisição para o Z-API
