@@ -24,8 +24,6 @@ serve(async (req) => {
     // 1. Autenticação Manual (Verifica se o usuário está logado)
     const authHeader = req.headers.get('Authorization')
     
-    // Usamos o Service Role Key para acessar o DB e verificar a configuração,
-    // mas ainda exigimos o token do usuário para garantir que a chamada venha de um usuário logado.
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized: Missing Authorization header' }), { 
         status: 401, 
@@ -56,7 +54,10 @@ serve(async (req) => {
         
     if (configError) {
         console.error('DB Config Error:', configError);
-        throw new Error('Failed to fetch notification configuration from database.');
+        throw new Response(JSON.stringify({ error: 'Failed to fetch notification configuration from database.' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
     }
     
     if (!configData.notificacao_whatsapp) {
@@ -67,7 +68,7 @@ serve(async (req) => {
         });
     }
 
-    // 4. Validação de Segredos (só verifica se a notificação está ativa)
+    // 4. Validação de Segredos
     if (!ZAPI_URL || !ZAPI_TOKEN) {
         return new Response(JSON.stringify({ error: 'Z-API secrets not configured in environment. Cannot send message.' }), {
             status: 500,
@@ -86,7 +87,23 @@ serve(async (req) => {
     }
     
     // 6. Formatar o número de telefone
-    const cleanPhone = phone.replace(/\D/g, '');
+    let cleanPhone = phone.replace(/\D/g, '');
+    
+    // Adiciona '55' se o número não começar com ele (formato brasileiro)
+    if (!cleanPhone.startsWith('55')) {
+        // Se o número tiver 11 dígitos (DDD + 9 + 8 dígitos), adiciona 55
+        if (cleanPhone.length === 11) {
+            cleanPhone = '55' + cleanPhone;
+        } 
+        // Se o número tiver 10 dígitos (DDD + 8 dígitos), adiciona 55
+        else if (cleanPhone.length === 10) {
+            cleanPhone = '55' + cleanPhone;
+        }
+        // Se o número for menor, o Z-API provavelmente falhará, mas tentamos enviar o limpo com 55
+        else if (cleanPhone.length > 0) {
+            cleanPhone = '55' + cleanPhone;
+        }
+    }
     
     // 7. Preparar payload para o Z-API
     const zapiPayload = {
