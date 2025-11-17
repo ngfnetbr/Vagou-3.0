@@ -57,61 +57,28 @@ serve(async (req) => {
       })
     }
     
-    // 2. Inicializa o Supabase Client com Service Role Key para acesso ao DB
+    // 2. Lendo as chaves Z-API diretamente das variáveis de ambiente (Secrets)
     // @ts-ignore
-    const supabase = createClient(
-      // @ts-ignore
-      Deno.env.get('SUPABASE_URL') ?? '',
-      // @ts-ignore
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', // Usando Service Role Key
-      {
-        auth: {
-          persistSession: false,
-        },
-      }
-    );
+    const ZAPI_INSTANCE_ID = Deno.env.get('ZAPI_INSTANCE_ID');
+    // @ts-ignore
+    const ZAPI_TOKEN = Deno.env.get('ZAPI_TOKEN');
 
-    // 3. Busca as configurações de notificação e as chaves Z-API do DB
-    const { data: configData, error: configError } = await supabase
-        .from('configuracoes_sistema')
-        .select('notificacao_whatsapp, zapi_instance_id, zapi_token')
-        .eq('id', 1)
-        .single();
-        
-    if (configError) {
-        console.error('DB Config Error:', configError);
-        return new Response(JSON.stringify({ error: 'Failed to fetch notification configuration from database.' }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-    }
-    
-    if (!configData.notificacao_whatsapp) {
-        return new Response(JSON.stringify({ message: 'WhatsApp notifications are disabled in system configuration.' }), {
-            status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-    }
-    
-    const ZAPI_INSTANCE_ID = configData.zapi_instance_id;
-    const ZAPI_TOKEN = configData.zapi_token;
-
-    // 4. Validação de Segredos (agora lidos do DB)
+    // 3. Validação de Segredos
     if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN) {
         // LOG DE DEBUG CRÍTICO
-        console.error(`[ZAPI CRITICAL DEBUG] Keys read from DB: Instance ID present: ${!!ZAPI_INSTANCE_ID}, Token present: ${!!ZAPI_TOKEN}`);
+        console.error(`[ZAPI CRITICAL DEBUG] Keys read from ENV: Instance ID present: ${!!ZAPI_INSTANCE_ID}, Token present: ${!!ZAPI_TOKEN}`);
         
-        return new Response(JSON.stringify({ error: 'Z-API secrets not configured in database. Cannot send message.' }), {
+        return new Response(JSON.stringify({ error: 'Z-API secrets not configured in Supabase Secrets. Cannot send message.' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     }
     
     // LOG DE DEBUG: Confirma que as chaves foram lidas
-    console.log(`[ZAPI DEBUG] Keys successfully read from DB. Instance ID length: ${ZAPI_INSTANCE_ID.length}, Token length: ${ZAPI_TOKEN.length}`);
+    console.log(`[ZAPI DEBUG] Keys successfully read from ENV. Instance ID length: ${ZAPI_INSTANCE_ID.length}, Token length: ${ZAPI_TOKEN.length}`);
 
 
-    // 5. Receber dados da requisição
+    // 4. Receber dados da requisição
     try {
         const body = await req.json();
         phone = body.phone;
@@ -124,7 +91,7 @@ serve(async (req) => {
         });
     }
     
-    // 6. Limpeza e Validação do Telefone
+    // 5. Limpeza e Validação do Telefone
     const formattedPhone = formatPhoneForZapi(phone || '');
     
     console.log(`[DEBUG] Original Phone: ${phone}, Formatted Phone: ${formattedPhone}, Message Length: ${message?.length}`);
@@ -140,7 +107,7 @@ serve(async (req) => {
       });
     }
     
-    // 7. Preparar payload para o Z-API
+    // 6. Preparar payload para o Z-API
     const zapiPayload = {
         phone: formattedPhone,
         message: message,
@@ -149,7 +116,7 @@ serve(async (req) => {
     // CONSTRUÇÃO DO URL FINAL: Base + ID da Instância + /token/ + Token + /send-text
     const finalUrl = `${ZAPI_BASE_URL}${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`;
 
-    // 8. Enviar requisição para o Z-API
+    // 7. Enviar requisição para o Z-API
     const zapiResponse = await fetch(finalUrl, {
         method: 'POST',
         headers: {
@@ -160,7 +127,7 @@ serve(async (req) => {
 
     const zapiResult = await zapiResponse.json();
 
-    // 9. VERIFICAÇÃO DE STATUS HTTP
+    // 8. VERIFICAÇÃO DE STATUS HTTP
     if (!zapiResponse.ok) {
         console.error('Z-API Error:', zapiResult);
         
