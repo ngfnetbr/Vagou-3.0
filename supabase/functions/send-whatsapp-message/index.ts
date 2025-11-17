@@ -9,9 +9,9 @@ const corsHeaders = {
 }
 
 // O URL e a chave do Z-API devem ser configurados como segredos no Supabase Console.
-// Exemplo de segredos necessários: ZAPI_URL (agora deve ser o ID da instância), ZAPI_TOKEN
+// AGORA BUSCA ZAPI_INSTANCE_ID
 // @ts-ignore
-const ZAPI_INSTANCE_ID = Deno.env.get('ZAPI_URL'); // Reutilizando ZAPI_URL para o ID da instância
+const ZAPI_INSTANCE_ID = Deno.env.get('ZAPI_INSTANCE_ID'); 
 // @ts-ignore
 const ZAPI_TOKEN = Deno.env.get('ZAPI_TOKEN');
 
@@ -148,16 +148,15 @@ serve(async (req) => {
         message: message,
     };
     
-    // CONSTRUÇÃO DO URL FINAL: Base + ID da Instância + /send-text (SEM TOKEN NO URL)
-    const finalUrl = `${ZAPI_BASE_URL}${ZAPI_INSTANCE_ID}/send-text`;
+    // CONSTRUÇÃO DO URL FINAL: Base + ID da Instância + /token/ + Token + /send-text (CORRIGIDO)
+    const finalUrl = `${ZAPI_BASE_URL}${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`;
 
     // 8. Enviar requisição para o Z-API
     const zapiResponse = await fetch(finalUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            // NOVO: Passando o token no cabeçalho Authorization
-            'Authorization': `Bearer ${ZAPI_TOKEN}`,
+            // REMOVIDO: Authorization header
         },
         body: JSON.stringify(zapiPayload),
     });
