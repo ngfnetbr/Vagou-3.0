@@ -101,11 +101,18 @@ serve(async (req) => {
 
     // 4. Validação de Segredos (agora lidos do DB)
     if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN) {
+        // LOG DE DEBUG CRÍTICO
+        console.error(`[ZAPI CRITICAL DEBUG] Keys read from DB: Instance ID present: ${!!ZAPI_INSTANCE_ID}, Token present: ${!!ZAPI_TOKEN}`);
+        
         return new Response(JSON.stringify({ error: 'Z-API secrets not configured in database. Cannot send message.' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     }
+    
+    // LOG DE DEBUG: Confirma que as chaves foram lidas
+    console.log(`[ZAPI DEBUG] Keys successfully read from DB. Instance ID length: ${ZAPI_INSTANCE_ID.length}, Token length: ${ZAPI_TOKEN.length}`);
+
 
     // 5. Receber dados da requisição
     try {
