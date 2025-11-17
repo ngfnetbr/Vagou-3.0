@@ -125,16 +125,15 @@ serve(async (req) => {
         message: message,
     };
     
-    // CONSTRUÇÃO DO URL FINAL: Base + ID da Instância + /token/ + Token + Endpoint
-    // Isso garante que o URL corresponda ao formato que o Z-API espera para enfileirar a mensagem.
-    const finalUrl = `${ZAPI_BASE_URL}${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-messages`;
+    // CONSTRUÇÃO DO URL FINAL: Base + ID da Instância + /token/ + Token + /send-text
+    const finalUrl = `${ZAPI_BASE_URL}${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`;
 
-    // 9. Enviar requisição para o Z-API, usando o header Client-Token
+    // 9. Enviar requisição para o Z-API
     const zapiResponse = await fetch(finalUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Client-Token': ZAPI_TOKEN, 
+            // Removendo o header Client-Token, pois o token já está no URL
         },
         body: JSON.stringify(zapiPayload),
     });
